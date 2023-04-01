@@ -50,3 +50,10 @@ const provider: vscode.DocumentSemanticTokensProvider = {
 const selector = { language: 'hlsl', scheme: 'file' }; // register for all HLSL documents from the local file system
 
 vscode.languages.registerDocumentSemanticTokensProvider(selector, provider, legend);
+
+// Hover information
+//vscode.languages.registerHoverProvider(selector, provider, legend);
+// Auto completion
+//vscode.languages.registerCompletionItemProvider(selector, provider, legend);
+// Jump to definition
+//vscode.languages.registerDefinitionProvider(selector, provider, legend);

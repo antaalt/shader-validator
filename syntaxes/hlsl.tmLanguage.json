@@ -29,8 +29,8 @@
 			"match": "\\b(false|true)\\b"
 		},
 		{
-			"name": "keyword.control.enum.hlsl",
-			"match": "\\b(enum)\\b"
+			"name": "keyword.control.other.hlsl",
+			"match": "\\b(string)\\b"
 		},
 		{
 			"name": "keyword.preprocessor.hlsl",
@@ -130,7 +130,7 @@
 		},
 		{
 			"name": "storage.type.structured.hlsl",
-			"match": "\\b(cbuffer|class|interface|namespace|struct|tbuffer)\\b"
+			"match": "\\b(cbuffer|class|interface|namespace|struct|tbuffer|enum)\\b"
 		},
 		{
 			"name": "support.constant.property-value.fx.hlsl",
@@ -209,16 +209,114 @@
 		}
 	],
 	"repository": {
-		"enum-keywords": {
-			"match": "\\b(enum)\\s+(class)?\\b",
-			"captures": {
+		"code": {
+
+		},
+		"comments": {
+
+		},
+		"enums": {
+			"name": "meta.enum.declaration.hlsl",
+			"begin": "^\\s*(enum)\\s+(class\\s+)?(\\w+)",
+			"beginCaptures": {
 				"1": {
-					"name": "storage.type.enum.hlsl"
+					"name": "keyword.control.enum.hlsl"
 				},
 				"2": {
-					"name": "storage.type.enum-class.hlsl"
+					"name": "keyword.control.enum-class.hlsl"
+				},
+				"3": {
+					"name": "storage.modifier.hlsl"
 				}
-			}
+			},
+			"end": "(?<=\\})",
+			"patterns": [
+				{
+					"include": "#comments"
+				},
+				{
+					"begin": "\\{",
+					"beginCaptures": {
+						"0": {
+							"name": "punctuation.definition.block.hlsl"
+						}
+					},
+					"end": "\\}",
+					"endCaptures": {
+						"0": {
+							"name": "punctuation.definition.block.hlsl"
+						}
+					},
+					"patterns": [
+						{
+							"begin": "(?<={)",
+							"end": "(?=,|})",
+							"patterns": [
+								{
+									"include": "#comments"
+								},
+								{
+									"begin": "\\b(\\w+)\\b",
+									"beginCaptures": {
+										"0": {
+											"name": "variable.other.enummember.hlsl"
+										}
+									},
+									"end": "(?=,|\\}|$)",
+									"endCaptures": {
+										"1": {
+											"name": "punctuation.separator.delimiter.hlsl"
+										}
+									},
+									"patterns": [
+										{
+											"include": "#comments"
+										},
+										{
+											"begin": "\\(",
+											"beginCaptures": {
+												"0": {
+													"name": "punctuation.bracket.round.hlsl"
+												}
+											},
+											"end": "\\)",
+											"endCaptures": {
+												"0": {
+													"name": "punctuation.bracket.round.hlsl"
+												}
+											},
+											"patterns": [
+												{
+													"include": "#code"
+												}
+											]
+										},
+										{
+											"begin": "{",
+											"beginCaptures": {
+												"0": {
+													"name": "punctuation.bracket.curly.java"
+												}
+											},
+											"end": "}",
+											"endCaptures": {
+												"0": {
+													"name": "punctuation.bracket.curly.java"
+												}
+											},
+											"patterns": [
+												{
+													"include": "#class-body"
+												}
+											]
+										}
+									]
+								}
+							]
+						}
+					]
+				}
+			]
 		},
 		"keywords": {
 			"patterns": [{
