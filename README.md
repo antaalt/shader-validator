@@ -2,6 +2,14 @@
 
 This is the README for your extension "hlsl". After writing up a brief description, we recommend including the following sections.
 
+## Why
+Not much efficient & light HLSL linter / highlighter easy to maintain & up to date. Most of them are abandonned.  
+- (Shader languages support for VS Code)[https://github.com/stef-levesque/vscode-shader] does not offer shader linting but still cool providing features that works well. 
+- (HLSL Tools)[https://github.com/tgjones/HlslTools] it offer linting by rewriting a complete pseudo HLSL compiler for HLSL which make it really tedious to maintain & update with newer HLSL version.
+- (HLSL linter)[https://github.com/A2K/vscode-hlsl-linter] really basic linting but works with DXC which make it easy to update.
+- (vscode-wgsl)[https://github.com/PolyMeilex/vscode-wgsl] a nice API with a rust backend server to lint & provide functionnalities for wgsl only using Naga.
+
+
 ## Features
 
 Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
