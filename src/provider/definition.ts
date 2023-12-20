@@ -3,11 +3,9 @@ import { Linter } from "../linter";
 
 export class HLSLDefinitionProvider implements vscode.DefinitionProvider {
     linter: Linter;
-    items: { [key: string]: vscode.Definition | vscode.LocationLink[] };
 
     constructor(linter: Linter) {
         this.linter = linter;
-        this.items = {};
     }
     
     provideDefinition(
@@ -18,18 +16,27 @@ export class HLSLDefinitionProvider implements vscode.DefinitionProvider {
     {
         return new Promise((res, rej) => {
             if (document.languageId === "hlsl") {
+                let results: vscode.Location[] = [];
 
-                const c = new vscode.Location(
-                    vscode.Uri.file("yo"), 
-                    new vscode.Range(
-                        new vscode.Position(0, 10), 
-                        new vscode.Position(10, 10),
-                    )
-                );
+                let range = document.getWordRangeAtPosition(position);
+                let word = document.getText(range);
 
-                this.items[document.uri.toString()] = c;
+                let text = document.getText();
+                let regex = new RegExp(`\\b${word}\\b`, "i"); 
+                // Stop on first match for now. 
+                // Should look for definition instead using a regex for function call. 
+                // Should also search all folders in workspace if not found ?
+                //vscode.workspace.findFiles("**/*.hlsl");
+                let match = regex.exec(text);
+                if (match) {
+                    let pos = document.positionAt(match.index);
+                    let range = document.getWordRangeAtPosition(pos);
+                    if (range) {
+                        results.push(new vscode.Location(document.uri, range));
+                    }
+                }
 
-                res(this.items[document.uri.toString()]);
+                res(results);
             } else {
                 rej();
             }

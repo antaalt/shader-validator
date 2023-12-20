@@ -3,11 +3,17 @@ import { Linter } from "../linter";
 
 export class HLSLHoverProvider implements vscode.HoverProvider {
     linter: Linter;
-    items: { [key: string]: vscode.Hover };
 
     constructor(linter: Linter) {
         this.linter = linter;
-        this.items = {};
+    }
+
+    trimText(text: string, limit: number): string {
+        if(text.length >= limit) {
+            return text.substring(0, limit).concat('...');
+        } else {
+            return text;
+        }
     }
     
     provideHover(
@@ -18,17 +24,16 @@ export class HLSLHoverProvider implements vscode.HoverProvider {
     {
         return new Promise((res, rej) => {
             if (document.languageId === "hlsl") {
-                
+                // TODO: should search in a db language specific informations about current function. 
+                // If nothing, regex to look for definition if function. if variable aswell.
+                let range = document.getWordRangeAtPosition(position);
+                let name = document.getText(range);
                 const c = new vscode.Hover(
-                    "yo", 
-                    new vscode.Range(
-                        new vscode.Position(0, 10), 
-                        new vscode.Position(10, 10),
-                    )
+                    "You are currently hovering the text '" + this.trimText(name, 15) + "'. Do what you want with this information.", 
+                    range
                 );
-                this.items[document.uri.toString()] = c;
 
-                res(this.items[document.uri.toString()]);
+                res(c);
             } else {
                 rej();
             }

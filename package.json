@@ -2,6 +2,7 @@
   "name": "hlsl",
   "displayName": "hlsl-validator",
   "description": "High-Level Shader Language support for vscode",
+  "icon": "res/icon.png",
   "version": "0.0.1",
   "publisher": "antaalt",
   "engines": {
@@ -35,7 +36,54 @@
       "language": "hlsl",
       "scopeName": "source.hlsl",
       "path": "./syntaxes/hlsl.tmLanguage.json"
-    }]
+    }],
+    "iconThemes": [
+      {
+        "id": "shader",
+        "label": "Shader",
+        "path": "./fileicons/turtles-icon-theme.json"
+      }
+    ],
+    "configuration": {
+      "title": "HLSL",
+      "properties": {
+        "hlsl.autocomplete": {
+          "description": "Autocomplete shader code as you type",
+          "type": "boolean",
+          "default": true
+        },
+        "hlsl.validateOnType": {
+          "description": "Validate shader as you type.",
+          "type": "boolean",
+          "default": true
+        },
+        "hlsl.validateOnSave": {
+          "description": "Validate shader when you save a file.",
+          "type": "boolean",
+          "default": true
+        },
+        "hlsl.severity": {
+          "type": "string",
+          "description": "Minimum linting severity. Set it lower to display some hints aswell. Might not be supported by all languages",
+          "default": "info",
+          "enum": [
+            "none",
+            "error", 
+            "warning",
+            "info",
+            "hint"
+          ]
+        },
+        "hlsl.includes": {
+          "description": "includes",
+          "type": "array",
+          "items": {
+              "type": "string"
+          },
+          "default": []
+        }
+      }
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
