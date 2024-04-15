@@ -2,8 +2,15 @@
 
 ## Build
 
-cargo build --lib --target wasm32-unknown-unknown --no-default-features
+The server is built using [WASI](https://wasi.dev/) to interface with VS Code WASI support.
 
-Should not require bindgen as we directly instantiate wasm file ?
+To build it, install target first :
+```shell
+rustup target add wasm32-wasi
+```
 
-wasm-bindgen .\target\wasm32-unknown-unknown\debug\shader_language_server.wasm --out-dir ./pkg --out-name shader_language_server --target no-modules
+Then build the app with:
+
+```shell
+cargo build --target wasm32-wasi
+```

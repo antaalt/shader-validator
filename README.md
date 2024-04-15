@@ -33,6 +33,8 @@ This extension contributes the following settings:
 
 ## Interesting resources
 
+https://code.visualstudio.com/blogs/2023/06/05/vscode-wasm-wasi
+
 https://github.com/MattSutherlin/HLSL_ST3/blob/master/HLSL.sublime-syntax
 
 https://www.osohq.com/post/building-vs-code-extension-with-rust-wasm-typescript

@@ -12,17 +12,9 @@ import { HLSLSymbolProvider } from './provider/symbol';
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
-export async function activate(context: vscode.ExtensionContext) {
-	// Use the console to output diagnostic information (console.log) and errors (console.error)
-	// This line of code will only be executed once when your extension is activated
-	console.log('Congratulations, your extension "hlsl" is now active!');
-
+export async function activate(context: vscode.ExtensionContext)
+{
   // Load the WASM API
-  // https://code.visualstudio.com/blogs/2023/06/05/vscode-wasm-wasi
-  // https://github.com/microsoft/vscode-wasm/blob/main/wasm-wasi/example/extension.ts
-  // https://github.com/SonOfLilit/vscode-web-wasm-rust/tree/main/vscode-web-wasm-webpack-plugin
-  // https://developer.mozilla.org/en-US/docs/WebAssembly/Rust_to_wasm
-
   const wasm: Wasm = await Wasm.api();
 
   const pty = wasm.createPseudoterminal();
@@ -36,7 +28,7 @@ export async function activate(context: vscode.ExtensionContext) {
     // Load the WASM module. It is stored alongside the extension's JS code.
     // So we can use VS Code's file system API to load it. Makes it
     // independent of whether the code runs in the desktop or the web.
-    const extensionLocalPath = 'shader-language-server/pkg/shader_language_server_bg.wasm';
+    const extensionLocalPath = 'shader-language-server/pkg/shader_language_server.wasm';
     const bits = await vscode.workspace.fs.readFile(vscode.Uri.joinPath(context.extensionUri, extensionLocalPath));
     const module = await WebAssembly.compile(bits);
     // Create a WASM process.
@@ -44,9 +36,7 @@ export async function activate(context: vscode.ExtensionContext) {
     console.log(module);
     console.log(process);
     // Run the process and wait for its result.
-    vscode.window.showInformationMessage('Compiling World from hlsl!');
     const result = await process.run();
-    vscode.window.showInformationMessage('Compiled World from hlsl!');
     if (result !== 0) {
       await vscode.window.showErrorMessage(`Process shader-language-server ended with error: ${result}`);
     }
@@ -54,7 +44,6 @@ export async function activate(context: vscode.ExtensionContext) {
     // Show an error message if something goes wrong.
     await vscode.window.showErrorMessage(error.message);
   }
-  vscode.window.showInformationMessage('YOOOO!');
 
   const linter = new Linter();
   const diagCol = vscode.languages.createDiagnosticCollection();
