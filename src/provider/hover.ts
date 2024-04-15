@@ -22,6 +22,7 @@ export class HLSLHoverProvider implements vscode.HoverProvider {
         token: vscode.CancellationToken
         ): vscode.ProviderResult<vscode.Hover>
     {
+        return null;
         return new Promise((res, rej) => {
             if (document.languageId === "hlsl") {
                 // TODO: should search in a db language specific informations about current function. 

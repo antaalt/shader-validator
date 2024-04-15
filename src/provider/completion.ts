@@ -14,6 +14,7 @@ export class HLSLCompletionItemProvider implements vscode.CompletionItemProvider
         _token: vscode.CancellationToken,
         _context: vscode.CompletionContext
       ): vscode.ProviderResult<any[] | vscode.CompletionList<vscode.CompletionItem>> {
+        return null;
         return new Promise((res, rej) => {
             if (document.languageId === "hlsl") {
 

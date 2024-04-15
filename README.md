@@ -37,4 +37,4 @@ https://github.com/MattSutherlin/HLSL_ST3/blob/master/HLSL.sublime-syntax
 
 https://www.osohq.com/post/building-vs-code-extension-with-rust-wasm-typescript
 
-
+https://www.npmjs.com/package/@vscode/wasm-wasi
