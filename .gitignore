@@ -5,6 +5,7 @@ node_modules
 .vscode-test/
 *.vsix
 examples/
+test/
 
 ### WASM ###
 pkg/

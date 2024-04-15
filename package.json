@@ -29,16 +29,23 @@
     "languages": [
       {
         "id": "hlsl",
-        "aliases": [
-          "hlsl",
-          "hlsl"
-        ],
         "extensions": [
           ".hlsl",
           ".h",
           ".fx",
-          ".fxh",
-          ""
+          ".fxh"
+        ],
+        "configuration": "./language-configuration.json"
+      },
+      {
+        "id": "glsl",
+        "extensions": [
+          ".glsl",
+          ".vert",
+          ".frag",
+          ".mesh",
+          ".task",
+          ".comp"
         ],
         "configuration": "./language-configuration.json"
       }
@@ -48,6 +55,11 @@
         "language": "hlsl",
         "scopeName": "source.hlsl",
         "path": "./syntaxes/hlsl.tmLanguage.json"
+      },
+      {
+        "language": "glsl",
+        "scopeName": "source.glsl",
+        "path": "./syntaxes/glsl.tmLanguage.json"
       }
     ],
     "iconThemes": [
