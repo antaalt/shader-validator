@@ -7,10 +7,10 @@ This is a simple extension allowing some basic features for various shader types
 
 ## Why
 Not much efficient & light HLSL linter / highlighter easy to maintain & up to date. Most of them are abandonned.  
-- (Shader languages support for VS Code)[https://github.com/stef-levesque/vscode-shader] does not offer shader linting but still cool providing features that works well. 
-- (HLSL Tools)[https://github.com/tgjones/HlslTools] it offer linting by rewriting a complete pseudo HLSL compiler for HLSL which make it really tedious to maintain & update with newer HLSL version.
-- (HLSL linter)[https://github.com/A2K/vscode-hlsl-linter] really basic linting but works with DXC which make it easy to update.
-- (vscode-wgsl)[https://github.com/PolyMeilex/vscode-wgsl] a nice API with a rust backend server to lint & provide functionnalities for wgsl only using Naga.
+- [Shader languages support for VS Code](https://github.com/stef-levesque/vscode-shader) does not offer shader linting but still cool providing features that works well. 
+- [HLSL Tools](https://github.com/tgjones/HlslTools) it offer linting by rewriting a complete pseudo HLSL compiler for HLSL which make it really tedious to maintain & update with newer HLSL version.
+- [HLSL linter](https://github.com/A2K/vscode-hlsl-linter) really basic linting but works with DXC which make it easy to update.
+- [vscode-wgsl](https://github.com/PolyMeilex/vscode-wgsl) a nice API with a rust backend server to lint & provide functionnalities for wgsl only using Naga.
 
 
 ## Features
@@ -31,22 +31,10 @@ This extension contributes the following settings:
 * `hlsl.severity`: Select log severity for linting.
 * `hlsl.includes`: All includes for linting.
 
-## Known Issues
+## Interesting resources
 
-Calling out known issues can help limit users opening duplicate issues against your extension.
+https://github.com/MattSutherlin/HLSL_ST3/blob/master/HLSL.sublime-syntax
 
-## Release Notes
+https://www.osohq.com/post/building-vs-code-extension-with-rust-wasm-typescript
 
-Users appreciate release notes as you update your extension.
 
-### 1.0.0
-
-Initial release of ...
-
-### 1.0.1
-
-Fixed issue #.
-
-### 1.1.0
-
-Added features X, Y, and Z.
