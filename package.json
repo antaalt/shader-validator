@@ -5,6 +5,10 @@
   "icon": "res/icon.png",
   "version": "0.0.1",
   "publisher": "antaalt",
+  "repository": { 
+    "type": "git", 
+    "url": "https://github.com/antaalt/hlsl-validator" 
+  },
   "engines": {
     "vscode": "^1.77.0"
   },
