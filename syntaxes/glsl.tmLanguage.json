@@ -339,11 +339,6 @@
                     "comment": "Custom type",
                     "name": "entity.name.type.hlsl",
                     "match": "\\b([A-Z][A-Za-z0-9_]*)\\b"
-                },
-                {
-                    "comment": "Custom macro",
-                    "name": "constant.character.preprocessor.hlsl",
-                    "match": "\\b([A-Z_][A-Z0-9_]*)\\b"
                 }
             ]
         },
