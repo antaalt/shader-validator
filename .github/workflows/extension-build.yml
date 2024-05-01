@@ -26,8 +26,12 @@ jobs:
       #  run: cargo test --target wasm32-wasi --verbose
       - name: Copy file
         run: mkdir -p ./shader-language-server/pkg/ && cp ./shader-language-server/target/wasm32-wasi/release/shader_language_server.wasm ./shader-language-server/pkg/shader_language_server.wasm
-      - name: "Package extension"
-        run: "vsce package"
+      - name: Install dependencies
+        run: npm ci
+      - name: Install VSCE
+        run: npm i -g vsce
+      - name: Package extension
+        run: vsce package
       - name: Copy VSIX
         run: cp ./hlsl-0.0.1.vsix ./shader-language-server/pkg/hlsl-0.0.1.vsix
       - name: Upload artifact
