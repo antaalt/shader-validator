@@ -25,7 +25,7 @@ jobs:
       #  working-directory: ./shader-language-server
       #  run: cargo test --target wasm32-wasi --verbose
       - name: Copy file
-        run: cp ./shader-language-server/target/wasm-wasi/release/shader_language_server.wasm ./shader-language-server/pkg/shader_language_server.wasm
+        run: cp ./shader-language-server/target/wasm32-wasi/release/shader_language_server.wasm ./shader-language-server/pkg/shader_language_server.wasm
       - name: "Package extension"
         run: "vsce package"
       - name: Copy VSIX
