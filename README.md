@@ -31,10 +31,23 @@ This extension contributes the following settings:
 * `hlsl.severity`: Select log severity for linting.
 * `hlsl.includes`: All includes for linting.
 
+## Extension publishing
+
+https://code.visualstudio.com/api/working-with-extensions/publishing-extension
+
+```vsce package```
+
+```code --install-extension myextension.vsix```
+
 ## Interesting resources
+
+https://code.visualstudio.com/blogs/2023/06/05/vscode-wasm-wasi
 
 https://github.com/MattSutherlin/HLSL_ST3/blob/master/HLSL.sublime-syntax
 
 https://www.osohq.com/post/building-vs-code-extension-with-rust-wasm-typescript
 
+https://www.npmjs.com/package/@vscode/wasm-wasi
 
+## File system
+wasi file system is virtual for security reason, so need to map our virtual folder to wasi process.

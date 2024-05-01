@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import { Linter } from "../linter";
 
-export class HLSLDefinitionProvider implements vscode.DefinitionProvider {
+export class HLSLDefinitionProvider implements vscode.DefinitionProvider, vscode.TypeDefinitionProvider {
     linter: Linter;
 
     constructor(linter: Linter) {
@@ -14,6 +14,7 @@ export class HLSLDefinitionProvider implements vscode.DefinitionProvider {
         token: vscode.CancellationToken
         ): vscode.ProviderResult<vscode.Definition | vscode.DefinitionLink[]>
     {
+        return null;
         return new Promise((res, rej) => {
             if (document.languageId === "hlsl") {
                 let results: vscode.Location[] = [];
@@ -40,6 +41,18 @@ export class HLSLDefinitionProvider implements vscode.DefinitionProvider {
             } else {
                 rej();
             }
+        });
+    }
+    
+    provideTypeDefinition(
+        document: vscode.TextDocument, 
+        position: vscode.Position, 
+        token: vscode.CancellationToken
+    ): vscode.ProviderResult<vscode.Definition | vscode.DefinitionLink[]>
+    {
+        return null;
+        return new Promise((res, rej) => {
+            rej();
         });
     }
 }

@@ -1,0 +1,73 @@
+name: Deploy Extension
+
+on:
+  push:
+    tags:
+      - "*"
+
+env:
+  CARGO_TERM_COLOR: always
+
+# https://github.com/marketplace/actions/publish-vs-code-extension
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    # Build WASM from source.
+    steps:
+      - uses: actions/checkout@v4
+      - name: Add target
+        run: rustup target add wasm32-wasi
+      - name: Build WASM
+        working-directory: ./shader-language-server
+        run: cargo build --release --target wasm32-wasi --verbose
+      - name: Run tests
+        working-directory: ./shader-language-server
+        run: cargo test --target wasm32-wasi --verbose
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./shader-language-server/target/wasm32-wasi/release/shader_language_server.wasm
+
+  deploy:
+    runs-on: ubuntu-latest
+
+    # Handle secrets: https://docs.github.com/fr/actions/security-guides/using-secrets-in-github-actions
+    # Get tokens: githuhttps://code.visualstudio.com/api/working-with-extensions/publishing-extension#get-a-personal-access-token
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm ci
+      - name: Publish to Open VSX Registry
+        uses: HaaLeo/publish-vscode-extension@v1
+        id: publishToOpenVSX
+        with:
+          pat: ${{ secrets.OPEN_VSX_TOKEN }}
+      - name: Publish to Visual Studio Marketplace
+        uses: HaaLeo/publish-vscode-extension@v1
+        with:
+          pat: ${{ secrets.VS_MARKETPLACE_TOKEN }}
+          registryUrl: https://marketplace.visualstudio.com
+          extensionFile: ${{ steps.publishToOpenVSX.outputs.vsixPath }}
+      - name: Create release
+        uses: actions/create-release@v1
+        id: create_release
+        with:
+          draft: true
+          prerelease: false
+          release_name: ${{ github.event.release.tag_name }}
+          tag_name: ${{ github.ref }}
+          body_path: New release
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+      - name: Create extension artifact
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ${{ steps.publishToOpenVSX.outputs.vsixPath }}
+          asset_name: ${{ steps.publishToOpenVSX.outputs.vsixPath }}
+          asset_content_type: application/javascript # What is the valid mime type here for VSIX ?

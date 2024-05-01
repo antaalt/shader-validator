@@ -1,6 +1,6 @@
 {
-    "name": "HLSL",
-    "scopeName": "source.hlsl",
+    "name": "GLSL",
+    "scopeName": "source.glsl",
     "patterns": [
         {
             "include": "#line_comments"
@@ -187,7 +187,7 @@
                 {
                     "comment": "function/method calls",
                     "name": "meta.function.call.hlsl",
-                    "begin": "((?!(float|half|double|uint|int|bool|dword)([1-4][1-4]?)?)[a-zA-Z_][a-zA-Z0-9_]*)(?=[\\s]*\\()",
+                    "begin": "((?!([buid]?vec|mat|float|double|uint|int|bool)([1-4][1-4]?)?)[a-zA-Z_][a-zA-Z0-9_]*)(?=[\\s]*\\()",
                     "beginCaptures": {
                         "1": {
                             "name": "entity.name.function.hlsl"
@@ -318,102 +318,27 @@
                 {
                     "comment": "scalar Types",
                     "name": "storage.type.hlsl",
-                    "match": "\\b(bool|int|uint|dword|half|float|double)\\b"
-                },
-                {
-                    "comment": "minimum precision scalar Types",
-                    "name": "storage.type.hlsl",
-                    "match": "\\b(min16float|min10float|min16int|min12int|min16uint)\\b"
-                },
-                {
-                    "comment": "scalar Types 6.0",
-                    "name": "storage.type.sm60.hlsl",
-                    "match": "\\b(uint64_t|int64_t|uint32_t|int32_t)\\b"
-                },
-                {
-                    "comment": "scalar Types 6.2",
-                    "name": "storage.type.sm62.hlsl",
-                    "match": "\\b(float16_t|uint16_t|int16_t|float32_t|float64_t)\\b"
+                    "match": "\\b(bool|int|uint|float|double)\\b"
                 },
                 {
                     "comment": "vector/matrix types",
                     "name": "storage.type.hlsl",
-                    "match": "\\b(matrix|vector|(bool|int|uint|half|float|double|dword)[1-4](x[1-4])?)\\b"
-                },
-                {
-                    "comment": "vector/matrix types",
-                    "name": "storage.type.hlsl",
-                    "match": "\\b((min12int|min16float|min16int|min16uint|float16_t|float32_t|float64_t|uint16_t|int16_t|uint32_t|int32_t|uint64_t|int64_t)[1-4](x[1-4])?)\\b"
-                },
-                {
-                    "comment": "string type",
-                    "name": "storage.type.hlsl",
-                    "match": "\\b(string)\\b"
-                },
-                {
-                    "comment": "read hlsl type",
-                    "name": "storage.type.object.hlsl",
-                    "match": "\\b(AppendStructuredBuffer|Buffer|StructuredBuffer|ByteAddressBuffer|ConstantBuffer|TextureBuffer|ConsumeStructuredBuffer|InputPatch|OutputPatch|FeedbackTexture2D|FeedbackTexture2DArray)\\b"
-                },
-                {
-                    "comment": "rasterized order view type",
-                    "name": "storage.type.object.rasterizerordered.hlsl",
-                    "match": "\\b(RasterizerOrderedBuffer|RasterizerOrderedByteAddressBuffer|RasterizerOrderedStructuredBuffer|RasterizerOrderedTexture1D|RasterizerOrderedTexture1DArray|RasterizerOrderedTexture2D|RasterizerOrderedTexture2DArray|RasterizerOrderedTexture3D)\\b"
-                },
-                {
-                    "comment": "read write hlsl type",
-                    "name": "storage.type.object.rw.hlsl",
-                    "match": "\\b(RWBuffer|RWByteAddressBuffer|RWStructuredBuffer|RWTexture1D|RWTexture1DArray|RWTexture2D|RWTexture2DArray|RWTexture3D)\\b"
-                },
-                {
-                    "comment": "raytracing extension",
-                    "name": "storage.type.object.rw.hlsl",
-                    "match": "\\b(RayDesc|BuiltInTriangleIntersectionAttributes|RaytracingAccelerationStructure|GlobalRootSignature)\\b"
-                },
-                {
-                    "comment": "geometry stream type",
-                    "name": "storage.type.object.geometryshader.hlsl",
-                    "match": "\\b(LineStream|PointStream|TriangleStream)\\b"
+                    "match": "\\b([biud]?(vec|mat)[1-4](x[1-4])?)\\b"
                 },
                 {
                     "comment": "legacy sampler type",
                     "name": "storage.type.sampler.legacy.hlsl",
-                    "match": "\\b(sampler|sampler1D|sampler2D|sampler3D|samplerCUBE|sampler_state)\\b"
-                },
-                {
-                    "comment": "sampler type",
-                    "name": "storage.type.sampler.hlsl",
-                    "match": "\\b(SamplerState|SamplerComparisonState)\\b"
-                },
-                {
-                    "comment": "legacy texture type",
-                    "name": "storage.type.texture.legacy.hlsl",
-                    "match": "\\b(texture2D|textureCUBE)\\b"
+                    "match": "\\b[biud]?(sampler|sampler1D|sampler2D|sampler3D|samplerCube|sampler2DRect|sampler1DArray|sampler2DArray|samplerCubeArray|samplerBuffer|sampler2DMS|sampler2DMSArray)(Shadow)?\\b"
                 },
                 {
                     "comment": "texture type",
                     "name": "storage.type.texture.hlsl",
-                    "match": "\\b(Texture1D|Texture1DArray|Texture2D|Texture2DArray|Texture2DMS|Texture2DMSArray|Texture3D|TextureCube|TextureCubeArray)\\b"
-                },
-                {
-                    "comment": "blending type",
-                    "name": "storage.type.hlsl",
-                    "match": "\\b(BlendState|DepthStencilState|RasterizerState)\\b"
-                },
-                {
-                    "comment": "technique type",
-                    "name": "storage.type.fx.technique.hlsl",
-                    "match": "\\b(technique|Technique|technique10|technique11|pass)\\b"
+                    "match": "\\b[biud]?(image1D|image2D|image3D|imageCube|image2DRect|image1DArray|image2DArray|imageCubeArray|imageBuffer|image2DMS|image2DMSArray)\\b"
                 },
                 {
                     "comment": "Custom type",
                     "name": "entity.name.type.hlsl",
                     "match": "\\b([A-Z][A-Za-z0-9_]*)\\b"
-                },
-                {
-                    "comment": "Custom macro",
-                    "name": "constant.character.preprocessor.hlsl",
-                    "match": "\\b([A-Z_][A-Z0-9_]*)\\b"
                 }
             ]
         },
@@ -465,27 +390,22 @@
                 {
                     "comment": "other keywords",
                     "name": "keyword.control.hlsl",
-                    "match": "\\b(const|goto|void|volatile|break|typedef|using|case|continue|default|discard|else|export|do|enum|for|function|if|private|return|switch|uniform|unorm|while|workgroup|operator)\\b"
+                    "match": "\\b(const|goto|void|volatile|break|typedef|using|case|continue|default|discard|else|export|do|enum|for|function|if|private|return|switch|attribute|varying|unorm|while|workgroup|operator)\\b"
                 },
                 {
                     "comment": "reserved keywords",
                     "name": "keyword.control.hlsl",
-                    "match": "\\b(try|catch|do|new|long|typeid|public|__imag|__real)\\b"
-                },
-                {
-                    "comment": "type keyword",
-                    "name": "keyword.declaration.type.hlsl",
-                    "match": "\\b(type|typename|template)\\b"
+                    "match": "\\b(try|catch|do|new|long|typeid|public)\\b"
                 },
                 {
                     "comment": "constant keyword",
                     "name": "keyword.declaration.hlsl",
-                    "match": "\\b(unsigned|signed|cbuffer|tbuffer|namespace)\\b"
+                    "match": "\\b(unsigned|signed|cbuffer|tbuffer|namespace|coherent|uniform|restrict|readonly|writeonly|lowp|mediump|highp)\\b"
                 },
                 {
                     "comment": "struct keyword",
                     "name": "keyword.declaration.struct.hlsl",
-                    "match": "\\b(struct|class|interface)\\s+(\\[[a-z]+\\]\\s+)?([a-zA-Z][a-zA-Z0-9_]*)?(\\s+:\\s+[a-zA-Z][a-zA-Z0-9_]*)?",
+                    "match": "\\b(struct)\\s+(\\[[a-z]+\\]\\s+)?([a-zA-Z][a-zA-Z0-9_]*)?(\\s+:\\s+[a-zA-Z][a-zA-Z0-9_]*)?",
                     "captures": {
                         "1": {
                             "name": "keyword.declaration.struct.hlsl"
@@ -560,7 +480,7 @@
                 {
                     "comment": "compiler operator",
                     "name": "keyword.declaration.hlsl",
-                    "match": "\\b(sizeof|offsetof|static_assert|decltype|__decltype|_Static_assert)\\b"
+                    "match": "\\b(sizeof|offsetof|static_assert|decltype)\\b"
                 },
                 {
                     "comment": "type modifier for float",
@@ -585,7 +505,7 @@
                 {
                     "comment": "preprocessor",
                     "name": "keyword.preprocessor.hlsl",
-                    "match": "^\\s*#\\s*(define|elif|else|endif|ifdef|ifndef|if|undef|include|line|error|warning|pragma|INF)\\s+([A-Za-z0-9_]+)?",
+                    "match": "^\\s*#\\s*(define|elif|else|endif|ifdef|ifndef|if|undef|include|line|error|warning|pragma|INF|version)\\s+([A-Za-z0-9_]+)?",
                     "captures": {
                         "1": {
                             "name": "keyword.preprocessor.hlsl"
