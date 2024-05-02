@@ -1,4 +1,5 @@
 use std::io::{BufRead, Read};
+use std::process::exit;
 use std::{io, path::PathBuf};
 use std::str::FromStr;
 
@@ -138,17 +139,15 @@ pub fn run() {
         Ok(serde_json::to_value(res).unwrap())
     });
     handler.add_sync_method("quit", move|_params: Params| {
-        //let params: Quit = params.parse()?;
+        // Simply exit server as requested.
+        exit(0);
         Ok(serde_json::from_str("{}").unwrap())
     });
 
     loop {
         for req in io::stdin().lock().lines() {
-            if let Some(rsp) = handler.handle_request_sync(&req.unwrap()) {
+            if let Some(mut rsp) = handler.handle_request_sync(&req.unwrap()) {
                 // Send response to stdio
-                if rsp == "{}" {
-                    break;
-                }
                 println!("{}", rsp);
             }
         }

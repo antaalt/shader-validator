@@ -8,6 +8,7 @@ import {
     RPCValidationResponse,
 } from "./rpc";
 import { MountPointDescriptor, Readable, Stdio, StdioConsoleDescriptor, StdioFileDescriptor, StdioPipeInDescriptor, StdioPipeOutDescriptor, StdioTerminalDescriptor, VSCodeFileSystemDescriptor, Wasm, WasmProcess, WasmPseudoterminal, Writable } from "@vscode/wasm-wasi";
+import path = require("path");
 
 export class Validator {
     callbacks: { [key: number]: (data: RPCResponse<any> | null) => void };
@@ -195,13 +196,18 @@ export class Validator {
         shadingLanguage: string,
         cb: (data: RPCResponse<RPCValidationResponse> | null) => void
     ) {
-        if (document.uri.scheme === "file") {
+        const workspace = vscode.workspace.getWorkspaceFolder(document.uri);
+        if (document.uri.scheme === "file" && workspace !== undefined)
+        {
             this.callbacks[this.currId] = cb;
+            const relativePath = path.join(workspace.name, path.relative(workspace?.uri.fsPath, document.uri.fsPath)).replace(/\\/g, "/");
+
+            console.log(relativePath);
             const req: RPCValidateFileRequest = {
                 jsonrpc: "2.0",
                 method: "validate_file",
                 params: {
-                    path: document.uri.path,
+                    path: relativePath,
                     shadingLanguage: shadingLanguage
                 },
                 id: this.currId,

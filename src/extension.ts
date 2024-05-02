@@ -130,7 +130,6 @@ function lint(
                 json.result.Messages.forEach((message) => {
                     if (message.ParserErr)
                     {
-                        vscode.window.showErrorMessage(JSON.stringify(json));
                         let err = message.ParserErr;
                 
                         let start = new vscode.Position(err.line - 1, err.pos);
@@ -175,6 +174,10 @@ function lint(
                     }
                 });
                 diagCol.set(document.uri, diagnostics);
+            }
+            else
+            {
+                console.log("Linted file with errors.");
             }
         });
     }
