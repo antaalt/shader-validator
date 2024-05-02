@@ -24,7 +24,6 @@ impl fmt::Display for ShaderErrorSeverity {
 pub enum ShaderError {
     ValidationErr {
         src: String,
-        error: WithSpan<ValidationError>, // TODO: could be a string ? or make a generic type.
         emitted: String,
     },
     ParserErr {

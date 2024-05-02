@@ -113,7 +113,7 @@ function lint(
   document: vscode.TextDocument,
   diagCol: vscode.DiagnosticCollection
 ) {
-    if (document.languageId === "hlsl" || document.languageId === "wgsl") {
+    if (document.languageId === "hlsl" || document.languageId === "wgsl" || document.languageId === "glsl") {
         validator.validateFile(document, document.languageId, (json) => {
             if (document === null) { return; }
             diagCol.delete(document.uri);

@@ -43,7 +43,17 @@ impl Validator for Naga {
             wgsl::parse_str(&shader).map_err(|err| Self::from_parse_err(err, &shader))?;
 
         if let Err(error) = self.validator.validate(&module) {
-            Err(ShaderErrorList::from(ShaderError::ValidationErr { emitted: error.emit_to_string(&shader), src: shader, error }))
+            if let Some((span, _)) = error.spans().next() {
+                let loc = span.location(&shader);
+                Err(ShaderErrorList::from(ShaderError::ParserErr {
+                    severity: ShaderErrorSeverity::Error,
+                    error: format!("{:#?}", error),
+                    line: loc.line_number as usize,
+                    pos: loc.line_position as usize,
+                }))
+            } else {
+                Err(ShaderErrorList::from(ShaderError::ValidationErr { emitted: error.emit_to_string(&shader), src: shader }))
+            }
         } else {
             Ok(())
         }

@@ -5,6 +5,7 @@ use std::str::FromStr;
 
 use crate::common::Validator;
 use crate::dxc::Dxc;
+use crate::glsl::Glsl;
 use crate::naga::Naga;
 use crate::shader_error::ShaderErrorList;
 use crate::common::ShadingLanguage;
@@ -70,21 +71,10 @@ impl ValidateFileResponse {
                         pos: *pos,
                     }
                 }
-                ShaderError::ValidationErr { src, error, .. } => {
-                    if let Some((span, _)) = error.spans().next() {
-                        let loc = span.location(&src);
-                        ValidateFileError::ParserErr {
-                            severity: ShaderErrorSeverity::Error.to_string(),
-                            error: format!("{}.\n\n{:#?}", error, error),
-                            scopes: vec![],
-                            line: loc.line_number as usize,
-                            pos: loc.line_position as usize,
-                        }
-                    } else {
-                        ValidateFileError::ValidationErr {
-                            message: format!("{}.\n\n{:#?}", error, error),
-                            debug: format!("{:#?}", error),
-                        }
+                ShaderError::ValidationErr { src, emitted } => {
+                    ValidateFileError::ValidationErr {
+                        message: format!("{}", src),
+                        debug: format!("{}", emitted),
                     }
                 }
                 err => ValidateFileError::UnknownError(format!("{:#?}", err)),
@@ -110,7 +100,8 @@ pub fn run() {
 
         let mut validator : Box<dyn Validator> = match shading_language {
             ShadingLanguage::Wgsl => Box::new(Naga::new()),
-            ShadingLanguage::Hlsl => Box::new(Dxc::new().expect("Failed to create DXC"))
+            ShadingLanguage::Hlsl => Box::new(Dxc::new().expect("Failed to create DXC")),
+            ShadingLanguage::Glsl => Box::new(Glsl::new())
         };
 
         let tree = validator.get_shader_tree(&params.path).ok();
@@ -129,7 +120,8 @@ pub fn run() {
 
         let mut validator : Box<dyn Validator> = match shading_language {
             ShadingLanguage::Wgsl => Box::new(Naga::new()),
-            ShadingLanguage::Hlsl => Box::new(Dxc::new().expect("Failed to create DXC"))
+            ShadingLanguage::Hlsl => Box::new(Dxc::new().expect("Failed to create DXC")),
+            ShadingLanguage::Glsl => Box::new(Glsl::new())
         };
 
         let res = match validator.validate_shader(&params.path) {

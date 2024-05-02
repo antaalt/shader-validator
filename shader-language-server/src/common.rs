@@ -7,7 +7,8 @@ use crate::shader_error::ShaderErrorList;
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub enum ShadingLanguage {
     Wgsl,
-    Hlsl
+    Hlsl,
+    Glsl
 }
 
 impl FromStr for ShadingLanguage {
@@ -18,6 +19,7 @@ impl FromStr for ShadingLanguage {
         match input {
             "wgsl" => Ok(ShadingLanguage::Wgsl),
             "hlsl" => Ok(ShadingLanguage::Hlsl),
+            "glsl" => Ok(ShadingLanguage::Glsl),
             _ => Err(()),
         }
     }
