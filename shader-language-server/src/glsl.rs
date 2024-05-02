@@ -24,13 +24,12 @@ impl Validator for Glsl {
         let shader = std::fs::read_to_string(&path).map_err(ShaderErrorList::from)?;
 
         let parse_result = ShaderStage::parse(shader);
-        if let Err(error) = parse_result {
-            match Glsl::parse_errors(&error.to_string()) {
+        match parse_result {
+            Ok(ast) => Ok(()),
+            Err(error) => match Glsl::parse_errors(&error.to_string()) {
                 Ok(error_list) => Err(error_list),
                 Err(error_list) => Err(error_list)
             }
-        } else {
-            Ok(())
         }
     }
 
