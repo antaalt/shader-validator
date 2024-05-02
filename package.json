@@ -17,7 +17,9 @@
   ],
   "keywords": [
     "shader",
-    "hlsl"
+    "hlsl",
+    "glsl",
+    "wgsl"
   ],
   "activationEvents": [
     "onCommand:hlsl.helloWorld"
@@ -55,6 +57,13 @@
           ".comp"
         ],
         "configuration": "./language-configuration.json"
+      },
+      {
+        "id": "wgsl",
+        "extensions": [
+          ".wgsl"
+        ],
+        "configuration": "./language-configuration.json"
       }
     ],
     "grammars": [
@@ -67,6 +76,11 @@
         "language": "glsl",
         "scopeName": "source.glsl",
         "path": "./syntaxes/glsl.tmLanguage.json"
+      },
+      {
+        "language": "wgsl",
+        "scopeName": "source.wgsl",
+        "path": "./syntaxes/wgsl.tmLanguage.json"
       }
     ],
     "iconThemes": [

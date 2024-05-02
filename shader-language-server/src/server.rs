@@ -144,7 +144,6 @@ pub fn run() {
 
     loop {
         for req in io::stdin().lock().lines() {
-            println!("Received something...");
             if let Some(rsp) = handler.handle_request_sync(&req.unwrap()) {
                 // Send response to stdio
                 if rsp == "{}" {

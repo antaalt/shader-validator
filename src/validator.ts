@@ -7,12 +7,14 @@ import {
     RPCValidateFileRequest,
     RPCValidationResponse,
 } from "./rpc";
-import { MountPointDescriptor, StdioConsoleDescriptor, StdioFileDescriptor, StdioPipeInDescriptor, StdioPipeOutDescriptor, StdioTerminalDescriptor, VSCodeFileSystemDescriptor, Wasm, WasmProcess, WasmPseudoterminal } from "@vscode/wasm-wasi";
+import { MountPointDescriptor, Readable, Stdio, StdioConsoleDescriptor, StdioFileDescriptor, StdioPipeInDescriptor, StdioPipeOutDescriptor, StdioTerminalDescriptor, VSCodeFileSystemDescriptor, Wasm, WasmProcess, WasmPseudoterminal, Writable } from "@vscode/wasm-wasi";
 
 export class Validator {
     callbacks: { [key: number]: (data: RPCResponse<any> | null) => void };
     currId: number = 1;
     pty: WasmPseudoterminal | null;
+    outProcess: Readable | null;
+    inProcess: Writable | null;
     process: WasmProcess | null;
 
     constructor()
@@ -20,6 +22,8 @@ export class Validator {
         this.callbacks = {};
         this.pty = null;
         this.process = null;
+        this.outProcess = null;
+        this.inProcess = null;
     }
     dispose()
     {
@@ -31,6 +35,14 @@ export class Validator {
         const wasm: Wasm = await Wasm.api();
 
         const pty = wasm.createPseudoterminal();
+        this.outProcess = wasm.createReadable();
+        this.inProcess = wasm.createWritable();
+        const stdio : Stdio = {
+            in:  {kind: "pipeIn", pipe: this.inProcess},
+            out: {kind: "pipeOut", pipe: this.outProcess},
+            err: {kind: "terminal", terminal: pty}
+        };
+        
         const terminal = vscode.window.createTerminal({
             name: 'Shader language server',
             pty,
@@ -38,18 +50,21 @@ export class Validator {
         });
         // Only for debug.
         terminal.show(true);
+
+        // Create a memory file system to create cached files.
+        //const fs = await wasm.createInMemoryFileSystem();
+
         // Create virtual file systems to access workspaces from wasi app
-        let mountPoints : MountPointDescriptor[] = [];
-        const testMountPoint : VSCodeFileSystemDescriptor = { kind: 'vscodeFileSystem', uri: vscode.Uri.joinPath(context.extensionUri, "test"), mountPoint:"/test"};
-        mountPoints.push(testMountPoint);
-        vscode.workspace.workspaceFolders?.forEach((element) => {
-            const workspaceMountPoint : VSCodeFileSystemDescriptor = { kind: 'vscodeFileSystem', uri: element.uri, mountPoint:"/test"};
-            mountPoints.push(workspaceMountPoint);
-        });
+        const mountPoints: MountPointDescriptor[] = [
+            { kind: 'vscodeFileSystem', uri: vscode.Uri.joinPath(context.extensionUri, "test"), mountPoint:"/test"}, // For test
+            { kind: 'workspaceFolder'}, // Workspaces
+            //{ kind: 'inMemoryFileSystem', fileSystem: fs, mountPoint: '/memory' }
+        ];
         try {
             // Load the WASM module. It is stored alongside the extension's JS code.
             // So we can use VS Code's file system API to load it. Makes it
             // independent of whether the code runs in the desktop or the web.
+            // TODO: need to bundle the wasm within the extension
             //const extensionLocalPath = 'shader-language-server/pkg/shader_language_server.wasm';
             const extensionLocalPath = 'shader-language-server/target/wasm32-wasi/debug/shader_language_server.wasm';
             const bits = await vscode.workspace.fs.readFile(vscode.Uri.joinPath(context.extensionUri, extensionLocalPath));
@@ -62,15 +77,16 @@ export class Validator {
                 } else if (io?.kind === "file") {   
                     return io as StdioFileDescriptor;
                 } else {
-                    throw new Error('Something bad happened');
+                    throw new Error('Terminal not compatible');
                 }
             }
             // Create a WASM process.
             this.process = await wasm.createProcess('shader-language-server', module, 
             { 
                 // Flip stdin & stdout as process will write to stdout & we want to read to stdin
-                stdio: pty.stdio,
-               // stdio: { in: getTerminal(pty.stdio.out), out: getTerminal(pty.stdio.in), err: pty.stdio.err },
+                //stdio: pty.stdio,
+                //stdio: { in: getTerminal(pty.stdio.out), out: getTerminal(pty.stdio.in), err: pty.stdio.err },
+                stdio: stdio,
                 args:[],
                 env:{},
                 mountPoints: mountPoints,
@@ -133,22 +149,18 @@ export class Validator {
 
     listen()
     {
-        let self = this;
-        function readLine() {
-            self.pty?.readline().then((string : String)=> {
-                self.onData(string);
-                console.log("Received some data: ", string);
-                readLine();
-            });
-        }
-        readLine();
+        this.outProcess?.onData((data : Uint8Array)=> {
+            const string = new TextDecoder().decode(data);
+            console.log("Received some data: ", string);
+            this.onData(string);
+        });
         // Should read std err aswell
     }
 
     write(message : string)
     {
         console.log("Sending some data: ", message);
-        this.pty?.write(message);
+        this.inProcess?.write(message);
     }
 
     getFileTree(
@@ -189,7 +201,7 @@ export class Validator {
                 jsonrpc: "2.0",
                 method: "validate_file",
                 params: {
-                    path: document.uri.fsPath,
+                    path: document.uri.path,
                     shadingLanguage: shadingLanguage
                 },
                 id: this.currId,
