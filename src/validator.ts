@@ -7,7 +7,7 @@ import {
     RPCValidateFileRequest,
     RPCValidationResponse,
 } from "./rpc";
-import { MountPointDescriptor, VSCodeFileSystemDescriptor, Wasm, WasmProcess, WasmPseudoterminal } from "@vscode/wasm-wasi";
+import { MountPointDescriptor, StdioConsoleDescriptor, StdioFileDescriptor, StdioPipeInDescriptor, StdioPipeOutDescriptor, StdioTerminalDescriptor, VSCodeFileSystemDescriptor, Wasm, WasmProcess, WasmPseudoterminal } from "@vscode/wasm-wasi";
 
 export class Validator {
     callbacks: { [key: number]: (data: RPCResponse<any> | null) => void };
@@ -54,10 +54,23 @@ export class Validator {
             const extensionLocalPath = 'shader-language-server/target/wasm32-wasi/debug/shader_language_server.wasm';
             const bits = await vscode.workspace.fs.readFile(vscode.Uri.joinPath(context.extensionUri, extensionLocalPath));
             const module = await WebAssembly.compile(bits);
+
+            function getTerminal(io: StdioFileDescriptor | StdioTerminalDescriptor| StdioPipeInDescriptor| StdioPipeOutDescriptor | StdioConsoleDescriptor | undefined): StdioFileDescriptor | StdioTerminalDescriptor | undefined
+            { 
+                if (io?.kind === "terminal") {   
+                    return io as StdioTerminalDescriptor;
+                } else if (io?.kind === "file") {   
+                    return io as StdioFileDescriptor;
+                } else {
+                    throw new Error('Something bad happened');
+                }
+            }
             // Create a WASM process.
             this.process = await wasm.createProcess('shader-language-server', module, 
             { 
+                // Flip stdin & stdout as process will write to stdout & we want to read to stdin
                 stdio: pty.stdio,
+               // stdio: { in: getTerminal(pty.stdio.out), out: getTerminal(pty.stdio.in), err: pty.stdio.err },
                 args:[],
                 env:{},
                 mountPoints: mountPoints,
@@ -114,56 +127,28 @@ export class Validator {
             }
         });
     }
+    onError(string: String)
+    {
+    }
 
     listen()
     {
-        if (this.pty?.stdio.out?.kind === 'pipeOut') 
-        {
-            this.pty.stdio.out.pipe?.onData((data: Uint8Array) => {
-                const string = new TextDecoder().decode(data);
-                this.onData(string);
+        let self = this;
+        function readLine() {
+            self.pty?.readline().then((string : String)=> {
+                self.onData(string);
+                console.log("Received some data: ", string);
+                readLine();
             });
         }
-        else if (this.pty?.stdio.out?.kind === 'terminal') 
-        {
-            console.log("Received some data ");
-            let self = this;
-            function readLine() {
-                if (self.pty?.stdio.out?.kind === 'terminal') 
-                {
-                    self.pty.stdio.out.terminal.readline().then((string : String) => {
-                        self.onData(string);
-                        console.log("Received some data: ", string);
-                        readLine();
-                    });
-                }
-            }
-            readLine();
-        }
-
-        if (this.pty?.stdio.err?.kind === 'pipeOut') 
-        {
-            this.pty.stdio.err.pipe?.onData((data: Uint8Array) => {
-                const errorMessage = new TextDecoder().decode(data);
-                console.log(errorMessage);
-            });
-        }
-        else if (this.pty?.stdio.out?.kind === 'terminal') 
-        {
-            
-        }
+        readLine();
+        // Should read std err aswell
     }
 
     write(message : string)
     {
-        if (this.pty?.stdio.in?.kind === 'pipeIn') 
-        {
-            this.pty.stdio.in.pipe?.write(message, "utf-8");
-        }
-        else if (this.pty?.stdio.in?.kind === 'terminal')
-        {
-            this.pty.stdio.in.terminal.write(message);
-        }
+        console.log("Sending some data: ", message);
+        this.pty?.write(message);
     }
 
     getFileTree(
@@ -171,19 +156,20 @@ export class Validator {
         shadingLanguage: string,
         cb: (data: RPCResponse<RPCGetFileTreeResponse | null> | null) => void
     ) {
-        if (document.uri.scheme === "file") {
+        if (document.uri.scheme === "file")
+        {
             this.callbacks[this.currId] = cb;
 
             console.log(document.uri.fsPath);
 
             const req: RPCGetFileTreeRequest = {
-            jsonrpc: "2.0",
-            method: "get_file_tree",
-            params: {
-                path: document.uri.fsPath,
-                shadingLanguage: shadingLanguage
-            },
-            id: this.currId,
+                jsonrpc: "2.0",
+                method: "get_file_tree",
+                params: {
+                    path: document.uri.fsPath,
+                    shadingLanguage: shadingLanguage
+                },
+                id: this.currId,
             };
 
             this.write(JSON.stringify(req) + "\n");
