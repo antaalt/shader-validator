@@ -1,6 +1,6 @@
 use std::path::Path;
 use crate::{shader_error::{ShaderError, ShaderErrorList, ShaderErrorSeverity}, common::{Validator, ShaderTree}};
-use glsl::{parser::Parse, visitor::Host};
+use glsl::parser::Parse;
 use glsl::syntax::ShaderStage;
 
 pub struct Glsl {
@@ -25,7 +25,7 @@ impl Validator for Glsl {
 
         let parse_result = ShaderStage::parse(shader);
         match parse_result {
-            Ok(ast) => Ok(()),
+            Ok(_ast) => Ok(()),
             Err(error) => match Glsl::parse_errors(&error.to_string()) {
                 Ok(error_list) => Err(error_list),
                 Err(error_list) => Err(error_list)
@@ -34,9 +34,10 @@ impl Validator for Glsl {
     }
 
     fn get_shader_tree(&mut self, path: &Path) -> Result<ShaderTree, ShaderErrorList> {
-        let mut types = Vec::new();
-        let mut global_variables = Vec::new();
-        let mut functions = Vec::new();
+        let _shader = std::fs::read_to_string(&path).map_err(ShaderErrorList::from)?;
+        let types = Vec::new();
+        let global_variables = Vec::new();
+        let functions = Vec::new();
 
         Ok(ShaderTree {
             types,
