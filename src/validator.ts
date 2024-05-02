@@ -200,7 +200,11 @@ export class Validator {
         if (document.uri.scheme === "file" && workspace !== undefined)
         {
             this.callbacks[this.currId] = cb;
-            const relativePath = path.join(workspace.name, path.relative(workspace?.uri.fsPath, document.uri.fsPath)).replace(/\\/g, "/");
+            // Somehow rust fs does not support \\
+            const relativePath = path.join(
+                workspace.name, 
+                path.relative(workspace?.uri.fsPath, document.uri.fsPath)
+            ).replace(/\\/g, "/");
 
             console.log(relativePath);
             const req: RPCValidateFileRequest = {
