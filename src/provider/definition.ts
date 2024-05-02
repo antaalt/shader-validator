@@ -1,11 +1,11 @@
 import * as vscode from "vscode";
-import { Linter } from "../linter";
+import { Validator } from "../validator";
 
 export class HLSLDefinitionProvider implements vscode.DefinitionProvider, vscode.TypeDefinitionProvider {
-    linter: Linter;
+    validator: Validator;
 
-    constructor(linter: Linter) {
-        this.linter = linter;
+    constructor(linter: Validator) {
+        this.validator = linter;
     }
     
     provideDefinition(

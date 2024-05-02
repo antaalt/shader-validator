@@ -1,11 +1,11 @@
 import * as vscode from "vscode";
-import { Linter } from "../linter";
+import { Validator } from "../validator";
 
 export class HLSLCompletionItemProvider implements vscode.CompletionItemProvider {
-    linter: Linter;
+    validator: Validator;
 
-    constructor(linter: Linter) {
-        this.linter = linter;
+    constructor(validator: Validator) {
+        this.validator = validator;
     }
     
     provideCompletionItems(

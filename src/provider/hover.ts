@@ -1,11 +1,11 @@
 import * as vscode from "vscode";
-import { Linter } from "../linter";
+import { Validator } from "../validator";
 
 export class HLSLHoverProvider implements vscode.HoverProvider {
-    linter: Linter;
+    validator: Validator;
 
-    constructor(linter: Linter) {
-        this.linter = linter;
+    constructor(linter: Validator) {
+        this.validator = linter;
     }
 
     trimText(text: string, limit: number): string {
