@@ -71,22 +71,9 @@ export class Validator {
             const bits = await vscode.workspace.fs.readFile(vscode.Uri.joinPath(context.extensionUri, extensionLocalPath));
             const module = await WebAssembly.compile(bits);
 
-            function getTerminal(io: StdioFileDescriptor | StdioTerminalDescriptor| StdioPipeInDescriptor| StdioPipeOutDescriptor | StdioConsoleDescriptor | undefined): StdioFileDescriptor | StdioTerminalDescriptor | undefined
-            { 
-                if (io?.kind === "terminal") {   
-                    return io as StdioTerminalDescriptor;
-                } else if (io?.kind === "file") {   
-                    return io as StdioFileDescriptor;
-                } else {
-                    throw new Error('Terminal not compatible');
-                }
-            }
             // Create a WASM process.
             this.process = await wasm.createProcess('shader-language-server', module, 
-            { 
-                // Flip stdin & stdout as process will write to stdout & we want to read to stdin
-                //stdio: pty.stdio,
-                //stdio: { in: getTerminal(pty.stdio.out), out: getTerminal(pty.stdio.in), err: pty.stdio.err },
+            {
                 stdio: stdio,
                 args:[],
                 env:{},
