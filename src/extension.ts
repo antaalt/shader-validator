@@ -32,14 +32,36 @@ export async function activate(context: vscode.ExtensionContext)
     );
 
     context.subscriptions.push(
-        vscode.workspace.onDidSaveTextDocument((doc) => {
+        vscode.workspace.onDidSaveTextDocument((doc: vscode.TextDocument) => {
             lint(validator, doc, diagCol);
         })
     );
-
+    // This is triggered on save / undo / redo / user typing
+    let changeTimers = new Map<string, ReturnType<typeof setTimeout>>();
     context.subscriptions.push(
-        vscode.workspace.onDidChangeTextDocument((doc) => {
-            lint(validator, doc.document, diagCol);
+        vscode.workspace.onDidChangeTextDocument((event : vscode.TextDocumentChangeEvent) => {
+            if (event.contentChanges.length > 0) {
+                const fileName = event.document.fileName;
+
+                const timer = changeTimers.get(fileName);
+                if (timer) {
+                    clearTimeout(timer);
+                }
+                changeTimers.set(fileName, setTimeout(() => {
+                    changeTimers.delete(fileName);
+                    // Here we need some way to pass the modified unsaved file to wasi server.
+                    // Do we really want to save the file for the user ? Should create temporary file instead... 
+                    // Or use wasm in memory file for caching it.
+                    // Or simply send the content instead of path, but might be tricky for include handling.
+                    //event.document.save();
+                    lint(validator, event.document, diagCol);
+                }, 500));
+            }
+        })
+    );
+    context.subscriptions.push(
+        vscode.workspace.onDidChangeConfiguration((event : vscode.ConfigurationChangeEvent) => {
+            // Restart server depending on new configs ?
         })
     );
 
