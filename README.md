@@ -1,9 +1,9 @@
 # hlsl
 
-This is a simple extension allowing some basic features for various shader types.
-- HLSL (with linting through DXC)
-- GLSL (with linting through glslangvalidator)
-- WGSL (with linting through Naga)
+This is a simple extension allowing syntax highlighting & linting for various shader types.
+- HLSL (linting not yet supported)
+- GLSL
+- WGSL
 
 ## Why
 Not much efficient & light HLSL linter / highlighter easy to maintain & up to date. Most of them are abandonned.  
@@ -15,11 +15,16 @@ Not much efficient & light HLSL linter / highlighter easy to maintain & up to da
 
 ## Features
 
+### Syntax highlighting
 
+This extension provide syntax highlighting for HLSL, GLSL & WGSL.
 
-## Requirements
+### Linting
 
-Might need to install DXC or Naga 
+You cant lint your code in real time through this extension:
+- WGSL uses Naga as backend for linting
+- GLSL uses [glsl rust crate]() as backend. It only provide parsing validation and not semantic. We should use a more powerfull parser for validation such as shaderc, but which needs to compile on WASI.
+- HLSL is not yet supported as I did not found any rust package compiling on WASI for accessing dxc. Maybe we could build it in wasm & import it.
 
 ## Extension Settings
 
