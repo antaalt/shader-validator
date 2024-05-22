@@ -5,7 +5,7 @@ edition = "2021"
 
 [dependencies]
 cfg-if = "1.0.0"
-glsl = "7.0.0"
+glslang = "0.3.2"
 jsonrpc-core = "18.0.0"
 #hassle-rs = "0.11.0" # cannot load dll in wasi...
 naga = { version = "0.12.2", features = ["wgsl-in", "validate", "span"] }
@@ -14,3 +14,7 @@ serde = { version = "1.0.199", features = ["derive"] }
 serde_json = "1.0.116"
 wasm-bindgen = "0.2.92"
 wee_alloc = "0.4.5"
+
+[patch.crates-io]
+glslang = { path = "../../../glslang-rs/glslang" }
+#glslang = { git = "https://github.com/antaalt/glslang-rs.git", branch = "main" }
