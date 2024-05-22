@@ -1,4 +1,4 @@
-use std::io::{BufRead, Read};
+use std::io::BufRead;
 use std::process::exit;
 use std::{io, path::PathBuf};
 use std::str::FromStr;
@@ -9,9 +9,8 @@ use crate::glsl::Glsl;
 use crate::naga::Naga;
 use crate::shader_error::ShaderErrorList;
 use crate::common::ShadingLanguage;
-use crate::shader_error::ShaderErrorSeverity;
 
-use jsonrpc_core::{IoHandler, Params, Value};
+use jsonrpc_core::{IoHandler, Params};
 
 use serde::{Deserialize, Serialize};
 
@@ -133,12 +132,13 @@ pub fn run() {
     handler.add_sync_method("quit", move|_params: Params| {
         // Simply exit server as requested.
         exit(0);
+        #[allow(unreachable_code)]
         Ok(serde_json::from_str("{}").unwrap())
     });
 
     loop {
         for req in io::stdin().lock().lines() {
-            if let Some(mut rsp) = handler.handle_request_sync(&req.unwrap()) {
+            if let Some(rsp) = handler.handle_request_sync(&req.unwrap()) {
                 // Send response to stdio
                 println!("{}", rsp);
             }

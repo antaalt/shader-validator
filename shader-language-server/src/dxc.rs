@@ -3,7 +3,7 @@
 
 use std::{io::Error, path::Path};
 
-use crate::{shader_error::{ShaderError, ShaderErrorList, ShaderErrorSeverity}, common::{ShaderTree, Validator}};
+use crate::{shader_error::{ShaderErrorList}, common::{ShaderTree, Validator}};
 
 pub struct Dxc {
     //compiler: hassle_rs::DxcCompiler,
@@ -16,7 +16,7 @@ pub struct Dxc {
    // dxc: hassle_rs::wrapper::Dxc,
 }
 
-struct IncludeHandler {}
+//struct IncludeHandler {}
 
 /*impl hassle_rs::wrapper::DxcIncludeHandler for IncludeHandler {
     fn load_source(&mut self, filename: String) -> Option<String> {
@@ -78,7 +78,7 @@ impl Dxc {
            // validator: Some(validator),
         })
     }
-    fn parse_dxc_errors(errors: &String) -> Result<ShaderErrorList, ShaderErrorList>
+    /*fn parse_dxc_errors(errors: &String) -> Result<ShaderErrorList, ShaderErrorList>
     {
         let mut shader_error_list = ShaderErrorList::empty();
 
@@ -117,10 +117,14 @@ impl Dxc {
         // TODO: should probably not assert or crash...
         assert!(shader_error_list.errors.len() > 0);
         return Ok(shader_error_list);
-    }
+    }*/
 }
 impl Validator for Dxc {
-    fn validate_shader(&mut self, path: &Path) -> Result<(), ShaderErrorList> {
+    fn validate_shader(&mut self, _path: &Path) -> Result<(), ShaderErrorList> {
+        //Command::new("bin/dxc.exe")
+        //    .args([""])
+        //    .output()
+        //    .expect("Failed to run DXC");
         /*let source = std::fs::read_to_string(path)?;
 
         let path_name = path.file_name().unwrap_or(&OsStr::new("shader.hlsl"));
@@ -177,7 +181,7 @@ impl Validator for Dxc {
         Ok(())
     }
 
-    fn get_shader_tree(&mut self, path: &Path) -> Result<ShaderTree, ShaderErrorList> {
+    fn get_shader_tree(&mut self, _path: &Path) -> Result<ShaderTree, ShaderErrorList> {
 
         /*let types = Vec::new();
         let global_variables = Vec::new();

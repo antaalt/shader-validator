@@ -1,7 +1,5 @@
 use core::fmt;
 
-use naga::{valid::ValidationError, WithSpan};
-
 #[derive(Debug)]
 pub enum ShaderErrorSeverity {
     Error,
