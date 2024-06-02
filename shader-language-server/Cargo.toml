@@ -7,7 +7,10 @@ edition = "2021"
 cfg-if = "1.0.0"
 glslang = "0.3.2"
 jsonrpc-core = "18.0.0"
-#hassle-rs = "0.11.0" # cannot load dll in wasi...
+# cannot load DXC dll in wasi
+# There is an issue to compile DXC statically:
+# https://github.com/Traverse-Research/hassle-rs/issues/57
+#hassle-rs = "0.11.0"
 naga = { version = "0.12.2", features = ["wgsl-in", "validate", "span"] }
 regex = "1.10.4"
 serde = { version = "1.0.199", features = ["derive"] }
@@ -16,5 +19,4 @@ wasm-bindgen = "0.2.92"
 wee_alloc = "0.4.5"
 
 [patch.crates-io]
-glslang = { path = "../../../glslang-rs/glslang" }
-#glslang = { git = "https://github.com/antaalt/glslang-rs.git", branch = "main" }
+glslang = { git = "https://github.com/antaalt/glslang-rs.git", branch = "master" }

@@ -3,6 +3,9 @@
 
 use std::{io::Error, path::Path};
 
+use glslang::{error::GlslangError, Compiler, CompilerOptions, ShaderInput, ShaderSource};
+use glslang::*;
+
 use crate::{shader_error::{ShaderErrorList}, common::{ShaderTree, Validator}};
 
 pub struct Dxc {
@@ -120,11 +123,26 @@ impl Dxc {
     }*/
 }
 impl Validator for Dxc {
-    fn validate_shader(&mut self, _path: &Path) -> Result<(), ShaderErrorList> {
-        //Command::new("bin/dxc.exe")
-        //    .args([""])
-        //    .output()
-        //    .expect("Failed to run DXC");
+    fn validate_shader(&mut self, path: &Path) -> Result<(), ShaderErrorList> {
+
+        let shader_string = std::fs::read_to_string(&path).map_err(ShaderErrorList::from)?;
+
+        let compiler = Compiler::acquire().unwrap();
+        let source = ShaderSource::try_from(shader_string).expect("Failed to read from source");
+
+        //let limits = ResourceLimits::default();
+        let input = ShaderInput::new(
+            &source,
+            ShaderStage::Fragment,
+            &CompilerOptions {
+                source_language: SourceLanguage::HLSL,
+                target: Target::None(Some(SpirvVersion::SPIRV1_6)),
+                ..Default::default()
+            },
+            None,
+        )?;
+        let _shader = Shader::new(&compiler, input)?;
+
         /*let source = std::fs::read_to_string(path)?;
 
         let path_name = path.file_name().unwrap_or(&OsStr::new("shader.hlsl"));

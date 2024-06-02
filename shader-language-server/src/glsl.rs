@@ -55,6 +55,8 @@ impl Glsl {
             let block : String = errors.chars().skip(first).take(length).collect();
             if let Some(capture) = internal_reg.captures(block.as_str()) {
                 let level = capture.get(1).map_or("", |m| m.as_str());
+                // Pos seems to always be zero because of GLSLang...
+                // https://github.com/KhronosGroup/glslang/issues/3238
                 let pos = capture.get(2).map_or("", |m| m.as_str());
                 let line = capture.get(3).map_or("", |m| m.as_str());
                 let msg = capture.get(4).map_or("", |m| m.as_str());
@@ -101,7 +103,7 @@ impl Validator for Glsl {
             },
             None,
         )?;
-        let shader = Shader::new(&compiler, input)?;
+        let _shader = Shader::new(&compiler, input)?;
         
         Ok(())
     }
