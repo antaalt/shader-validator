@@ -40,6 +40,9 @@ jobs:
       - name: Build WASI
         working-directory: ./shader-language-server
         run: cargo build --release --target wasm32-wasi --verbose
+        env: # Somehow this VM has clang14 by default, which is not supported...
+          CC: clang-17
+          CXX: clang++-17
       #- name: Run tests
       #  working-directory: ./shader-language-server
       #  run: cargo test --target wasm32-wasi --verbose
