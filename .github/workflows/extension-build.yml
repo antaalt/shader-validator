@@ -29,8 +29,9 @@ jobs:
               ls -f $WASI_SYSROOT
       - name: Download latest clang
         run: |
-              sudo apt update
-              sudo apt install clang
+              wget https://apt.llvm.org/llvm.sh
+              chmod +x ./llvm.sh
+              sudo ./llvm.sh 17
               clang --version
       - name: Add target
         run: rustup target add wasm32-wasi
