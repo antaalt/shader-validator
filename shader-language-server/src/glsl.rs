@@ -2,6 +2,17 @@ use std::path::Path;
 use crate::{shader_error::{ShaderError, ShaderErrorList, ShaderErrorSeverity}, common::{Validator, ShaderTree}};
 use glslang::{error::GlslangError, Compiler, CompilerOptions, ShaderInput, ShaderSource};
 use glslang::*;
+
+impl From<regex::Error> for ShaderErrorList {
+    fn from(error: regex::Error) -> Self {
+        match error {
+            regex::Error::CompiledTooBig(err) => ShaderErrorList::internal(format!("Regex compile too big: {}", err)),
+            regex::Error::Syntax(err) => ShaderErrorList::internal(format!("Regex syntax invalid: {}", err)),
+            err =>  ShaderErrorList::internal(format!("Regex error: {:#?}", err))
+        }
+    }
+}
+
 pub struct Glsl {
 }
 
@@ -51,13 +62,13 @@ impl Glsl {
     {
         let mut shader_error_list = ShaderErrorList::empty();
 
-        let reg = regex::Regex::new(r"(?m)^(.*?: \d+:\d+:(?:(\d+):))")?;
+        let reg = regex::Regex::new(r"(?m)^(.*?: \d+:\d+:)")?;
         let mut starts = Vec::new();
         for capture in reg.captures_iter(errors.as_str()) {
             starts.push(capture.get(0).unwrap().start());
         }
         starts.push(errors.len());
-        let internal_reg = regex::Regex::new(r"(?m)^(.*?): (\d+):(\d+):(?:(\d+):)(.+)")?;
+        let internal_reg = regex::Regex::new(r"(?m)^(.*?): (\d+):(\d+):(.+)")?;
         for start in 0..starts.len()-1 {
             let first = starts[start];
             let length = starts[start + 1] - starts[start];
@@ -98,7 +109,7 @@ impl Validator for Glsl {
         let compiler = Compiler::acquire().unwrap();
         let source = ShaderSource::try_from(shader_string).expect("Failed to read from source");
 
-        
+
         let input = ShaderInput::new(
             &source,
             ShaderStage::Fragment,

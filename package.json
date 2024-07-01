@@ -40,7 +40,7 @@
         "id": "hlsl",
         "extensions": [
           ".hlsl",
-          ".h",
+          ".hlsli",
           ".fx",
           ".fxh"
         ],
@@ -54,7 +54,10 @@
           ".frag",
           ".mesh",
           ".task",
-          ".comp"
+          ".comp",
+          ".geom",
+          ".tesc",
+          ".tese"
         ],
         "configuration": "./language-configuration.json"
       },
