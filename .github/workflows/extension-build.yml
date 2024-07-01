@@ -30,7 +30,9 @@ jobs:
       - name: Download latest clang
         run: |
               sudo apt update
-              sudo apt install clang
+              wget https://apt.llvm.org/llvm.sh
+              chmod +x ./llvm.sh
+              sudo ./llvm.sh 17
               clang --version
               clang17 --version
       - name: Add target
