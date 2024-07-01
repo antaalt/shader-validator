@@ -20,7 +20,6 @@ jobs:
         with:
           repository: 'WebAssembly/wasi-sdk'
           tag: 'wasi-sdk-22'
-          #releaseId: 'wasi-sdk-22'
           fileName: 'wasi-sysroot-22.0.tar.gz'
           extract: true
       - run: echo "WASI_SYSROOT=$(echo $GITHUB_WORKSPACE)/wasi-sysroot/" >> $GITHUB_ENV
