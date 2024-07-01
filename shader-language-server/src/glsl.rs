@@ -33,7 +33,10 @@ impl From<GlslangError> for ShaderErrorList {
                     Err(err) => err
                 }
             },
-            _ => ShaderErrorList::from(ShaderError::InternalErr(String::from("Internal error")))
+            GlslangError::ShaderStageNotFound(stage) => {
+                ShaderErrorList::from(ShaderError::ValidationErr{ src: String::from(""), emitted: String::from("")})
+            },
+            err => ShaderErrorList::internal(format!("{:#?}", err))
         }
     }
 }
@@ -42,13 +45,13 @@ impl Glsl {
     {
         let mut shader_error_list = ShaderErrorList::empty();
 
-        let reg = regex::Regex::new(r"(?m)^(.*?: \d+:\d+:)")?;
+        let reg = regex::Regex::new(r"(?m)^(.*?: \d+:\d+:(?:(\d+):))")?;
         let mut starts = Vec::new();
         for capture in reg.captures_iter(errors.as_str()) {
             starts.push(capture.get(0).unwrap().start());
         }
         starts.push(errors.len());
-        let internal_reg = regex::Regex::new(r"(?m)^(.*?): (\d+):(\d+):(.+)")?;
+        let internal_reg = regex::Regex::new(r"(?m)^(.*?): (\d+):(\d+):(?:(\d+):)(.+)")?;
         for start in 0..starts.len()-1 {
             let first = starts[start];
             let length = starts[start + 1] - starts[start];
@@ -57,9 +60,10 @@ impl Glsl {
                 let level = capture.get(1).map_or("", |m| m.as_str());
                 // Pos seems to always be zero because of GLSLang...
                 // https://github.com/KhronosGroup/glslang/issues/3238
-                let pos = capture.get(2).map_or("", |m| m.as_str());
+                let _str = capture.get(2).map_or("", |m| m.as_str());
                 let line = capture.get(3).map_or("", |m| m.as_str());
-                let msg = capture.get(4).map_or("", |m| m.as_str());
+                let pos = capture.get(4).map_or("", |m| m.as_str());
+                let msg = capture.get(5).map_or("", |m| m.as_str());
                 shader_error_list.push(ShaderError::ParserErr {
                     severity: match level {
                         "ERROR" => ShaderErrorSeverity::Error,
@@ -88,7 +92,7 @@ impl Validator for Glsl {
         let compiler = Compiler::acquire().unwrap();
         let source = ShaderSource::try_from(shader_string).expect("Failed to read from source");
 
-        //let limits = ResourceLimits::default();
+        
         let input = ShaderInput::new(
             &source,
             ShaderStage::Fragment,
@@ -99,6 +103,7 @@ impl Validator for Glsl {
                     version: VulkanVersion::Vulkan1_3, 
                     spirv_version: SpirvVersion::SPIRV1_6 
                 },
+                messages: ShaderMessage::CASCADING_ERRORS | ShaderMessage::DEBUG_INFO,
                 ..Default::default()
             },
             None,

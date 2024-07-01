@@ -19,4 +19,4 @@ wasm-bindgen = "0.2.92"
 wee_alloc = "0.4.5"
 
 [patch.crates-io]
-glslang = { git = "https://github.com/antaalt/glslang-rs.git", branch = "master" }
+glslang = { git = "https://github.com/antaalt/glslang-rs.git", branch = "add-shader-messages" }

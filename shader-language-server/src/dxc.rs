@@ -3,10 +3,10 @@
 
 use std::{io::Error, path::Path};
 
-use glslang::{error::GlslangError, Compiler, CompilerOptions, ShaderInput, ShaderSource};
+use glslang::{Compiler, CompilerOptions, ShaderInput, ShaderSource};
 use glslang::*;
 
-use crate::{shader_error::{ShaderErrorList}, common::{ShaderTree, Validator}};
+use crate::{shader_error::ShaderErrorList, common::{ShaderTree, Validator}};
 
 pub struct Dxc {
     //compiler: hassle_rs::DxcCompiler,
@@ -137,6 +137,7 @@ impl Validator for Dxc {
             &CompilerOptions {
                 source_language: SourceLanguage::HLSL,
                 target: Target::None(Some(SpirvVersion::SPIRV1_6)),
+                messages: ShaderMessage::CASCADING_ERRORS | ShaderMessage::DEBUG_INFO,
                 ..Default::default()
             },
             None,

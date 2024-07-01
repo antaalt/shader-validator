@@ -76,7 +76,8 @@ impl ValidateFileResponse {
                         debug: format!("{}", emitted),
                     }
                 }
-                err => ValidateFileError::UnknownError(format!("{:#?}", err)),
+                ShaderError::InternalErr(error) => ValidateFileError::UnknownError(error.clone()),
+                ShaderError::IoErr(error) => ValidateFileError::UnknownError(error.to_string()),
             });
         }
         Self {
