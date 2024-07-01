@@ -22,10 +22,16 @@ jobs:
           tag: 'wasi-sdk-22'
           fileName: 'wasi-sysroot-22.0.tar.gz'
           extract: true
-      - run: echo "WASI_SYSROOT=$(echo $GITHUB_WORKSPACE)/wasi-sysroot/" >> $GITHUB_ENV
-      - run: echo $WASI_SYSROOT
-      - run: ls -f $WASI_SYSROOT
-      - run: clang --version
+      - name: Setup WASI_SYSROOT
+        run: |
+              echo "WASI_SYSROOT=$(echo $GITHUB_WORKSPACE)/wasi-sysroot/" >> $GITHUB_ENV
+              echo $WASI_SYSROOT
+              ls -f $WASI_SYSROOT
+      - name: Download latest clang
+        run: |
+              sudo apt update
+              sudo apt install clang
+              clang --version
       - name: Add target
         run: rustup target add wasm32-wasi
       - name: Build WASI
