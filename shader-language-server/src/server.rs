@@ -4,7 +4,10 @@ use std::{io, path::PathBuf};
 use std::str::FromStr;
 
 use crate::common::Validator;
+#[cfg(not(target_os = "wasi"))]
 use crate::dxc::Dxc;
+#[cfg(target_os = "wasi")]
+use crate::hlsl::Hlsl;
 use crate::glsl::Glsl;
 use crate::naga::Naga;
 use crate::shader_error::ShaderErrorList;
@@ -100,6 +103,9 @@ pub fn run() {
 
         let mut validator : Box<dyn Validator> = match shading_language {
             ShadingLanguage::Wgsl => Box::new(Naga::new()),
+            #[cfg(target_os = "wasi")]
+            ShadingLanguage::Hlsl => Box::new(Hlsl::new()),
+            #[cfg(not(target_os = "wasi"))]
             ShadingLanguage::Hlsl => Box::new(Dxc::new().expect("Failed to create DXC")),
             ShadingLanguage::Glsl => Box::new(Glsl::new())
         };
@@ -120,7 +126,10 @@ pub fn run() {
 
         let mut validator : Box<dyn Validator> = match shading_language {
             ShadingLanguage::Wgsl => Box::new(Naga::new()),
+            #[cfg(not(target_os = "wasi"))]
             ShadingLanguage::Hlsl => Box::new(Dxc::new().expect("Failed to create DXC")),
+            #[cfg(target_os = "wasi")]
+            ShadingLanguage::Hlsl => Box::new(Hlsl::new()),
             ShadingLanguage::Glsl => Box::new(Glsl::new())
         };
 

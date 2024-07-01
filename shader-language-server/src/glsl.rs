@@ -75,12 +75,14 @@ impl Glsl {
             let block : String = errors.chars().skip(first).take(length).collect();
             if let Some(capture) = internal_reg.captures(block.as_str()) {
                 let level = capture.get(1).map_or("", |m| m.as_str());
-                // Pos seems to always be zero because of GLSLang...
+                // First number is not pos.
                 // https://github.com/KhronosGroup/glslang/issues/3238
                 let _str = capture.get(2).map_or("", |m| m.as_str());
                 let line = capture.get(3).map_or("", |m| m.as_str());
-                let pos = capture.get(4).map_or("", |m| m.as_str());
-                let msg = capture.get(5).map_or("", |m| m.as_str());
+                // Add position once following PR is merged
+                // https://github.com/KhronosGroup/glslang/pull/3614
+                //let pos = capture.get(4).map_or("", |m| m.as_str());
+                let msg = capture.get(4).map_or("", |m| m.as_str());
                 shader_error_list.push(ShaderError::ParserErr {
                     severity: match level {
                         "ERROR" => ShaderErrorSeverity::Error,
@@ -91,7 +93,7 @@ impl Glsl {
                     },
                     error: String::from(msg),
                     line: line.parse::<usize>().unwrap_or(1),
-                    pos: pos.parse::<usize>().unwrap_or(0),
+                    pos: 0//pos.parse::<usize>().unwrap_or(0),
                 });
             }
             else 
@@ -109,7 +111,7 @@ impl Validator for Glsl {
         let compiler = Compiler::acquire().unwrap();
         let source = ShaderSource::try_from(shader_string).expect("Failed to read from source");
 
-
+        
         let input = ShaderInput::new(
             &source,
             ShaderStage::Fragment,

@@ -170,12 +170,12 @@ function lint(
                         let err = message.ValidationErr;
                 
                         let start = new vscode.Position(0, 0);
-                        let end = new vscode.Position(document.lineCount - 1, 0);
+                        let end = new vscode.Position(0, 0);
                 
                         let diagnostic: vscode.Diagnostic = {
                             severity: vscode.DiagnosticSeverity.Error,
                             range: new vscode.Range(start, end),
-                            message: `${err.message}\n\n${err.debug}`,
+                            message: `${err.message}`,//\n\n${err.debug}`,
                             source: "hlsl-validator",
                         };
                         diagnostics.push(diagnostic);

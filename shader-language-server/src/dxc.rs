@@ -1,27 +1,22 @@
-//use hassle_rs::*;
-//use std::{ffi::OsStr, intrinsics::mir::Return, path::Path};
+use hassle_rs::*;
+use std::{ffi::OsStr, path::Path};
 
-use std::{io::Error, path::Path};
-
-use glslang::{Compiler, CompilerOptions, ShaderInput, ShaderSource};
-use glslang::*;
-
-use crate::{shader_error::ShaderErrorList, common::{ShaderTree, Validator}};
+use crate::{shader_error::{ShaderErrorList, ShaderError, ShaderErrorSeverity}, common::{ShaderTree, Validator}};
 
 pub struct Dxc {
-    //compiler: hassle_rs::DxcCompiler,
-    //library: hassle_rs::DxcLibrary,
+    compiler: hassle_rs::DxcCompiler,
+    library: hassle_rs::DxcLibrary,
     
-    //validator: Option<hassle_rs::DxcValidator>,
-    //dxil: Option<hassle_rs::wrapper::Dxil>,
+    validator: Option<hassle_rs::DxcValidator>,
+    dxil: Option<hassle_rs::wrapper::Dxil>,
 
-    //#[allow(dead_code)] // Need to keep dxc alive while dependencies created
-   // dxc: hassle_rs::wrapper::Dxc,
+    #[allow(dead_code)] // Need to keep dxc alive while dependencies created
+    dxc: hassle_rs::wrapper::Dxc,
 }
 
-//struct IncludeHandler {}
+struct IncludeHandler {}
 
-/*impl hassle_rs::wrapper::DxcIncludeHandler for IncludeHandler {
+impl hassle_rs::wrapper::DxcIncludeHandler for IncludeHandler {
     fn load_source(&mut self, filename: String) -> Option<String> {
         use std::io::Read;
         match std::fs::File::open(filename) {
@@ -51,37 +46,26 @@ impl From<hassle_rs::HassleError> for ShaderErrorList {
             err => ShaderErrorList::internal(err.to_string())
         }
     }
-}*/
-
-impl From<regex::Error> for ShaderErrorList {
-    fn from(error: regex::Error) -> Self {
-        match error {
-            regex::Error::CompiledTooBig(err) => ShaderErrorList::internal(format!("Regex compile too big: {}", err)),
-            regex::Error::Syntax(err) => ShaderErrorList::internal(format!("Regex syntax invalid: {}", err)),
-            _ =>  ShaderErrorList::internal(String::from("Regex error"))
-        }
-    }
 }
 
 impl Dxc {
-    pub fn new() -> Result<Self, Error> {
-    //pub fn new() -> Result<Self, hassle_rs::HassleError> {
-        /*let dxc = hassle_rs::Dxc::new(None)?;
+    pub fn new() -> Result<Self, hassle_rs::HassleError> {
+        let dxc = hassle_rs::Dxc::new(None)?;
         let library = dxc.create_library()?;
         let compiler = dxc.create_compiler()?;
         // TODO: check dxil.dll exist or it will fail. Just return Ok if it does not exist.
         //#[cfg(target_os = "windows")]
         let dxil = Dxil::new(None)?;
-        let validator = dxil.create_validator()?;*/
+        let validator = dxil.create_validator()?;
         Ok(Self {
-           // dxc,
-           // compiler,
-           // library,
-           // dxil: Some(dxil),
-           // validator: Some(validator),
+            dxc,
+            compiler,
+            library,
+            dxil: Some(dxil),
+            validator: Some(validator),
         })
     }
-    /*fn parse_dxc_errors(errors: &String) -> Result<ShaderErrorList, ShaderErrorList>
+    fn parse_dxc_errors(errors: &String) -> Result<ShaderErrorList, ShaderErrorList>
     {
         let mut shader_error_list = ShaderErrorList::empty();
 
@@ -120,31 +104,12 @@ impl Dxc {
         // TODO: should probably not assert or crash...
         assert!(shader_error_list.errors.len() > 0);
         return Ok(shader_error_list);
-    }*/
+    }
 }
 impl Validator for Dxc {
     fn validate_shader(&mut self, path: &Path) -> Result<(), ShaderErrorList> {
 
-        let shader_string = std::fs::read_to_string(&path).map_err(ShaderErrorList::from)?;
-
-        let compiler = Compiler::acquire().unwrap();
-        let source = ShaderSource::try_from(shader_string).expect("Failed to read from source");
-
-        //let limits = ResourceLimits::default();
-        let input = ShaderInput::new(
-            &source,
-            ShaderStage::Fragment,
-            &CompilerOptions {
-                source_language: SourceLanguage::HLSL,
-                target: Target::None(Some(SpirvVersion::SPIRV1_6)),
-                messages: ShaderMessage::CASCADING_ERRORS | ShaderMessage::DEBUG_INFO,
-                ..Default::default()
-            },
-            None,
-        )?;
-        let _shader = Shader::new(&compiler, input)?;
-
-        /*let source = std::fs::read_to_string(path)?;
+        let source = std::fs::read_to_string(path)?;
 
         let path_name = path.file_name().unwrap_or(&OsStr::new("shader.hlsl"));
         let path_name_str = path_name.to_str().unwrap_or("shader.hlsl");
@@ -174,16 +139,9 @@ impl Validator for Dxc {
                             Ok(())
                         }
                         Err(dxc_err) => {
-                            
                             let error_blob = dxc_err.0.get_error_buffer()?;
                             let error_emitted = self.library.get_blob_as_string(&error_blob.into())?;
                             Err(ShaderErrorList::internal(format!("Validation failed: {}", error_emitted)))
-                            /*Err(ShaderErrorList::from(ShaderError::ValidationErr{
-                                emitted: error_emitted, 
-                                src: String::from(path_name_str), 
-                                // TODO: use generic validation error 
-                                error: naga::WithSpan::<naga::valid::ValidationError>::new(naga::valid::ValidationError::Corrupted) 
-                            }))*/
                         }
                     }
                 } else {
@@ -196,13 +154,12 @@ impl Validator for Dxc {
                     self.library.get_blob_as_string(&error_blob.into())?,
                 )))
             }
-        }*/
-        Ok(())
+        }
     }
 
-    fn get_shader_tree(&mut self, _path: &Path) -> Result<ShaderTree, ShaderErrorList> {
+    fn get_shader_tree(&mut self, path: &Path) -> Result<ShaderTree, ShaderErrorList> {
 
-        /*let types = Vec::new();
+        let types = Vec::new();
         let global_variables = Vec::new();
         let functions = Vec::new();
 
@@ -241,7 +198,6 @@ impl Validator for Dxc {
                 })
             }
             Err((_dxc_result, _hresult)) => Err(ShaderErrorList::internal(String::from("Failed to get reflection data from shader")))
-        }*/
-        Err(ShaderErrorList::empty())
+        }
     }
 }
