@@ -34,7 +34,13 @@ impl From<GlslangError> for ShaderErrorList {
                 }
             },
             GlslangError::ShaderStageNotFound(stage) => {
-                ShaderErrorList::from(ShaderError::ValidationErr{ src: String::from(""), emitted: String::from("")})
+                ShaderErrorList::from(ShaderError::ValidationErr{ src: String::from(""), emitted: format!("Shader stage not found: {:#?}", stage)})
+            },
+            GlslangError::InvalidProfile(target, value, profile) => {
+                ShaderErrorList::internal(format!("Invalid profile {} for target {:#?}: {:#?}", value, target, profile))
+            },
+            GlslangError::VersionUnsupported(value, profile) => {
+                ShaderErrorList::internal(format!("Unsupported profile {}: {:#?}", value, profile))
             },
             err => ShaderErrorList::internal(format!("{:#?}", err))
         }

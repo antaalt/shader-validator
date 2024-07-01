@@ -184,7 +184,7 @@ function lint(
                     else if (message.UnknownError) 
                     {
                         let start = new vscode.Position(0, 0);
-                        let end = new vscode.Position(document.lineCount - 1, 0);
+                        let end = new vscode.Position(0, 0);
                 
                         let diagnostic: vscode.Diagnostic = {
                             severity: vscode.DiagnosticSeverity.Error,
