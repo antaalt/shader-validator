@@ -13,13 +13,19 @@ impl From<regex::Error> for ShaderErrorList {
     }
 }
 
-pub struct Glsl {
+pub struct Glslang {
+    hlsl: bool
 }
 
-impl Glsl {
-    pub fn new() -> Self {
+impl Glslang {
+    pub fn hlsl() -> Self {
         Self {
-            
+            hlsl: true
+        }
+    }
+    pub fn glsl() -> Self {
+        Self {
+            hlsl: false
         }
     }
 }
@@ -27,19 +33,19 @@ impl From<GlslangError> for ShaderErrorList {
     fn from(err: GlslangError) -> Self {
         match err {
             GlslangError::PreprocessError(error) => {
-                match Glsl::parse_errors(&error) {
+                match Glslang::parse_errors(&error) {
                     Ok(err) => err,
                     Err(err) => err
                 }
             },
             GlslangError::ParseError(error) => {
-                match Glsl::parse_errors(&error) {
+                match Glslang::parse_errors(&error) {
                     Ok(err) => err,
                     Err(err) => err
                 }
             },
             GlslangError::LinkError(error) => {
-                match Glsl::parse_errors(&error) {
+                match Glslang::parse_errors(&error) {
                     Ok(err) => err,
                     Err(err) => err
                 }
@@ -57,7 +63,7 @@ impl From<GlslangError> for ShaderErrorList {
         }
     }
 }
-impl Glsl {
+impl Glslang {
     fn parse_errors(errors: &String) -> Result<ShaderErrorList, ShaderErrorList>
     {
         let mut shader_error_list = ShaderErrorList::empty();
@@ -104,7 +110,7 @@ impl Glsl {
         return Ok(shader_error_list);
     }
 }
-impl Validator for Glsl {
+impl Validator for Glslang {
     fn validate_shader(&mut self, path: &Path) -> Result<(), ShaderErrorList> {
         let shader_string = std::fs::read_to_string(&path).map_err(ShaderErrorList::from)?;
 
@@ -116,11 +122,15 @@ impl Validator for Glsl {
             &source,
             ShaderStage::Fragment,
             &CompilerOptions {
-                source_language: SourceLanguage::GLSL,
+                source_language: if self.hlsl { SourceLanguage::HLSL } else { SourceLanguage::GLSL },
                 // Should have some settings to select these.
-                target: Target::Vulkan { 
-                    version: VulkanVersion::Vulkan1_3, 
-                    spirv_version: SpirvVersion::SPIRV1_6 
+                target: if self.hlsl {
+                    Target::None(Some(SpirvVersion::SPIRV1_6))
+                } else {
+                    Target::Vulkan { 
+                        version: VulkanVersion::Vulkan1_3, 
+                        spirv_version: SpirvVersion::SPIRV1_6 
+                    }
                 },
                 messages: ShaderMessage::CASCADING_ERRORS | ShaderMessage::DEBUG_INFO,
                 ..Default::default()

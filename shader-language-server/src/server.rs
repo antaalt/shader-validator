@@ -6,9 +6,7 @@ use std::str::FromStr;
 use crate::common::Validator;
 #[cfg(not(target_os = "wasi"))]
 use crate::dxc::Dxc;
-#[cfg(target_os = "wasi")]
-use crate::hlsl::Hlsl;
-use crate::glsl::Glsl;
+use crate::glslang::Glslang;
 use crate::naga::Naga;
 use crate::shader_error::ShaderErrorList;
 use crate::common::ShadingLanguage;
@@ -90,6 +88,23 @@ impl ValidateFileResponse {
     }
 }
 
+pub fn get_validator(shading_language: ShadingLanguage) -> Box<dyn Validator> {
+    match shading_language {
+        ShadingLanguage::Wgsl => Box::new(Naga::new()),
+        ShadingLanguage::Hlsl => {
+            #[cfg(target_os = "wasi")]
+            {
+                Box::new(Glslang::hlsl())
+            }
+            #[cfg(not(target_os = "wasi"))]
+            {
+                Box::new(Dxc::new().expect("Failed to create DXC"))
+            }
+        },
+        ShadingLanguage::Glsl => Box::new(Glslang::glsl())
+    }
+}
+
 pub fn run() {
     let mut handler = IoHandler::new();
     handler.add_sync_method("get_file_tree", move|params: Params| {
@@ -101,14 +116,7 @@ pub fn run() {
             Err(_) => { return Err(jsonrpc_core::Error::invalid_params(format!("Invalid shading language: {}", params.shadingLanguage))); }
         };
 
-        let mut validator : Box<dyn Validator> = match shading_language {
-            ShadingLanguage::Wgsl => Box::new(Naga::new()),
-            #[cfg(target_os = "wasi")]
-            ShadingLanguage::Hlsl => Box::new(Hlsl::new()),
-            #[cfg(not(target_os = "wasi"))]
-            ShadingLanguage::Hlsl => Box::new(Dxc::new().expect("Failed to create DXC")),
-            ShadingLanguage::Glsl => Box::new(Glsl::new())
-        };
+        let mut validator = get_validator(shading_language);
 
         let tree = validator.get_shader_tree(&params.path).ok();
 
@@ -124,14 +132,7 @@ pub fn run() {
             Err(()) => { return Err(jsonrpc_core::Error::invalid_params(format!("Invalid shading language: {}", params.shadingLanguage))); }
         };
 
-        let mut validator : Box<dyn Validator> = match shading_language {
-            ShadingLanguage::Wgsl => Box::new(Naga::new()),
-            #[cfg(not(target_os = "wasi"))]
-            ShadingLanguage::Hlsl => Box::new(Dxc::new().expect("Failed to create DXC")),
-            #[cfg(target_os = "wasi")]
-            ShadingLanguage::Hlsl => Box::new(Hlsl::new()),
-            ShadingLanguage::Glsl => Box::new(Glsl::new())
-        };
+        let mut validator = get_validator(shading_language);
 
         let res = match validator.validate_shader(&params.path) {
             Ok(_) => ValidateFileResponse::ok(),
