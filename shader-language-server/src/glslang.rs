@@ -18,6 +18,7 @@ pub struct Glslang {
 }
 
 impl Glslang {
+    #[allow(dead_code)] // Only used for WASI (alternative to DXC)
     pub fn hlsl() -> Self {
         Self {
             hlsl: true
@@ -59,7 +60,7 @@ impl From<GlslangError> for ShaderErrorList {
             GlslangError::VersionUnsupported(value, profile) => {
                 ShaderErrorList::internal(format!("Unsupported profile {}: {:#?}", value, profile))
             },
-            err => ShaderErrorList::internal(format!("{:#?}", err))
+            err => ShaderErrorList::internal(format!("Internal error: {:#?}", err))
         }
     }
 }
