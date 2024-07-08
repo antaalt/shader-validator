@@ -36,19 +36,19 @@
     "repository": {
         "line_comments": {
             "comment": "single line comment",
-            "name": "comment.line.double-slash.hlsl",
+            "name": "comment.line.double-slash.glsl",
             "match": "\\s*//.*"
         },
         "block_comments": {
             "patterns": [
                 {
                     "comment": "empty block comments",
-                    "name": "comment.block.hlsl",
+                    "name": "comment.block.glsl",
                     "match": "/\\*\\*/"
                 },
                 {
                     "comment": "block documentation comments",
-                    "name": "comment.block.documentation.hlsl",
+                    "name": "comment.block.documentation.glsl",
                     "begin": "/\\*\\*",
                     "end": "\\*/",
                     "patterns": [
@@ -59,7 +59,7 @@
                 },
                 {
                     "comment": "block comments",
-                    "name": "comment.block.hlsl",
+                    "name": "comment.block.glsl",
                     "begin": "/\\*(?!\\*)",
                     "end": "\\*/",
                     "patterns": [
@@ -70,33 +70,24 @@
                 }
             ]
         },
-        "attributes": {
-            "patterns": [
-                {
-                    "comment": "attribute declaration",
-                    "name": "constant.language.attribute.hlsl",
-                    "match": "\\[(?i:domain|earlydepthstencil|instance|maxtessfactor|numthreads|outputcontrolpoints|outputtopology|partitioning|patchconstantfunc|flatten|branch|loop|unroll|fastopt|allow_uav_condition|forcecase|call|clipplanes|maxvertexcount|noinline|unknown|rootsignature|raypayload)"
-                }
-            ]
-        },
         "functions": {
             "patterns": [
                 {
                     "comment": "macro function definition",
-                    "name": "meta.function.definition.hlsl",
+                    "name": "meta.function.definition.glsl",
                     "begin": "\\b([A-Z_][A-Z0-9_]*)(?=[\\s]*\\()", 
                     "beginCaptures": {
                         "1": {
-                            "name": "constant.character.preprocessor.hlsl"
+                            "name": "constant.character.preprocessor.glsl"
                         },
                         "2": {
-                            "name": "punctuation.brackets.round.hlsl"
+                            "name": "punctuation.brackets.round.glsl"
                         }
                     },
                     "end": "\\)",
                     "endCaptures": {
                         "0": {
-                            "name": "punctuation.brackets.round.hlsl"
+                            "name": "punctuation.brackets.round.glsl"
                         }
                     },
                     "patterns": [
@@ -131,23 +122,23 @@
                 },
                 {
                     "comment": "function definition",
-                    "name": "meta.function.definition.hlsl",
+                    "name": "meta.function.definition.glsl",
                     "begin": "\\b([a-zA-Z_][a-zA-Z0-9_]*)\\s+([a-zA-Z_][a-zA-Z0-9_]*)(?=[\\s]*\\()", 
                     "beginCaptures": {
                         "1": {
-                            "name": "storage.type.hlsl"
+                            "name": "storage.type.glsl"
                         },
                         "2": {
-                            "name": "entity.name.function.hlsl"
+                            "name": "entity.name.function.glsl"
                         },
                         "4": {
-                            "name": "punctuation.brackets.round.hlsl"
+                            "name": "punctuation.brackets.round.glsl"
                         }
                     },
                     "end": "\\{",
                     "endCaptures": {
                         "0": {
-                            "name": "punctuation.brackets.curly.hlsl"
+                            "name": "punctuation.brackets.curly.glsl"
                         }
                     },
                     "patterns": [
@@ -186,20 +177,20 @@
             "patterns": [
                 {
                     "comment": "function/method calls",
-                    "name": "meta.function.call.hlsl",
+                    "name": "meta.function.call.glsl",
                     "begin": "((?!([buid]?vec|mat|float|double|uint|int|bool)([1-4][1-4]?)?)[a-zA-Z_][a-zA-Z0-9_]*)(?=[\\s]*\\()",
                     "beginCaptures": {
                         "1": {
-                            "name": "entity.name.function.hlsl"
+                            "name": "entity.name.function.glsl"
                         },
                         "2": {
-                            "name": "punctuation.brackets.round.hlsl"
+                            "name": "punctuation.brackets.round.glsl"
                         }
                     },
                     "end": "\\)",
                     "endCaptures": {
                         "0": {
-                            "name": "punctuation.brackets.round.hlsl"
+                            "name": "punctuation.brackets.round.glsl"
                         }
                     },
                     "patterns": [
@@ -238,73 +229,88 @@
             "patterns": [
                 {
                     "comment": "decimal float literal",
-                    "name": "constant.numeric.float.hlsl",
+                    "name": "constant.numeric.float.glsl",
                     "match": "(-?\\b[0-9][0-9]*\\.[0-9]*)([eE][+-]?[0-9]+|(?i:[fhl]))?\\b",
                     "captures": {
                         "1": {
-                            "name": "constant.numeric.float.hlsl"
+                            "name": "constant.numeric.float.glsl"
                         },
                         "2": {
-                            "name": "constant.language.attribute.hlsl entity.name.tag"
+                            "name": "constant.language.attribute.glsl entity.name.tag"
                         }
                     }
                 },
                 {
                     "comment": "decimal literal",
-                    "name": "constant.numeric.decimal.hlsl",
+                    "name": "constant.numeric.decimal.glsl",
                     "match": "(-?\\b(0x)[0-9a-fA-F]+\\b|\\b0\\b|\\b(0)[0-9]+\\b|\\b[0-9][0-9]*)((?i:[lu]+))?\\b",
                     "captures": {
                         "1": {
-                            "name": "constant.numeric.decimal.hlsl"
+                            "name": "constant.numeric.decimal.glsl"
                         },
                         "2": {
-                            "name": "constant.language.attribute.hlsl entity.name.tag"
+                            "name": "constant.language.attribute.glsl entity.name.tag"
                         },
                         "3": {
-                            "name": "constant.language.attribute.hlsl entity.name.tag"
+                            "name": "constant.language.attribute.glsl entity.name.tag"
                         },
                         "4": {
-                            "name": "constant.language.attribute.hlsl entity.name.tag"
+                            "name": "constant.language.attribute.glsl entity.name.tag"
                         }
                     }
                 },
                 {
                     "comment": "boolean constant",
-                    "name": "constant.language.boolean.hlsl",
+                    "name": "constant.language.boolean.glsl",
                     "match": "\\b(true|false)\\b"
                 },
                 {
-                    "name": "constant.language.boolean.hlsl",
+                    "name": "constant.language.boolean.glsl",
                     "match": "\\b(FALSE|TRUE|NULL)\\b"
                 },
                 {
-                    "comment": "hlsl semantic",
-                    "name": "constant.language.hlsl",
-                    "match": "(?<=\\:\\s|\\:)(?i:BINORMAL[0-9]*|BLENDINDICES[0-9]*|BLENDWEIGHT[0-9]*|COLOR[0-9]*|NORMAL[0-9]*|POSITIONT|POSITION[0-9]*|PSIZE[0-9]*|TANGENT[0-9]*|TEXCOORD[0-9]*|FOG|TESSFACTOR[0-9]*|VFACE|VPOS|DEPTH[0-9]*)\\b"
+                    "comment": "builtin variable",
+                    "name": "constant.language.builtin.glsl",
+                    "match": "\\b(?i:gl_VertexID|gl_InstanceID|gl_DrawID|gl_BaseVertex|gl_BaseInstance)\\b"
                 },
                 {
-                    "comment": "hlsl semantic shader model 4.0",
-                    "name": "constant.language.sm4.hlsl",
-                    "match": "\\b(?<=\\:\\s|\\:)(?i:SV_ClipDistance[0-9]*|SV_CullDistance[0-9]*|SV_Coverage|SV_Depth|SV_DepthGreaterEqual[0-9]*|SV_DepthLessEqual[0-9]*|SV_InstanceID|SV_IsFrontFace|SV_Position|SV_RenderTargetArrayIndex|SV_SampleIndex|SV_StencilRef|SV_Target[0-7]?|SV_VertexID|SV_ViewportArrayIndex)\\b"
+                    "comment": "builtin variable tesselation shader",
+                    "name": "constant.language.builtin.tesselation.glsl",
+                    "match": "\\b(?i:gl_PatchVerticesIn|gl_PrimitiveID|gl_Position|gl_InvocationID|gl_PointSize|gl_TessCoord|gl_PatchVerticesIn|gl_ClipDistance|gl_MaxPatchVertices)\\b"
                 },
                 {
-                    "comment": "hlsl semantic shader model 5.0",
-                    "name": "constant.language.sm5.hlsl",
-                    "match": "(?<=\\:\\s|\\:)(?i:SV_DispatchThreadID|SV_DomainLocation|SV_GroupID|SV_GroupIndex|SV_GroupThreadID|SV_GSInstanceID|SV_InsideTessFactor|SV_OutputControlPointID|SV_TessFactor)\\b"
+                    "comment": "builtin variable tesselation shader output",
+                    "name": "constant.language.builtin.tesselation.output.glsl",
+                    "match": "\\b(?i:(gl_TessLevelOuter|gl_TessLevelInner|gl_in|gl_out)\\[[0-9]+\\])"
                 },
                 {
-                    "comment": "hlsl semantic shader model 5.1",
-                    "name": "constant.language.sm51.hlsl",
-                    "match": "(?<=\\:\\s|\\:)(?i:SV_InnerCoverage|SV_StencilRef)\\b"
+                    "comment": "builtin variable geometry shader",
+                    "name": "constant.language.builtin.geometry.glsl",
+                    "match": "\\b(?i:gl_PrimitiveIDI[0-9]+|gl_InvocationID|gl_Position|gl_InvocationID|gl_PointSize|gl_ViewportIndex|gl_Layer)\\b"
+                },
+                {
+                    "comment": "builtin variable fragment shader",
+                    "name": "constant.language.builtin.fragment.glsl",
+                    "match": "\\b(?i:gl_FragCoord|gl_FrontFacing|gl_PointCoord|gl_SampleID|gl_SamplePosition|gl_SampleMaskIn|gl_SampleMask|gl_FragDepth)\\b"
+                },
+                {
+                    "comment": "builtin variable compute shader",
+                    "name": "constant.language.builtin.compute.glsl",
+                    "match": "\\b(?i:gl_NumWorkGroups|gl_WorkGroupID|gl_LocalInvocationID|gl_GlobalInvocationID|gl_LocalInvocationIndex|gl_WorkGroupSize)\\b"
+                },
+                {
+                    "comment": "builtin variable shader",
+                    "name": "constant.language.builtin.glsl",
+                    "match": "\\b(?i:gl_DepthRangeParameters|gl_DepthRange|gl_NumSamples)\\b"
                 },
                 {
                     "comment": "string constant",
-                    "name": "string.quoted.double.hlsl",
+                    "name": "string.quoted.double.glsl",
                     "begin": "[\"']",
                     "end": "[\"']",
                     "patterns": [
                         {
-                            "name": "constant.character.escape.hlsl",
+                            "name": "constant.character.escape.glsl",
                             "match": "\\\\."
                         }
                     ]
@@ -313,31 +319,31 @@
         },
         "types": {
             "comment": "types",
-            "name": "storage.type.hlsl",
+            "name": "storage.type.glsl",
             "patterns": [
                 {
                     "comment": "scalar Types",
-                    "name": "storage.type.hlsl",
+                    "name": "storage.type.glsl",
                     "match": "\\b(bool|int|uint|float|double)\\b"
                 },
                 {
                     "comment": "vector/matrix types",
-                    "name": "storage.type.hlsl",
+                    "name": "storage.type.glsl",
                     "match": "\\b([biud]?(vec|mat)[1-4](x[1-4])?)\\b"
                 },
                 {
                     "comment": "legacy sampler type",
-                    "name": "storage.type.sampler.legacy.hlsl",
+                    "name": "storage.type.sampler.legacy.glsl",
                     "match": "\\b[biud]?(sampler|sampler1D|sampler2D|sampler3D|samplerCube|sampler2DRect|sampler1DArray|sampler2DArray|samplerCubeArray|samplerBuffer|sampler2DMS|sampler2DMSArray)(Shadow)?\\b"
                 },
                 {
                     "comment": "texture type",
-                    "name": "storage.type.texture.hlsl",
+                    "name": "storage.type.texture.glsl",
                     "match": "\\b[biud]?(image1D|image2D|image3D|imageCube|image2DRect|image1DArray|image2DArray|imageCubeArray|imageBuffer|image2DMS|image2DMSArray)\\b"
                 },
                 {
                     "comment": "Custom type",
-                    "name": "entity.name.type.hlsl",
+                    "name": "entity.name.type.glsl",
                     "match": "\\b([A-Z][A-Za-z0-9_]*)\\b"
                 }
             ]
@@ -346,7 +352,7 @@
             "patterns": [
                 {
                     "comment": "variables",
-                    "name": "variable.other.hlsl",
+                    "name": "variable.other.glsl",
                     "match": "\\b(?<!(?<!\\.)\\.)(?:r#(?!(crate|[Ss]elf|super)))?[a-z0-9_]+\\b"
                 }
             ]
@@ -355,32 +361,32 @@
             "patterns": [
                 {
                     "comment": "comma",
-                    "name": "punctuation.comma.hlsl",
+                    "name": "punctuation.comma.glsl",
                     "match": ","
                 },
                 {
                     "comment": "curly braces",
-                    "name": "punctuation.brackets.curly.hlsl",
+                    "name": "punctuation.brackets.curly.glsl",
                     "match": "[{}]"
                 },
                 {
                     "comment": "parentheses, round brackets",
-                    "name": "punctuation.brackets.round.hlsl",
+                    "name": "punctuation.brackets.round.glsl",
                     "match": "[()]"
                 },
                 {
                     "comment": "semicolon",
-                    "name": "punctuation.semi.hlsl",
+                    "name": "punctuation.semi.glsl",
                     "match": ";"
                 },
                 {
                     "comment": "square brackets",
-                    "name": "punctuation.brackets.square.hlsl",
+                    "name": "punctuation.brackets.square.glsl",
                     "match": "[\\[\\]]"
                 },
                 {
                     "comment": "angle brackets",
-                    "name": "punctuation.brackets.angle.hlsl",
+                    "name": "punctuation.brackets.angle.glsl",
                     "match": "(?<![=-])[<>]"
                 }
             ]
@@ -389,129 +395,124 @@
             "patterns": [
                 {
                     "comment": "other keywords",
-                    "name": "keyword.control.hlsl",
-                    "match": "\\b(const|goto|void|volatile|break|typedef|using|case|continue|default|discard|else|export|do|enum|for|function|if|private|return|switch|attribute|varying|unorm|while|workgroup|operator)\\b"
+                    "name": "keyword.control.glsl",
+                    "match": "\\b(const|goto|void|volatile|break|typedef|using|case|continue|default|discard|else|export|do|enum|for|function|if|private|return|switch|attribute|while|workgroup|operator)\\b"
                 },
                 {
                     "comment": "reserved keywords",
-                    "name": "keyword.control.hlsl",
+                    "name": "keyword.control.glsl",
                     "match": "\\b(try|catch|do|new|long|typeid|public)\\b"
                 },
                 {
                     "comment": "constant keyword",
-                    "name": "keyword.declaration.hlsl",
-                    "match": "\\b(unsigned|signed|cbuffer|tbuffer|namespace|coherent|uniform|restrict|readonly|writeonly|lowp|mediump|highp)\\b"
+                    "name": "keyword.declaration.glsl",
+                    "match": "\\b(unsigned|signed|cbuffer|tbuffer|namespace|coherent|uniform|restrict|readonly|writeonly|lowp|mediump|highp|precision|varying|unorm|sample|patch)\\b"
                 },
                 {
                     "comment": "struct keyword",
-                    "name": "keyword.declaration.struct.hlsl",
+                    "name": "keyword.declaration.struct.glsl",
                     "match": "\\b(struct)\\s+(\\[[a-z]+\\]\\s+)?([a-zA-Z][a-zA-Z0-9_]*)?(\\s+:\\s+[a-zA-Z][a-zA-Z0-9_]*)?",
                     "captures": {
                         "1": {
-                            "name": "keyword.declaration.struct.hlsl"
+                            "name": "keyword.declaration.struct.glsl"
                         },
                         "2": {
-                            "name": "constant.language.attribute.hlsl"
+                            "name": "constant.language.attribute.glsl"
                         },
                         "3": {
-                            "name": "entity.name.type.hlsl"
+                            "name": "entity.name.type.glsl"
                         },
                         "5": {
-                            "name": "entity.name.type.hlsl"
+                            "name": "entity.name.type.glsl"
                         }
                     }
                     
                 },
                 {
                     "comment": "logical operators",
-                    "name": "keyword.operator.logical.hlsl",
+                    "name": "keyword.operator.logical.glsl",
                     "match": "(\\^|\\||\\|\\||&&|<<|>>|!|~|\\*)(?!=)"
                 },
                 {
                     "comment": "logical AND, borrow references",
-                    "name": "keyword.operator.borrow.and.hlsl",
+                    "name": "keyword.operator.borrow.and.glsl",
                     "match": "&(?![&=])"
                 },
                 {
                     "comment": "assignment operators",
-                    "name": "keyword.operator.assignment.hlsl",
+                    "name": "keyword.operator.assignment.glsl",
                     "match": "(\\+=|-=|\\*=|/=|%=|\\^=|&=|\\|=|<<=|>>=)"
                 },
                 {
                     "comment": "single equal",
-                    "name": "keyword.operator.assignment.equal.hlsl",
+                    "name": "keyword.operator.assignment.equal.glsl",
                     "match": "(?<![<>])=(?!=|>)"
                 },
                 {
                     "comment": "comparison operators",
-                    "name": "keyword.operator.comparison.hlsl",
+                    "name": "keyword.operator.comparison.glsl",
                     "match": "(=(=)?(?!>)|!=|<=|(?<!=)>=|>|<)"
                 },
                 {
                     "comment": "math operators",
-                    "name": "keyword.operator.math.hlsl",
+                    "name": "keyword.operator.math.glsl",
                     "match": "(([+%]|(\\*(?!\\w)))(?!=))|(-(?!>))|(/(?!/))"
                 },
                 {
                     "comment": "dot access",
-                    "name": "keyword.operator.access.dot.hlsl",
+                    "name": "keyword.operator.access.dot.glsl",
                     "match": "\\.(?!\\.)"
                 },
                 {
                     "comment": "namespace access",
-                    "name": "keyword.operator.access.colon.hlsl",
+                    "name": "keyword.operator.access.colon.glsl",
                     "match": "\\::(?!\\:)"
                 },
                 {
                     "comment": "dashrocket, skinny arrow",
-                    "name": "keyword.operator.arrow.skinny.hlsl",
+                    "name": "keyword.operator.arrow.skinny.glsl",
                     "match": "->"
                 },
                 {
                     "comment": "type modifier",
-                    "name": "keyword.declaration.hlsl",
-                    "match": "\\b(column_major|const|export|extern|globallycoherent|groupshared|inline|inout|in|out|precise|row_major|shared|static|uniform|volatile)\\b"
-                },
-                {
-                    "comment": "type modifier",
-                    "name": "keyword.declaration.hlsl",
-                    "match": "\\b(column_major|const|export|extern|globallycoherent|groupshared|inline|inout|in|out|precise|row_major|shared|static|uniform|volatile)\\b"
+                    "name": "keyword.declaration.glsl",
+                    "match": "\\b(column_major|const|export|extern|globallycoherent|groupshared|inline|inout|in|out|precise|row_major|shared|static|uniform|volatile|buffer)\\b"
                 },
                 {
                     "comment": "compiler operator",
-                    "name": "keyword.declaration.hlsl",
+                    "name": "keyword.declaration.glsl",
                     "match": "\\b(sizeof|offsetof|static_assert|decltype)\\b"
                 },
                 {
                     "comment": "type modifier for float",
-                    "name": "keyword.declaration.float.hlsl",
+                    "name": "keyword.declaration.float.glsl",
                     "match": "\\b(snorm|unorm)\\b"
                 },
                 {
                     "comment": "type modifier for storage",
-                    "name": "keyword.declaration.hlsl",
+                    "name": "keyword.declaration.glsl",
                     "match": "\\b(packoffset|register)\\b"
                 },
                 {
                     "comment": "type modifier for interpolation",
-                    "name": "keyword.declaration.hlsl",
-                    "match": "\\b(centroid|linear|nointerpolation|noperspective|sample)\\b"
+                    "name": "keyword.declaration.glsl",
+                    "match": "\\b(flat|noperspective|smooth)\\b"
                 },
                 {
                     "comment": "type modifier for geometry shader",
-                    "name": "keyword.declaration.hlsl",
+                    "name": "keyword.declaration.glsl",
                     "match": "\\b(lineadj|line|point|triangle|triangleadj)\\b"
                 },
                 {
                     "comment": "preprocessor",
-                    "name": "keyword.preprocessor.hlsl",
-                    "match": "^\\s*#\\s*(define|elif|else|endif|ifdef|ifndef|if|undef|include|line|error|warning|pragma|INF|version)\\s+([A-Za-z0-9_]+)?",
+                    "name": "keyword.preprocessor.glsl",
+                    "match": "^\\s*#\\s*(define|elif|else|endif|ifdef|ifndef|if|undef|include|line|error|warning|pragma|INF|version|extension)\\s+([A-Za-z0-9_]+)?",
                     "captures": {
                         "1": {
-                            "name": "keyword.preprocessor.hlsl"
+                            "name": "keyword.preprocessor.glsl"
                         },
                         "2": {
-                            "name": "constant.character.preprocessor.hlsl"
+                            "name": "constant.character.preprocessor.glsl"
                         }
                     }
                 }
