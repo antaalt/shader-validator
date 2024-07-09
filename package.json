@@ -21,6 +21,11 @@
     "glsl",
     "wgsl"
   ],
+  "activationEvents": [
+    "onLanguage:glsl",
+    "onLanguage:wgsl",
+    "onLanguage:hlsl",
+  ],
   "main": "./out/extension.js",
   "extensionDependencies": [
     "ms-vscode.wasm-wasi-core"
