@@ -8,15 +8,22 @@ import { HLSLCompletionItemProvider } from './provider/completion';
 import { HLSLHoverProvider } from './provider/hover';
 import { HLSLDefinitionProvider } from './provider/definition';
 import { HLSLSymbolProvider } from './provider/symbol';
+import { ValidatorWasi } from './validatorWasi';
+import { ValidatorChildProcess } from './validatorChildProcess';
 import { Validator } from './validator';
+
+function createValidator(): Validator {
+    // Create validator
+    console.log("creating some validation");
+    //return new ValidatorWasi();
+    return new ValidatorChildProcess();
+}
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export async function activate(context: vscode.ExtensionContext)
 {
-    // Create validator
-    console.log("creating some validation");
-    const validator = new Validator();
+    const validator = createValidator();
     // Subscribe for dispose
     context.subscriptions.push(vscode.Disposable.from(validator));
     await validator.launch(context);
