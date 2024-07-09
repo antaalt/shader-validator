@@ -29,7 +29,7 @@ export class ValidatorChildProcess implements Validator {
     }
     async launch(context: vscode.ExtensionContext)
     {
-        const extensionLocalPath = 'shader-language-server/target/debug/shader_language_server.exe';
+        const extensionLocalPath = 'bin/shader_language_server.exe';
         const executable = vscode.Uri.joinPath(context.extensionUri, extensionLocalPath);
         this.server = cp.spawn(executable.fsPath);
         this.server.stdin.setDefaultEncoding("utf8");

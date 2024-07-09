@@ -68,7 +68,7 @@ export class ValidatorWasi implements Validator {
             // independent of whether the code runs in the desktop or the web.
             // TODO: need to bundle the wasm within the extension
             //const extensionLocalPath = 'shader-language-server/pkg/shader_language_server.wasm';
-            const extensionLocalPath = 'shader-language-server/target/wasm32-wasi/debug/shader_language_server.wasm';
+            const extensionLocalPath = 'bin/shader_language_server.wasm';
             const bits = await vscode.workspace.fs.readFile(vscode.Uri.joinPath(context.extensionUri, extensionLocalPath));
             const module = await WebAssembly.compile(bits);
 
