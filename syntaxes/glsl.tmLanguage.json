@@ -406,7 +406,7 @@
                 {
                     "comment": "constant keyword",
                     "name": "keyword.declaration.glsl",
-                    "match": "\\b(unsigned|signed|cbuffer|tbuffer|namespace|coherent|uniform|restrict|readonly|writeonly|lowp|mediump|highp|precision|varying|unorm|sample|patch)\\b"
+                    "match": "\\b(unsigned|signed|cbuffer|tbuffer|namespace|coherent|uniform|restrict|readonly|writeonly|lowp|mediump|highp|precision|varying|unorm|patch)\\b"
                 },
                 {
                     "comment": "struct keyword",
@@ -496,7 +496,7 @@
                 {
                     "comment": "type modifier for interpolation",
                     "name": "keyword.declaration.glsl",
-                    "match": "\\b(flat|noperspective|smooth)\\b"
+                    "match": "\\b(flat|noperspective|smooth|centroid|sample|invariant)\\b"
                 },
                 {
                     "comment": "type modifier for geometry shader",
