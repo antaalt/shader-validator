@@ -1,7 +1,7 @@
 {
-  "name": "hlsl",
-  "displayName": "hlsl-validator",
-  "description": "High-Level Shader Language support for vscode",
+  "name": "shader-validator",
+  "displayName": "Shader validator",
+  "description": "HLSL / GLSL / WGSL linting for vscode",
   "icon": "res/icon.png",
   "version": "0.0.1",
   "publisher": "antaalt",
@@ -20,9 +20,6 @@
     "hlsl",
     "glsl",
     "wgsl"
-  ],
-  "activationEvents": [
-    "onCommand:hlsl.helloWorld"
   ],
   "main": "./out/extension.js",
   "extensionDependencies": [
