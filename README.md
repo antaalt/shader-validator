@@ -2,7 +2,7 @@
 
 This is a simple extension allowing syntax highlighting & linting for various shader types. 
 
-- HLSL (through glslang, up to sm 5.0)
+- HLSL (through dxc on desktop)
 - GLSL (through glslang)
 - WGSL (through naga)
 
@@ -10,14 +10,14 @@ This is a simple extension allowing syntax highlighting & linting for various sh
 
 ### Syntax highlighting
 
-This extension provide syntax highlighting for HLSL, GLSL & WGSL.
+This extension provide syntax highlighting for HLSL, GLSL & WGSL. It also provides some really basic auto completion.
 
 ### Linting
 
 You cant lint your code in real time through this extension:
 - WGSL uses Naga as backend for linting
-- GLSL uses [glsl rust crate]() as backend. It only provide parsing validation and not semantic. We should use a more powerfull parser for validation such as shaderc, but which needs to compile on WASI.
-- HLSL is not yet supported as I did not found any rust package compiling on WASI for accessing dxc. Maybe we could build it in wasm & import it.
+- GLSL uses [glslang-rs](https://github.com/SnowflakePowered/glslang-rs) as backend. It provide complete linting for GLSL trough glslang API bindings from C.
+- HLSL uses [hassle-rs](https://github.com/Traverse-Research/hassle-rs) as backend. It provides bindings to directx shader compiler in rust and though is linting HLSL efficiently.
 
 ## Extension Settings
 
@@ -29,10 +29,6 @@ This extension contributes the following settings:
 * `hlsl.severity`: Select log severity for linting.
 * `hlsl.includes`: All includes for linting.
 
-## Tech
-
-https://code.visualstudio.com/blogs/2023/06/05/vscode-wasm-wasi
-
 ## Extension publishing
 
 It relies on WASI extension support.
@@ -41,14 +37,3 @@ https://code.visualstudio.com/api/working-with-extensions/publishing-extension
 ```vsce package```
 
 ```code --install-extension myextension.vsix```
-
-## Interesting resources
-
-https://code.visualstudio.com/blogs/2023/06/05/vscode-wasm-wasi
-
-https://github.com/MattSutherlin/HLSL_ST3/blob/master/HLSL.sublime-syntax
-
-https://www.osohq.com/post/building-vs-code-extension-with-rust-wasm-typescript
-
-https://www.npmjs.com/package/@vscode/wasm-wasi
-
