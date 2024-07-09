@@ -25,7 +25,7 @@ jobs:
       - name: Package extension
         run: vsce package
       - name: Copy VSIX
-        run: mkdir -p ./ext/ && cp ./hlsl-0.0.1.vsix ./ext/hlsl-0.0.1.vsix
+        run: mkdir -p ./ext/ && cp ./shader-validator-0.0.1.vsix ./ext/shader-validator-0.0.1.vsix
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
