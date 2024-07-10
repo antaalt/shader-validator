@@ -31,64 +31,58 @@ export async function activate(context: vscode.ExtensionContext)
 
     const diagCol = vscode.languages.createDiagnosticCollection();
     const config = vscode.workspace.getConfiguration();
-    // config.get("") for settings
 
     context.subscriptions.push(
         vscode.workspace.onDidOpenTextDocument((doc) => {
             lint(validator, doc, diagCol);
         })
     );
+    if (config.get<boolean>("shader.validateOnSave") === true)
+    {
+        context.subscriptions.push(
+            vscode.workspace.onDidSaveTextDocument((doc: vscode.TextDocument) => {
+                lint(validator, doc, diagCol);
+            })
+        );
+    }
+    if (config.get<boolean>("shader.validateOnType") === true)
+    {
+        let delay = config.get<number>("shader.validateOnType.delay") || 500;
+        // This is triggered on save / undo / redo / user typing
+        let changeTimers = new Map<string, ReturnType<typeof setTimeout>>();
+        context.subscriptions.push(
+            vscode.workspace.onDidChangeTextDocument((event : vscode.TextDocumentChangeEvent) => {
+                if (event.contentChanges.length > 0) {
+                    const fileName = event.document.fileName;
 
-    context.subscriptions.push(
-        vscode.workspace.onDidSaveTextDocument((doc: vscode.TextDocument) => {
-            lint(validator, doc, diagCol);
-        })
-    );
-    // This is triggered on save / undo / redo / user typing
-    let changeTimers = new Map<string, ReturnType<typeof setTimeout>>();
-    context.subscriptions.push(
-        vscode.workspace.onDidChangeTextDocument((event : vscode.TextDocumentChangeEvent) => {
-            if (event.contentChanges.length > 0) {
-                const fileName = event.document.fileName;
-
-                const timer = changeTimers.get(fileName);
-                if (timer) {
-                    clearTimeout(timer);
+                    const timer = changeTimers.get(fileName);
+                    if (timer) {
+                        clearTimeout(timer);
+                    }
+                    changeTimers.set(fileName, setTimeout(() => {
+                        changeTimers.delete(fileName);
+                        // Here we need some way to pass the modified unsaved file to wasi server.
+                        // Do we really want to save the file for the user ? Should create temporary file instead... 
+                        // Or use wasm in memory file for caching it.
+                        // Or simply send the content instead of path, but might be tricky for include handling.
+                        //event.document.save();
+                        lint(validator, event.document, diagCol);
+                    }, delay));
                 }
-                changeTimers.set(fileName, setTimeout(() => {
-                    changeTimers.delete(fileName);
-                    // Here we need some way to pass the modified unsaved file to wasi server.
-                    // Do we really want to save the file for the user ? Should create temporary file instead... 
-                    // Or use wasm in memory file for caching it.
-                    // Or simply send the content instead of path, but might be tricky for include handling.
-                    //event.document.save();
-                    lint(validator, event.document, diagCol);
-                }, 500));
-            }
-        })
-    );
+            })
+        );
+    }
     context.subscriptions.push(
         vscode.workspace.onDidChangeConfiguration((event : vscode.ConfigurationChangeEvent) => {
-            // Restart server depending on new configs ?
-        })
-    );
-
-    // The command has been defined in the package.json file
-    // Now provide the implementation of the command with registerCommand
-    // The commandId parameter must match the command field in package.json
-    context.subscriptions.push(
-        vscode.commands.registerCommand('hlsl.helloWorld', () => {
-            // The code you place here will be executed every time your command is executed
-            // Display a message box to the user
-            vscode.window.showInformationMessage('Hello World from hlsl!');
+            // Could reset linting for all open files ?
         })
     );
 
     context.subscriptions.push(
-        vscode.commands.registerCommand("hlsl.validateFile", () => {
+        vscode.commands.registerCommand("shader.validateFile", () => {
             let document = vscode.window.activeTextEditor?.document;
             if (document) {
-            lint(validator, document, diagCol);
+                lint(validator, document, diagCol);
             }
         })
     );
@@ -143,6 +137,7 @@ function lint(
   document: vscode.TextDocument,
   diagCol: vscode.DiagnosticCollection
 ) {
+    const config = vscode.workspace.getConfiguration();
     if (document.languageId === "hlsl" || document.languageId === "wgsl" || document.languageId === "glsl") {
         validator.validateFile(document, document.languageId, (json) => {
             if (document === null) { return; }
@@ -161,17 +156,20 @@ function lint(
                     if (message.ParserErr)
                     {
                         let err = message.ParserErr;
-                
-                        let start = new vscode.Position(err.line - 1, err.pos);
-                        let end = new vscode.Position(err.line - 1, err.pos);
-                        let diagnostic: vscode.Diagnostic = {
-                            severity: getSeverityFromString(err.severity),
-                            range: new vscode.Range(start, end),
-                            message: err.error,
-                            source: "hlsl-validator",
-                        };
-                        diagnostics.push(diagnostic);
-            
+                        let severity = getSeverityFromString(err.severity);
+                        let severityRequired = getSeverityFromString(config.get<string>("shader.severity") || "hint");
+                        if (severity <= severityRequired)
+                        {
+                            let start = new vscode.Position(err.line - 1, err.pos);
+                            let end = new vscode.Position(err.line - 1, err.pos);
+                            let diagnostic: vscode.Diagnostic = {
+                                severity: severity,
+                                range: new vscode.Range(start, end),
+                                message: err.error,
+                                source: "shader-validator",
+                            };
+                            diagnostics.push(diagnostic);
+                        }
                     }
                     else if (message.ValidationErr)
                     {
@@ -184,7 +182,7 @@ function lint(
                             severity: vscode.DiagnosticSeverity.Error,
                             range: new vscode.Range(start, end),
                             message: `${err.message}`,//\n\n${err.debug}`,
-                            source: "hlsl-validator",
+                            source: "shader-validator",
                         };
                         diagnostics.push(diagnostic);
             
@@ -198,7 +196,7 @@ function lint(
                             severity: vscode.DiagnosticSeverity.Error,
                             range: new vscode.Range(start, end),
                             message: message.UnknownError,
-                            source: "hlsl-validator",
+                            source: "shader-validator",
                         };
                         diagnostics.push(diagnostic);
                     }

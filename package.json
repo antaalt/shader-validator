@@ -17,11 +17,14 @@
   ],
   "keywords": [
     "shader",
+    "lint",
+    "validate",
     "hlsl",
     "glsl",
     "wgsl"
   ],
   "activationEvents": [
+    "onCommand:shader.validateFile",
     "onLanguage:glsl",
     "onLanguage:wgsl",
     "onLanguage:hlsl"
@@ -33,8 +36,8 @@
   "contributes": {
     "commands": [
       {
-        "command": "hlsl.helloWorld",
-        "title": "Hello World"
+        "command": "shader.validateFile",
+        "title": "Validate file"
       }
     ],
     "languages": [
@@ -96,24 +99,29 @@
       }
     ],
     "configuration": {
-      "title": "HLSL",
+      "title": "Shader Validator",
       "properties": {
-        "hlsl.autocomplete": {
+        "shader.autocomplete": {
           "description": "Autocomplete shader code as you type",
           "type": "boolean",
           "default": true
         },
-        "hlsl.validateOnType": {
+        "shader.validateOnType": {
           "description": "Validate shader as you type.",
           "type": "boolean",
           "default": true
         },
-        "hlsl.validateOnSave": {
+        "shader.validateOnType.delay": {
+          "description": "Number of milliseconds before validation is triggered.",
+          "type": "number",
+          "default": 500
+        },
+        "shader.validateOnSave": {
           "description": "Validate shader when you save a file.",
           "type": "boolean",
           "default": true
         },
-        "hlsl.severity": {
+        "shader.severity": {
           "type": "string",
           "description": "Minimum linting severity. Set it lower to display some hints aswell. Might not be supported by all languages",
           "default": "info",
@@ -125,7 +133,7 @@
             "hint"
           ]
         },
-        "hlsl.includes": {
+        "shader.includes": {
           "description": "includes",
           "type": "array",
           "items": {
