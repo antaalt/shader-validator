@@ -111,7 +111,7 @@
           "type": "boolean",
           "default": true
         },
-        "shader.validateOnType.delay": {
+        "shader.validateOnTypeDelay": {
           "description": "Number of milliseconds before validation is triggered.",
           "type": "number",
           "default": 500
@@ -123,7 +123,7 @@
         },
         "shader.severity": {
           "type": "string",
-          "description": "Minimum linting severity. Set it lower to display some hints aswell. Might not be supported by all languages",
+          "description": "Minimum linting severity. Set it lower to display some hints aswell. Might not be supported by all languages.",
           "default": "info",
           "enum": [
             "none",
@@ -134,12 +134,19 @@
           ]
         },
         "shader.includes": {
-          "description": "includes",
+          "description": "Include paths to look up for includes.",
           "type": "array",
           "items": {
             "type": "string"
           },
           "default": []
+        },
+        "shader.defines": {
+          "description": "Preprocessor variables and values.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
         }
       }
     }

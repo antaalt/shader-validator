@@ -9,7 +9,7 @@ import {
 } from "./rpc";
 import { MountPointDescriptor, Readable, Stdio, StdioConsoleDescriptor, StdioFileDescriptor, StdioPipeInDescriptor, StdioPipeOutDescriptor, StdioTerminalDescriptor, VSCodeFileSystemDescriptor, Wasm, WasmProcess, WasmPseudoterminal, Writable } from "@vscode/wasm-wasi";
 import path = require("path");
-import { Validator } from "./validator";
+import { ValidationParams, Validator } from "./validator";
 
 export class ValidatorWasi implements Validator {
     callbacks: { [key: number]: (data: RPCResponse<any> | null) => void };
@@ -83,8 +83,7 @@ export class ValidatorWasi implements Validator {
             // Run the process and wait for its result.
             // As we are running a server, run it async to not block vs code.
             this.process.run().then(async (result) => {
-                if (result !== 0)
-                {
+                if (result !== 0) {
                     await vscode.window.showErrorMessage(`Process shader-language-server ended with error: ${result}`);
                 } else {
                     await vscode.window.showErrorMessage(`Process shader-language-server ended without error: ${result}`);
@@ -157,6 +156,7 @@ export class ValidatorWasi implements Validator {
     getFileTree(
         document: vscode.TextDocument,
         shadingLanguage: string,
+        params:ValidationParams,
         cb: (data: RPCResponse<RPCGetFileTreeResponse | null> | null) => void
     ) {
         if (document.uri.scheme === "file")
@@ -168,7 +168,9 @@ export class ValidatorWasi implements Validator {
                 method: "get_file_tree",
                 params: {
                     path: document.uri.fsPath,
-                    shadingLanguage: shadingLanguage
+                    shadingLanguage: shadingLanguage,
+                    includes: params.includes,
+                    defines: params.defines,
                 },
                 id: this.currId,
             };
@@ -182,6 +184,7 @@ export class ValidatorWasi implements Validator {
     validateFile(
         document: vscode.TextDocument,
         shadingLanguage: string,
+        params:ValidationParams,
         cb: (data: RPCResponse<RPCValidationResponse> | null) => void
     ) {
         const workspace = vscode.workspace.getWorkspaceFolder(document.uri);
@@ -199,7 +202,9 @@ export class ValidatorWasi implements Validator {
                 method: "validate_file",
                 params: {
                     path: relativePath,
-                    shadingLanguage: shadingLanguage
+                    shadingLanguage: shadingLanguage,
+                    includes: params.includes,
+                    defines: params.defines,
                 },
                 id: this.currId,
             };

@@ -2,9 +2,9 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 
 export interface RPCParserErr {
+    filename: string;
     severity: string;
     error: string;
-    scopes: string[];
     line: number;
     pos: number;
 }
@@ -52,6 +52,8 @@ export interface RPCValidateFileRequest extends RPCRequest {
     params: {
         path: string;
         shadingLanguage: string;
+        includes: string[];
+        defines: Object;
     };
 }
 
@@ -60,5 +62,7 @@ export interface RPCGetFileTreeRequest extends RPCRequest {
     params: {
         path: string;
         shadingLanguage: string;
+        includes: string[];
+        defines: Object;
     };
 }

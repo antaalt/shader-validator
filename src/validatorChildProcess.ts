@@ -10,7 +10,7 @@ import {
 } from "./rpc";
 
 import path = require("path");
-import { Validator } from "./validator";
+import { ValidationParams, Validator } from "./validator";
 import assert = require("assert");
 
 export class ValidatorChildProcess implements Validator {
@@ -104,6 +104,7 @@ export class ValidatorChildProcess implements Validator {
     getFileTree(
         document: vscode.TextDocument,
         shadingLanguage: string,
+        params: ValidationParams,
         cb: (data: RPCResponse<RPCGetFileTreeResponse | null> | null) => void
     ) {
         if (document.uri.scheme === "file")
@@ -115,7 +116,9 @@ export class ValidatorChildProcess implements Validator {
                 method: "get_file_tree",
                 params: {
                     path: document.uri.fsPath,
-                    shadingLanguage: shadingLanguage
+                    shadingLanguage: shadingLanguage,
+                    includes: params.includes,
+                    defines: params.defines,
                 },
                 id: this.currId,
             };
@@ -129,6 +132,7 @@ export class ValidatorChildProcess implements Validator {
     validateFile(
         document: vscode.TextDocument,
         shadingLanguage: string,
+        params: ValidationParams,
         cb: (data: RPCResponse<RPCValidationResponse> | null) => void
     ) {
         const workspace = vscode.workspace.getWorkspaceFolder(document.uri);
@@ -141,7 +145,9 @@ export class ValidatorChildProcess implements Validator {
                 method: "validate_file",
                 params: {
                     path: document.uri.fsPath,
-                    shadingLanguage: shadingLanguage
+                    shadingLanguage: shadingLanguage,
+                    includes: params.includes,
+                    defines: params.defines,
                 },
                 id: this.currId,
             };

@@ -32,11 +32,8 @@ export async function activate(context: vscode.ExtensionContext)
     const diagCol = vscode.languages.createDiagnosticCollection();
     const config = vscode.workspace.getConfiguration();
 
-    context.subscriptions.push(
-        vscode.workspace.onDidOpenTextDocument((doc) => {
-            lint(validator, doc, diagCol);
-        })
-    );
+    const validate = config.get<boolean>("shader.validateOnSave") === true || config.get<boolean>("shader.validateOnType") === true;
+
     if (config.get<boolean>("shader.validateOnSave") === true)
     {
         context.subscriptions.push(
@@ -47,7 +44,7 @@ export async function activate(context: vscode.ExtensionContext)
     }
     if (config.get<boolean>("shader.validateOnType") === true)
     {
-        let delay = config.get<number>("shader.validateOnType.delay") || 500;
+        let delay = config.get<number>("shader.validateOnType.delay", 500);
         // This is triggered on save / undo / redo / user typing
         let changeTimers = new Map<string, ReturnType<typeof setTimeout>>();
         context.subscriptions.push(
@@ -115,10 +112,18 @@ export async function activate(context: vscode.ExtensionContext)
         )
     );*/
 
-    // Validate on editor open
-    let document = vscode.window.activeTextEditor?.document;
-    if (document) {
-        lint(validator, document, diagCol);
+    if (validate)
+    {
+        context.subscriptions.push(
+            vscode.workspace.onDidOpenTextDocument((doc) => {
+                lint(validator, doc, diagCol);
+            })
+        );
+        // Validate on editor open
+        let document = vscode.window.activeTextEditor?.document;
+        if (document) {
+            lint(validator, document, diagCol);
+        }
     }
 }
 
@@ -138,8 +143,15 @@ function lint(
   diagCol: vscode.DiagnosticCollection
 ) {
     const config = vscode.workspace.getConfiguration();
+    let includes = config.get<string[]>("shader.includes", []);
+    let definesObject = config.get<Object>("shader.defines", {});
+    let defines : {[key: string]: string} = {};
+    for (const [key, value] of Object.entries(definesObject)) {
+        defines[key] = value+""; // stringify
+    }
+    let params = { includes, defines };
     if (document.languageId === "hlsl" || document.languageId === "wgsl" || document.languageId === "glsl") {
-        validator.validateFile(document, document.languageId, (json) => {
+        validator.validateFile(document, document.languageId, params, (json) => {
             if (document === null) { return; }
             diagCol.delete(document.uri);
             if (!json) { return; }
@@ -157,8 +169,9 @@ function lint(
                     {
                         let err = message.ParserErr;
                         let severity = getSeverityFromString(err.severity);
-                        let severityRequired = getSeverityFromString(config.get<string>("shader.severity") || "hint");
-                        if (severity <= severityRequired)
+                        let severityRequired = getSeverityFromString(config.get<string>("shader.severity", "hint"));
+                        let filename = document.fileName.split('\\').pop()?.split('/').pop() || "";
+                        if (severity <= severityRequired && (err.filename === filename || err.filename === null))
                         {
                             let start = new vscode.Position(err.line - 1, err.pos);
                             let end = new vscode.Position(err.line - 1, err.pos);
@@ -166,7 +179,7 @@ function lint(
                                 severity: severity,
                                 range: new vscode.Range(start, end),
                                 message: err.error,
-                                source: "shader-validator",
+                                source: "shader-validator:" + filename,
                             };
                             diagnostics.push(diagnostic);
                         }
