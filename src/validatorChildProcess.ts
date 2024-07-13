@@ -9,9 +9,8 @@ import {
     RPCValidationResponse,
 } from "./rpc";
 
-import path = require("path");
 import { ValidationParams, Validator } from "./validator";
-import assert = require("assert");
+import path = require("path");
 
 export class ValidatorChildProcess implements Validator {
     server: cp.ChildProcessWithoutNullStreams | null;
@@ -116,6 +115,7 @@ export class ValidatorChildProcess implements Validator {
                 method: "get_file_tree",
                 params: {
                     path: document.uri.fsPath,
+                    cwd: path.dirname(document.uri.fsPath),
                     shadingLanguage: shadingLanguage,
                     includes: params.includes,
                     defines: params.defines,
@@ -132,10 +132,12 @@ export class ValidatorChildProcess implements Validator {
     validateFile(
         document: vscode.TextDocument,
         shadingLanguage: string,
+        temporaryFile: string | null,
         params: ValidationParams,
         cb: (data: RPCResponse<RPCValidationResponse> | null) => void
     ) {
         const workspace = vscode.workspace.getWorkspaceFolder(document.uri);
+        // Check uri scheme to ensure file is saved.
         if (document.uri.scheme === "file" && workspace !== undefined)
         {
             this.callbacks[this.currId] = cb;
@@ -144,7 +146,8 @@ export class ValidatorChildProcess implements Validator {
                 jsonrpc: "2.0",
                 method: "validate_file",
                 params: {
-                    path: document.uri.fsPath,
+                    path: temporaryFile || document.uri.fsPath,
+                    cwd: path.dirname(document.uri.fsPath),
                     shadingLanguage: shadingLanguage,
                     includes: params.includes,
                     defines: params.defines,

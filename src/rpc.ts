@@ -51,6 +51,7 @@ export interface RPCValidateFileRequest extends RPCRequest {
     method: "validate_file";
     params: {
         path: string;
+        cwd: string,
         shadingLanguage: string;
         includes: string[];
         defines: Object;
@@ -61,6 +62,7 @@ export interface RPCGetFileTreeRequest extends RPCRequest {
     method: "get_file_tree";
     params: {
         path: string;
+        cwd: string,
         shadingLanguage: string;
         includes: string[];
         defines: Object;

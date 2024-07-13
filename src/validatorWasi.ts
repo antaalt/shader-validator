@@ -9,7 +9,7 @@ import {
 } from "./rpc";
 import { MountPointDescriptor, Readable, Stdio, StdioConsoleDescriptor, StdioFileDescriptor, StdioPipeInDescriptor, StdioPipeOutDescriptor, StdioTerminalDescriptor, VSCodeFileSystemDescriptor, Wasm, WasmProcess, WasmPseudoterminal, Writable } from "@vscode/wasm-wasi";
 import path = require("path");
-import { ValidationParams, Validator } from "./validator";
+import { getTemporaryFolder, ValidationParams, Validator } from "./validator";
 
 export class ValidatorWasi implements Validator {
     callbacks: { [key: number]: (data: RPCResponse<any> | null) => void };
@@ -55,10 +55,10 @@ export class ValidatorWasi implements Validator {
 
         // Create a memory file system to create cached files.
         //const fs = await wasm.createInMemoryFileSystem();
-
         // Create virtual file systems to access workspaces from wasi app
         const mountPoints: MountPointDescriptor[] = [
             { kind: 'vscodeFileSystem', uri: vscode.Uri.joinPath(context.extensionUri, "test"), mountPoint:"/test"}, // For test
+            { kind: 'vscodeFileSystem', uri: vscode.Uri.parse(getTemporaryFolder()), mountPoint:"/temp"},
             { kind: 'workspaceFolder'}, // Workspaces
             //{ kind: 'inMemoryFileSystem', fileSystem: fs, mountPoint: '/memory' }
         ];
@@ -168,6 +168,7 @@ export class ValidatorWasi implements Validator {
                 method: "get_file_tree",
                 params: {
                     path: document.uri.fsPath,
+                    cwd: path.dirname(document.uri.fsPath),
                     shadingLanguage: shadingLanguage,
                     includes: params.includes,
                     defines: params.defines,
@@ -184,6 +185,7 @@ export class ValidatorWasi implements Validator {
     validateFile(
         document: vscode.TextDocument,
         shadingLanguage: string,
+        temporaryFile: string | null,
         params:ValidationParams,
         cb: (data: RPCResponse<RPCValidationResponse> | null) => void
     ) {
@@ -196,12 +198,20 @@ export class ValidatorWasi implements Validator {
                 workspace.name, 
                 path.relative(workspace?.uri.fsPath, document.uri.fsPath)
             ).replace(/\\/g, "/");
+            
+            // If we have a temporary file, pass its URL instead.
+            const useTemp = temporaryFile !== null;
+            const temporaryRelativePath = path.join(
+                "temp",
+                path.relative(getTemporaryFolder(), temporaryFile || "undefined")
+            ).replace(/\\/g, "/");
 
             const req: RPCValidateFileRequest = {
                 jsonrpc: "2.0",
                 method: "validate_file",
                 params: {
-                    path: relativePath,
+                    path: useTemp ? temporaryRelativePath : relativePath,
+                    cwd: path.dirname(relativePath),
                     shadingLanguage: shadingLanguage,
                     includes: params.includes,
                     defines: params.defines,

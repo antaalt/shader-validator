@@ -1,6 +1,7 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
+import * as fs from 'fs';
 
 import { MountPointDescriptor, VSCodeFileSystemDescriptor, Wasm, WorkspaceFolderDescriptor } from '@vscode/wasm-wasi';
 
@@ -10,7 +11,7 @@ import { HLSLDefinitionProvider } from './provider/definition';
 import { HLSLSymbolProvider } from './provider/symbol';
 import { ValidatorWasi } from './validatorWasi';
 import { ValidatorChildProcess } from './validatorChildProcess';
-import { Validator } from './validator';
+import { getTemporaryFolder, Validator } from './validator';
 
 function createValidator(): Validator {
     // Create validator
@@ -20,10 +21,17 @@ function createValidator(): Validator {
     return new ValidatorChildProcess();
 }
 
+function getBaseName(fileName: string) {
+    return fileName.split('\\').pop()?.split('/').pop() || "";
+}
+
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export async function activate(context: vscode.ExtensionContext)
 {
+    // Create temporary folder
+    fs.mkdirSync(getTemporaryFolder(), { recursive: true });
+    // Create validator
     const validator = createValidator();
     // Subscribe for dispose
     context.subscriptions.push(vscode.Disposable.from(validator));
@@ -38,7 +46,7 @@ export async function activate(context: vscode.ExtensionContext)
     {
         context.subscriptions.push(
             vscode.workspace.onDidSaveTextDocument((doc: vscode.TextDocument) => {
-                lint(validator, doc, diagCol);
+                lint(validator, doc, null, diagCol);
             })
         );
     }
@@ -58,12 +66,13 @@ export async function activate(context: vscode.ExtensionContext)
                     }
                     changeTimers.set(fileName, setTimeout(() => {
                         changeTimers.delete(fileName);
-                        // Here we need some way to pass the modified unsaved file to wasi server.
-                        // Do we really want to save the file for the user ? Should create temporary file instead... 
-                        // Or use wasm in memory file for caching it.
-                        // Or simply send the content instead of path, but might be tricky for include handling.
-                        //event.document.save();
-                        lint(validator, event.document, diagCol);
+                        // Write content to temporary folder & pass path to linter.
+                        let tempDir = getTemporaryFolder();
+                        let path = tempDir + getBaseName(fileName); // Keep same file
+                        fs.writeFileSync(path, event.document.getText(), {
+                            flag: "w"
+                        });
+                        lint(validator, event.document, path, diagCol);
                     }, delay));
                 }
             })
@@ -79,7 +88,7 @@ export async function activate(context: vscode.ExtensionContext)
         vscode.commands.registerCommand("shader.validateFile", () => {
             let document = vscode.window.activeTextEditor?.document;
             if (document) {
-                lint(validator, document, diagCol);
+                lint(validator, document, null, diagCol);
             }
         })
     );
@@ -116,13 +125,13 @@ export async function activate(context: vscode.ExtensionContext)
     {
         context.subscriptions.push(
             vscode.workspace.onDidOpenTextDocument((doc) => {
-                lint(validator, doc, diagCol);
+                lint(validator, doc, null, diagCol);
             })
         );
         // Validate on editor open
         let document = vscode.window.activeTextEditor?.document;
         if (document) {
-            lint(validator, document, diagCol);
+            lint(validator, document, null, diagCol);
         }
     }
 }
@@ -140,18 +149,19 @@ function getSeverityFromString(severity: string): vscode.DiagnosticSeverity {
 function lint(
   validator: Validator,
   document: vscode.TextDocument,
+  temporaryFile: string | null,
   diagCol: vscode.DiagnosticCollection
 ) {
-    const config = vscode.workspace.getConfiguration();
-    let includes = config.get<string[]>("shader.includes", []);
-    let definesObject = config.get<Object>("shader.defines", {});
-    let defines : {[key: string]: string} = {};
-    for (const [key, value] of Object.entries(definesObject)) {
-        defines[key] = value+""; // stringify
-    }
-    let params = { includes, defines };
     if (document.languageId === "hlsl" || document.languageId === "wgsl" || document.languageId === "glsl") {
-        validator.validateFile(document, document.languageId, params, (json) => {
+        const config = vscode.workspace.getConfiguration();
+        let includes = config.get<string[]>("shader.includes", []);
+        let definesObject = config.get<Object>("shader.defines", {});
+        let defines : {[key: string]: string} = {};
+        for (const [key, value] of Object.entries(definesObject)) {
+            defines[key] = value;
+        }
+        let params = { includes, defines };
+        validator.validateFile(document, document.languageId, temporaryFile, params, (json) => {
             if (document === null) { return; }
             diagCol.delete(document.uri);
             if (!json) { return; }
@@ -170,7 +180,7 @@ function lint(
                         let err = message.ParserErr;
                         let severity = getSeverityFromString(err.severity);
                         let severityRequired = getSeverityFromString(config.get<string>("shader.severity", "hint"));
-                        let filename = document.fileName.split('\\').pop()?.split('/').pop() || "";
+                        let filename = getBaseName(document.fileName);
                         if (severity <= severityRequired && (err.filename === filename || err.filename === null))
                         {
                             let start = new vscode.Position(err.line - 1, err.pos);
@@ -227,4 +237,6 @@ function lint(
 // This method is called when your extension is deactivated
 export function deactivate(context: vscode.ExtensionContext) {
     // Validator should self destruct thanks to vscode.Disposable
+    // Remove temporary files created during extension usage.
+    fs.rmSync(getTemporaryFolder(), { recursive: true, force: true });
 }
