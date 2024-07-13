@@ -9,7 +9,7 @@ import {
     RPCValidationResponse,
 } from "./rpc";
 
-import { ValidationParams, Validator } from "./validator";
+import { getBinaryPath, ValidationParams, Validator } from "./validator";
 import path = require("path");
 
 export class ValidatorChildProcess implements Validator {
@@ -28,8 +28,7 @@ export class ValidatorChildProcess implements Validator {
     }
     async launch(context: vscode.ExtensionContext)
     {
-        const extensionLocalPath = 'bin/shader_language_server.exe';
-        const executable = vscode.Uri.joinPath(context.extensionUri, extensionLocalPath);
+        const executable = getBinaryPath(context, 'shader_language_server.exe');
         this.server = cp.spawn(executable.fsPath);
         this.server.stdin.setDefaultEncoding("utf8");
         this.server.stdout.setEncoding("utf8");

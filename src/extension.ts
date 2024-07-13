@@ -204,7 +204,7 @@ function lint(
                         let diagnostic: vscode.Diagnostic = {
                             severity: vscode.DiagnosticSeverity.Error,
                             range: new vscode.Range(start, end),
-                            message: `${err.message}`,//\n\n${err.debug}`,
+                            message: `${err.message}`,
                             source: "shader-validator",
                         };
                         diagnostics.push(diagnostic);

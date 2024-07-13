@@ -19,6 +19,17 @@ export function getTemporaryFolder() {
     return `${tmpDir}${Path.sep}shaders-validator${Path.sep}`;
 }
 
+export function getBinaryPath(context : vscode.ExtensionContext, executable : string)
+{
+    if (context.extensionMode === vscode.ExtensionMode.Development) {
+        // Hardcoded path to avoid copying the file.
+        // Should be handled cleaner.
+        return vscode.Uri.file("D:/Bibliotheque/Dev/shader-language-server/target/debug/" + executable);
+    } else { // Running in production or test mode
+        return vscode.Uri.joinPath(context.extensionUri, "bin/" + executable);
+    }
+}
+
 export interface Validator {
 
     dispose(): void;

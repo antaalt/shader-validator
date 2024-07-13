@@ -11,7 +11,6 @@ export interface RPCParserErr {
 
 export interface RPCValidationErr {
     message: string;
-    debug: string;
 }
 
 export type RPCUnknownError = string;

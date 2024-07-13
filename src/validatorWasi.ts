@@ -9,7 +9,7 @@ import {
 } from "./rpc";
 import { MountPointDescriptor, Readable, Stdio, StdioConsoleDescriptor, StdioFileDescriptor, StdioPipeInDescriptor, StdioPipeOutDescriptor, StdioTerminalDescriptor, VSCodeFileSystemDescriptor, Wasm, WasmProcess, WasmPseudoterminal, Writable } from "@vscode/wasm-wasi";
 import path = require("path");
-import { getTemporaryFolder, ValidationParams, Validator } from "./validator";
+import { getBinaryPath, getTemporaryFolder, ValidationParams, Validator } from "./validator";
 
 export class ValidatorWasi implements Validator {
     callbacks: { [key: number]: (data: RPCResponse<any> | null) => void };
@@ -58,7 +58,7 @@ export class ValidatorWasi implements Validator {
         // Create virtual file systems to access workspaces from wasi app
         const mountPoints: MountPointDescriptor[] = [
             { kind: 'vscodeFileSystem', uri: vscode.Uri.joinPath(context.extensionUri, "test"), mountPoint:"/test"}, // For test
-            { kind: 'vscodeFileSystem', uri: vscode.Uri.parse(getTemporaryFolder()), mountPoint:"/temp"},
+            { kind: 'vscodeFileSystem', uri: vscode.Uri.file(getTemporaryFolder()), mountPoint:"/temp"},
             { kind: 'workspaceFolder'}, // Workspaces
             //{ kind: 'inMemoryFileSystem', fileSystem: fs, mountPoint: '/memory' }
         ];
@@ -67,9 +67,8 @@ export class ValidatorWasi implements Validator {
             // So we can use VS Code's file system API to load it. Makes it
             // independent of whether the code runs in the desktop or the web.
             // TODO: need to bundle the wasm within the extension
-            //const extensionLocalPath = 'shader-language-server/pkg/shader_language_server.wasm';
-            const extensionLocalPath = 'bin/shader_language_server.wasm';
-            const bits = await vscode.workspace.fs.readFile(vscode.Uri.joinPath(context.extensionUri, extensionLocalPath));
+            const executable = getBinaryPath(context, 'shader_language_server.wasm');
+            const bits = await vscode.workspace.fs.readFile(executable);
             const module = await WebAssembly.compile(bits);
 
             // Create a WASM process.
