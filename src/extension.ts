@@ -212,16 +212,7 @@ function lint(
                     } 
                     else if (message.UnknownError) 
                     {
-                        let start = new vscode.Position(0, 0);
-                        let end = new vscode.Position(0, 0);
-                
-                        let diagnostic: vscode.Diagnostic = {
-                            severity: vscode.DiagnosticSeverity.Error,
-                            range: new vscode.Range(start, end),
-                            message: message.UnknownError,
-                            source: "shader-validator",
-                        };
-                        diagnostics.push(diagnostic);
+                        vscode.window.showErrorMessage("Internal error: " + message.UnknownError);
                     }
                 });
                 diagCol.set(document.uri, diagnostics);
