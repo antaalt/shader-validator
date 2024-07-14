@@ -22,11 +22,22 @@ jobs:
         run: npm ci
       - name: Install VSCE
         run: npm i -g vsce
+      #- name: Download executables.
+      #  uses: robinraju/release-downloader@v1.11
+      #  with:
+      #    repository: 'antaalt/shader-language-server'
+      #    latest: true
+      #    preRelease: true
+      #    fileName: 'shader_language_server.zip'
+      #    extract: true
+      #    out-file-path: './bin'
+      # Should remove binary from repo, they are not required...
       - name: Package extension
         run: vsce package
       - name: Copy VSIX
         run: mkdir -p ./ext/ && cp ./shader-validator-0.0.1.vsix ./ext/shader-validator-0.0.1.vsix
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
+          name: extension
           path: ./ext/
