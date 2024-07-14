@@ -1,54 +1,42 @@
-name: Deploy Extension
+name: Deploy and publish Extension
 
 on:
-  push:
-    tags:
-      - "*"
-
-env:
-  CARGO_TERM_COLOR: always
+  release:
+    types: [created] # TODO: on publish instead
 
 # https://github.com/marketplace/actions/publish-vs-code-extension
+# https://code.visualstudio.com/api/working-with-extensions/continuous-integration
 jobs:
+  build:
+    uses: ./.github/workflows/build.yml
+
   deploy:
+    permissions: write-all
+    needs: build
     runs-on: ubuntu-latest
 
     # Handle secrets: https://docs.github.com/fr/actions/security-guides/using-secrets-in-github-actions
     # Get tokens: githuhttps://code.visualstudio.com/api/working-with-extensions/publishing-extension#get-a-personal-access-token
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      # TODO: Should instead use the value of published data
+      - name: Download VSIX
+        uses: actions/download-artifact@v4
         with:
-          node-version: 20
-      - run: npm ci
-      - name: Publish to Open VSX Registry
-        uses: HaaLeo/publish-vscode-extension@v1
-        id: publishToOpenVSX
-        with:
-          pat: ${{ secrets.OPEN_VSX_TOKEN }}
-      - name: Publish to Visual Studio Marketplace
-        uses: HaaLeo/publish-vscode-extension@v1
-        with:
-          pat: ${{ secrets.VS_MARKETPLACE_TOKEN }}
-          registryUrl: https://marketplace.visualstudio.com
-          extensionFile: ${{ steps.publishToOpenVSX.outputs.vsixPath }}
-      - name: Create release
-        uses: actions/create-release@v1
-        id: create_release
-        with:
-          draft: true
-          prerelease: false
-          release_name: ${{ github.event.release.tag_name }}
-          tag_name: ${{ github.ref }}
-          body_path: New release
+          name: extension
+      #- name: Publish to Open VSX Registry
+      #  uses: HaaLeo/publish-vscode-extension@v1
+      #  id: publishToOpenVSX
+      #  with:
+      #    pat: ${{ secrets.OPEN_VSX_TOKEN }}
+      #    extensionFile: shader-validator.vsix # TODO: version in path
+      #- name: Publish to Visual Studio Marketplace
+      #  uses: HaaLeo/publish-vscode-extension@v1
+      #  with:
+      #    pat: ${{ secrets.VS_MARKETPLACE_TOKEN }}
+      #    registryUrl: https://marketplace.visualstudio.com
+      #    extensionFile: ${{ steps.publishToOpenVSX.outputs.vsixPath }}
+      - name: Upload assets to release
+        run: gh release upload ${{ github.ref_name }} shader-validator-0.0.1.vsix # TODO: version in path should be retrieved by 
         env:
-          GITHUB_TOKEN: ${{ github.token }}
-      - name: Create extension artifact
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ${{ steps.publishToOpenVSX.outputs.vsixPath }}
-          asset_name: ${{ steps.publishToOpenVSX.outputs.vsixPath }}
-          asset_content_type: application/javascript # What is the valid mime type here for VSIX ?
+          GH_TOKEN: ${{ github.token }}
