@@ -44,7 +44,6 @@ jobs:
           preRelease: true
           fileName: 'shader_language_server.zip'
           extract: true
-          out-file-path: './bin'
           token: '${{ secrets.GH_PERSONAL_TOKEN }}'
       - name: Download dxc dll.
         uses: robinraju/release-downloader@v1.11
@@ -60,6 +59,7 @@ jobs:
       - name: Copy dxc dll to bin.
         run: cp ./dxc/bin/x64/dxcompiler.dll ./bin/dxcompiler.dll && cp ./dxc/bin/x64/dxil.dll ./bin/dxil.dll
       - run: rm -rf ./dxc
+      - run: rm shader_language_server.zip
       - name: Package extension
         run: vsce package
       - name: Copy VSIX
