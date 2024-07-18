@@ -45,7 +45,7 @@ jobs:
           fileName: 'shader_language_server.zip'
           extract: true
           out-file-path: './bin'
-          token: '${{ secrets.GITHUB_TOKEN }}'
+          token: '${{ secrets.GH_PERSONAL_TOKEN }}'
       - name: Download dxc dll.
         uses: robinraju/release-downloader@v1.11
         with:
