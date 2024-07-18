@@ -54,9 +54,9 @@ jobs:
           fileName: 'dxc_2024_05_24.zip'
           extract: true
           out-file-path: './dxc'
-      - run: ll .
-      - run: ll ./bin
-      - run: ll ./dxc
+      - run: ls .
+      - run: ls ./bin
+      - run: ls ./dxc
       - name: Copy dxc dll to bin.
         run: cp ./dxc/dxc_2024_05_24/bin/x64/dxcompiler.dll ./bin/dxcompiler.dll && cp ./dxc/dxc_2024_05_24/bin/x64/dxil.dll ./bin/dxil.dll
       - run: rm -rf ./dxc
