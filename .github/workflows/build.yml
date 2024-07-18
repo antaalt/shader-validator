@@ -58,7 +58,7 @@ jobs:
       - run: ls ./bin
       - run: ls ./dxc
       - name: Copy dxc dll to bin.
-        run: cp ./dxc/dxc_2024_05_24/bin/x64/dxcompiler.dll ./bin/dxcompiler.dll && cp ./dxc/dxc_2024_05_24/bin/x64/dxil.dll ./bin/dxil.dll
+        run: cp ./dxc/bin/x64/dxcompiler.dll ./bin/dxcompiler.dll && cp ./dxc/bin/x64/dxil.dll ./bin/dxil.dll
       - run: rm -rf ./dxc
       - name: Package extension
         run: vsce package
