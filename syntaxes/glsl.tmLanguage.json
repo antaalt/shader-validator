@@ -12,9 +12,6 @@
             "include": "#keywords"
         },
         {
-            "include": "#attributes"
-        },
-        {
             "include": "#functions"
         },
         {
@@ -101,9 +98,6 @@
                             "include": "#keywords"
                         },
                         {
-                            "include": "#attributes"
-                        },
-                        {
                             "include": "#function_calls"
                         },
                         {
@@ -150,9 +144,6 @@
                         },
                         {
                             "include": "#keywords"
-                        },
-                        {
-                            "include": "#attributes"
                         },
                         {
                             "include": "#function_calls"
@@ -204,9 +195,6 @@
                             "include": "#keywords"
                         },
                         {
-                            "include": "#attributes"
-                        },
-                        {
                             "include": "#function_calls"
                         },
                         {
@@ -230,12 +218,15 @@
                 {
                     "comment": "decimal float literal",
                     "name": "constant.numeric.float.glsl",
-                    "match": "(-?\\b[0-9][0-9]*\\.[0-9]*)([eE][+-]?[0-9]+|(?i:[fhl]))?\\b",
+                    "match": "(-?\\b[0-9][0-9]*(\\.)[0-9]*)([eE][+-]?[0-9]+|(?i:[fhl]))?\\b",
                     "captures": {
                         "1": {
                             "name": "constant.numeric.float.glsl"
                         },
                         "2": {
+                            "name": "constant.language.attribute.glsl entity.name.tag"
+                        },
+                        "3": {
                             "name": "constant.language.attribute.glsl entity.name.tag"
                         }
                     }
@@ -243,7 +234,7 @@
                 {
                     "comment": "decimal literal",
                     "name": "constant.numeric.decimal.glsl",
-                    "match": "(-?\\b(0x)[0-9a-fA-F]+\\b|\\b0\\b|\\b(0)[0-9]+\\b|\\b[0-9][0-9]*)((?i:[lu]+))?\\b",
+                    "match": "(-?\\b(0x)[0-9a-fA-F]+|\\b(0)[0-9]+|\\b[0-9][0-9]*)((?i:[lu]+))?\\b",
                     "captures": {
                         "1": {
                             "name": "constant.numeric.decimal.glsl"
