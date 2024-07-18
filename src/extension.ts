@@ -16,7 +16,6 @@ import { getTemporaryFolder, Validator } from './validator';
 function createValidator(): Validator {
     // Create validator
     // Should handle creation depending on supported platform (for dxc)
-    console.log("creating some validation");
     //return new ValidatorWasi();
     return new ValidatorChildProcess();
 }
