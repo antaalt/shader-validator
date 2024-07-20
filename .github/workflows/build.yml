@@ -36,7 +36,7 @@ jobs:
           # If github-token is specified, this is the run that artifacts will be downloaded from.
           # Optional. Default is ${{ github.run_id }}
       #    run-id: # we cant have latest...
-      - name: Download executables.
+      - name: Download shader language server.
         uses: robinraju/release-downloader@v1.11
         with:
           repository: 'antaalt/shader-language-server'
@@ -44,7 +44,7 @@ jobs:
           preRelease: true
           fileName: 'shader_language_server.zip'
           extract: true
-          token: '${{ secrets.GH_PERSONAL_TOKEN }}'
+          token: '${{ secrets.GH_PAT }}'
       - name: Download dxc dll.
         uses: robinraju/release-downloader@v1.11
         with:
