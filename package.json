@@ -5,12 +5,12 @@
   "icon": "res/icon.png",
   "version": "0.0.1",
   "publisher": "antaalt",
-  "repository": { 
-    "type": "git", 
-    "url": "https://github.com/antaalt/hlsl-validator" 
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/antaalt/hlsl-validator"
   },
   "engines": {
-    "vscode": "^1.77.0"
+    "vscode": "^1.88.0"
   },
   "categories": [
     "Programming Languages"
@@ -29,7 +29,8 @@
     "onLanguage:wgsl",
     "onLanguage:hlsl"
   ],
-  "main": "./out/extension.js",
+  "main": "./dist/node/extension",
+  "browser": "./dist/web/extension",
   "extensionDependencies": [
     "ms-vscode.wasm-wasi-core"
   ],
@@ -152,27 +153,36 @@
     }
   },
   "scripts": {
-    "vscode:prepublish": "npm run compile",
-    "compile": "tsc -p ./",
-    "watch": "tsc -watch -p ./",
-    "pretest": "npm run compile && npm run lint",
-    "lint": "eslint src --ext ts",
-    "test": "node ./out/test/runTest.js"
+    "vscode:prepublish": "webpack --mode production",
+    "compile": "webpack --mode development",
+    "watch": "webpack --mode development --watch",
+    "package": "webpack --mode production --devtool hidden-source-map",
+
+    "compile-tests": "tsc -p . --outDir out",
+    "pretest": "npm run compile-tests",
+    "test": "vscode-test",
+    
+    "lint": "eslint src --ext ts"
   },
   "devDependencies": {
     "@types/glob": "^8.0.0",
     "@types/mocha": "^10.0.1",
     "@types/node": "16.x",
-    "@types/vscode": "1.77.0",
+    "@types/vscode": "1.88.0",
     "@typescript-eslint/eslint-plugin": "^5.45.0",
     "@typescript-eslint/parser": "^5.45.0",
     "@vscode/test-electron": "^2.2.0",
     "eslint": "^8.28.0",
     "glob": "^8.0.3",
     "mocha": "^10.1.0",
-    "typescript": "^4.9.3"
+    "ts-loader": "^9.5.1",
+    "typescript": "^4.9.3",
+    "webpack": "^5.93.0",
+    "webpack-cli": "^5.1.4"
   },
   "dependencies": {
-    "@vscode/wasm-wasi": "0.11.0-next.0"
+    "@vscode/wasm-wasi": "1.0.0-pre.2",
+    "os-browserify": "^0.3.0",
+    "path-browserify": "^1.0.1"
   }
 }

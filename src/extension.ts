@@ -2,8 +2,7 @@
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
 import * as fs from 'fs';
-
-import { MountPointDescriptor, VSCodeFileSystemDescriptor, Wasm, WorkspaceFolderDescriptor } from '@vscode/wasm-wasi';
+import * as cp from "child_process";
 
 import { HLSLCompletionItemProvider } from './provider/completion';
 import { HLSLHoverProvider } from './provider/hover';
@@ -13,11 +12,18 @@ import { ValidatorWasi } from './validatorWasi';
 import { ValidatorChildProcess } from './validatorChildProcess';
 import { getTemporaryFolder, Validator } from './validator';
 
+function isRunningInBrowser(): boolean {
+    return Object.keys(cp).length === 0;
+}
+
 function createValidator(): Validator {
     // Create validator
-    // Should handle creation depending on supported platform (for dxc)
-    //return new ValidatorWasi();
-    return new ValidatorChildProcess();
+    // Web does not support child process, use wasi instead.
+    if (isRunningInBrowser()) {
+        return new ValidatorWasi();
+    } else {
+        return new ValidatorChildProcess();
+    }
 }
 
 function getBaseName(fileName: string) {
@@ -29,7 +35,9 @@ function getBaseName(fileName: string) {
 export async function activate(context: vscode.ExtensionContext)
 {
     // Create temporary folder
-    fs.mkdirSync(getTemporaryFolder(), { recursive: true });
+    if (!isRunningInBrowser()) {
+        fs.mkdirSync(getTemporaryFolder(), { recursive: true });
+    }
     // Create validator
     const validator = createValidator();
     // Subscribe for dispose
@@ -49,7 +57,7 @@ export async function activate(context: vscode.ExtensionContext)
             })
         );
     }
-    if (config.get<boolean>("shader.validateOnType") === true)
+    if (config.get<boolean>("shader.validateOnType") === true && !isRunningInBrowser())
     {
         let delay = config.get<number>("shader.validateOnType.delay", 500);
         // This is triggered on save / undo / redo / user typing
@@ -228,5 +236,7 @@ function lint(
 export function deactivate(context: vscode.ExtensionContext) {
     // Validator should self destruct thanks to vscode.Disposable
     // Remove temporary files created during extension usage.
-    fs.rmSync(getTemporaryFolder(), { recursive: true, force: true });
+    if (!isRunningInBrowser()) {
+        fs.rmSync(getTemporaryFolder(), { recursive: true, force: true });
+    }
 }
