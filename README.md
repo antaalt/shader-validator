@@ -30,3 +30,7 @@ This extension contributes the following settings:
 * `hlsl.severity`: Select log severity for linting.
 * `hlsl.includes`: All includes for linting.
 * `hlsl.defines`: All macros and their values for linting.
+
+## Credits
+
+This extension is based on a heavily modified version of PolyMeilex [vscode-wgsl](https://github.com/PolyMeilex/vscode-wgsl)
