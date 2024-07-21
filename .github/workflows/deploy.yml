@@ -37,7 +37,11 @@ jobs:
       #    pat: ${{ secrets.VS_MARKETPLACE_TOKEN }}
       #    registryUrl: https://marketplace.visualstudio.com
       #    extensionFile: ${{ steps.publishToOpenVSX.outputs.vsixPath }}
+      - name: Get version
+        run: echo "PACKAGE_VERSION=$(npm pkg get version)" >> $GITHUB_ENV
+      - name: Check version
+        run: echo $PACKAGE_VERSION
       - name: Upload assets to release
-        run: gh release upload ${{ github.ref_name }} shader-validator-0.0.1.vsix # TODO: version in path should be retrieved by 
+        run: gh release upload ${{ github.ref_name }} "shader-validator-$PACKAGE_VERSION.vsix"
         env:
           GH_TOKEN: ${{ github.token }}

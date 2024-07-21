@@ -66,8 +66,12 @@ jobs:
         run: xvfb-run --auto-servernum npm test
       - name: Package extension
         run: vsce package
+      - name: Get version
+        run: echo "PACKAGE_VERSION=$(npm pkg get version)" >> $GITHUB_ENV
+      - name: Check version
+        run: echo $PACKAGE_VERSION
       - name: Copy VSIX
-        run: mkdir -p ./ext/ && cp ./shader-validator-0.0.1.vsix ./ext/shader-validator-0.0.1.vsix
+        run: mkdir -p ./ext/ && cp ./shader-validator-$PACKAGE_VERSION.vsix ./ext/shader-validator-$PACKAGE_VERSION.vsix
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
