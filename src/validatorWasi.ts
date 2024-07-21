@@ -34,7 +34,7 @@ export class ValidatorWasi implements Validator {
     async launch(context: vscode.ExtensionContext)
     {
         // Load the WASM API
-        const wasm: Wasm = await Wasm.api();
+        const wasm: Wasm = await Wasm.load();
 
         const pty = wasm.createPseudoterminal();
         this.outProcess = wasm.createReadable();

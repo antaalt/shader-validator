@@ -13,7 +13,7 @@ import { ValidatorChildProcess } from './validatorChildProcess';
 import { getTemporaryFolder, Validator } from './validator';
 
 function isRunningInBrowser(): boolean {
-    return Object.keys(cp).length === 0;
+    return typeof cp.spawn !== 'function';
 }
 
 function createValidator(): Validator {
