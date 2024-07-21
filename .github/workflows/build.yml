@@ -60,9 +60,10 @@ jobs:
         run: cp ./dxc/bin/x64/dxcompiler.dll ./bin/dxcompiler.dll && cp ./dxc/bin/x64/dxil.dll ./bin/dxil.dll
       - run: rm -rf ./dxc
       - run: rm shader_language_server.zip
-      # VScode need a framebuffer to run test...
-      #- name: Test extension
-      #  run: npm test
+      # VScode need a framebuffer to run test. So create one.
+      - run: sudo apt-get install xvfb
+      - name: Test extension
+        run: xvfb-run --auto-servernum npm test
       - name: Package extension
         run: vsce package
       - name: Copy VSIX
