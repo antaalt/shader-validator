@@ -60,6 +60,8 @@ jobs:
         run: cp ./dxc/bin/x64/dxcompiler.dll ./bin/dxcompiler.dll && cp ./dxc/bin/x64/dxil.dll ./bin/dxil.dll
       - run: rm -rf ./dxc
       - run: rm shader_language_server.zip
+      - name: Test extension
+        run: npm test
       - name: Package extension
         run: vsce package
       - name: Copy VSIX
