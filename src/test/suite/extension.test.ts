@@ -7,7 +7,9 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 function doesBinaryExist(binary : string) : boolean {
-	let binFolder = "../../bin/";
+	// Depending on platform, we have different cwd...
+	// https://github.com/microsoft/vscode-test/issues/17
+	let binFolder = process.platform === 'win32' ? "../../bin/" : "./bin/";
 	let executablePath = path.join(binFolder, binary);
 	console.log(`Checking presence of ${executablePath} from ${process.cwd()}`);
 	return fs.existsSync(executablePath);
