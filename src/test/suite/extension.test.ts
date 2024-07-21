@@ -9,6 +9,7 @@ import * as path from 'path';
 function doesBinaryExist(binary : string) : boolean {
 	let binFolder = "../../bin/";
 	let executablePath = path.join(binFolder, binary);
+	console.log(`Checking presence of ${executablePath} from ${process.cwd()}`);
 	return fs.existsSync(executablePath);
 }
 
