@@ -67,7 +67,7 @@ jobs:
       - name: Package extension
         run: vsce package
       - name: Get version
-        run: echo "PACKAGE_VERSION=$(npm pkg get version)" >> $GITHUB_ENV
+        run: echo "PACKAGE_VERSION=$(npm pkg get version | sed 's/"//g')" >> $GITHUB_ENV
       - name: Check version
         run: echo $PACKAGE_VERSION
       - name: Copy VSIX
