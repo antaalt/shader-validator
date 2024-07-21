@@ -71,7 +71,7 @@ jobs:
       - name: Check version
         run: echo $PACKAGE_VERSION
       - name: Copy VSIX
-        run: mkdir -p ./ext/ && cp ./shader-validator-$PACKAGE_VERSION.vsix ./ext/shader-validator-$PACKAGE_VERSION.vsix
+        run: mkdir -p ./ext/ && cp ./shader-validator-$PACKAGE_VERSION.vsix ./ext/shader-validator.vsix
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
