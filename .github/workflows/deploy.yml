@@ -38,6 +38,6 @@ jobs:
       #    registryUrl: https://marketplace.visualstudio.com
       #    extensionFile: ${{ steps.publishToOpenVSX.outputs.vsixPath }}
       - name: Upload assets to release
-        run: gh release upload ${{ github.ref_name }} shader-validator-0.0.1.vsix # TODO: version in path should be retrieved by 
+        run: gh release upload ${{ github.ref_name }} "shader-validator.vsix"
         env:
           GH_TOKEN: ${{ github.token }}

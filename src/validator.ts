@@ -22,16 +22,16 @@ export function getTemporaryFolder() {
 export function getBinaryPath(context : vscode.ExtensionContext, executable : string)
 {
     if (context.extensionMode === vscode.ExtensionMode.Development) {
-        console.info("Running extension in dev mode. Looking for environment variable SHADER_LANGUAGE_SERVER_EXECUTABLE targetting server.");
-        if (process.env.SHADER_LANGUAGE_SERVER_EXECUTABLE !== undefined) {
-            console.info("SHADER_LANGUAGE_SERVER_EXECUTABLE found.");
-            return vscode.Uri.file(process.env.SHADER_LANGUAGE_SERVER_EXECUTABLE);
+        console.info("Running extension in dev mode. Looking for environment variable SHADER_LANGUAGE_SERVER_EXECUTABLE_PATH targetting server.");
+        if (process.env.SHADER_LANGUAGE_SERVER_EXECUTABLE_PATH !== undefined) {
+            console.info(`SHADER_LANGUAGE_SERVER_EXECUTABLE_PATH found: ${process.env.SHADER_LANGUAGE_SERVER_EXECUTABLE_PATH}`);
+            return vscode.Uri.file(process.env.SHADER_LANGUAGE_SERVER_EXECUTABLE_PATH + '/' + executable);
         } else {
-            // CI is handling the copy to bin folder to avoid storage of exe on git.
-            console.warn(`SHADER_LANGUAGE_SERVER_EXECUTABLE environment variable not found. Trying to launch ./bin/${executable}.`);
+            console.warn(`SHADER_LANGUAGE_SERVER_EXECUTABLE_PATH environment variable not found. Trying to launch ./bin/${executable}.`);
             return vscode.Uri.joinPath(context.extensionUri, "bin/" + executable);
         }
     } else { // Running in production or test mode
+        // CI is handling the copy to bin folder to avoid storage of exe on git.
         return vscode.Uri.joinPath(context.extensionUri, "bin/" + executable);
     }
 }

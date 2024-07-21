@@ -7,7 +7,7 @@ import {
     RPCValidateFileRequest,
     RPCValidationResponse,
 } from "./rpc";
-import { MountPointDescriptor, Readable, Stdio, StdioConsoleDescriptor, StdioFileDescriptor, StdioPipeInDescriptor, StdioPipeOutDescriptor, StdioTerminalDescriptor, VSCodeFileSystemDescriptor, Wasm, WasmProcess, WasmPseudoterminal, Writable } from "@vscode/wasm-wasi";
+import { MountPointDescriptor, Readable, Stdio, Wasm, WasmProcess, WasmPseudoterminal, Writable } from "@vscode/wasm-wasi/v1";
 import path = require("path");
 import { getBinaryPath, getTemporaryFolder, ValidationParams, Validator } from "./validator";
 
@@ -34,7 +34,7 @@ export class ValidatorWasi implements Validator {
     async launch(context: vscode.ExtensionContext)
     {
         // Load the WASM API
-        const wasm: Wasm = await Wasm.api();
+        const wasm: Wasm = await Wasm.load();
 
         const pty = wasm.createPseudoterminal();
         this.outProcess = wasm.createReadable();
@@ -58,7 +58,7 @@ export class ValidatorWasi implements Validator {
         // Create virtual file systems to access workspaces from wasi app
         const mountPoints: MountPointDescriptor[] = [
             { kind: 'vscodeFileSystem', uri: vscode.Uri.joinPath(context.extensionUri, "test"), mountPoint:"/test"}, // For test
-            { kind: 'vscodeFileSystem', uri: vscode.Uri.file(getTemporaryFolder()), mountPoint:"/temp"},
+            //{ kind: 'vscodeFileSystem', uri: vscode.Uri.file(getTemporaryFolder()), mountPoint:"/temp"},
             { kind: 'workspaceFolder'}, // Workspaces
             //{ kind: 'inMemoryFileSystem', fileSystem: fs, mountPoint: '/memory' }
         ];
@@ -81,7 +81,7 @@ export class ValidatorWasi implements Validator {
             });
             // Run the process and wait for its result.
             // As we are running a server, run it async to not block vs code.
-            this.process.run().then(async (result) => {
+            this.process.run().then(async (result: any) => {
                 if (result !== 0) {
                     await vscode.window.showErrorMessage(`Process shader-language-server ended with error: ${result}`);
                 } else {
@@ -195,21 +195,21 @@ export class ValidatorWasi implements Validator {
             // Somehow rust fs does not support \\
             const relativePath = path.join(
                 workspace.name, 
-                path.relative(workspace?.uri.fsPath, document.uri.fsPath)
-            ).replace(/\\/g, "/");
+                path.relative(workspace?.uri.fsPath.replace(/\\/g, "/"), document.uri.fsPath.replace(/\\/g, "/"))
+            );
             
             // If we have a temporary file, pass its URL instead.
-            const useTemp = temporaryFile !== null;
+            /*const useTemp = temporaryFile !== null;
             const temporaryRelativePath = path.join(
                 "temp",
                 path.relative(getTemporaryFolder(), temporaryFile || "undefined")
-            ).replace(/\\/g, "/");
+            ).replace(/\\/g, "/");*/
 
             const req: RPCValidateFileRequest = {
                 jsonrpc: "2.0",
                 method: "validate_file",
                 params: {
-                    path: useTemp ? temporaryRelativePath : relativePath,
+                    path: /*useTemp ? temporaryRelativePath :*/ relativePath,
                     cwd: path.dirname(relativePath),
                     shadingLanguage: shadingLanguage,
                     includes: params.includes,

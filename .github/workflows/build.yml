@@ -60,10 +60,18 @@ jobs:
         run: cp ./dxc/bin/x64/dxcompiler.dll ./bin/dxcompiler.dll && cp ./dxc/bin/x64/dxil.dll ./bin/dxil.dll
       - run: rm -rf ./dxc
       - run: rm shader_language_server.zip
+      # VScode need a framebuffer to run test. So create one.
+      - run: sudo apt-get install xvfb
+      - name: Test extension
+        run: xvfb-run --auto-servernum npm test
       - name: Package extension
         run: vsce package
+      - name: Get version
+        run: echo "PACKAGE_VERSION=$(npm pkg get version | sed 's/"//g')" >> $GITHUB_ENV
+      - name: Check version
+        run: echo $PACKAGE_VERSION
       - name: Copy VSIX
-        run: mkdir -p ./ext/ && cp ./shader-validator-0.0.1.vsix ./ext/shader-validator-0.0.1.vsix
+        run: mkdir -p ./ext/ && cp ./shader-validator-$PACKAGE_VERSION.vsix ./ext/shader-validator.vsix
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
