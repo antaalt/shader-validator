@@ -21,7 +21,8 @@ export function getTemporaryFolder() {
 
 export function getBinaryPath(context : vscode.ExtensionContext, executable : string)
 {
-    if (context.extensionMode === vscode.ExtensionMode.Development) {
+    // process might be undefined on the web.
+    if (typeof process !== 'undefined' && context.extensionMode === vscode.ExtensionMode.Development) {
         console.info("Running extension in dev mode. Looking for environment variable SHADER_LANGUAGE_SERVER_EXECUTABLE_PATH targetting server.");
         if (process.env.SHADER_LANGUAGE_SERVER_EXECUTABLE_PATH !== undefined) {
             console.info(`SHADER_LANGUAGE_SERVER_EXECUTABLE_PATH found: ${process.env.SHADER_LANGUAGE_SERVER_EXECUTABLE_PATH}`);
