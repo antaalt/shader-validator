@@ -51,16 +51,18 @@ export class ValidatorWasi implements Validator {
             isTransient: true
         });
         // Only for debug.
-        terminal.show(true);
+        if (context.extensionMode === vscode.ExtensionMode.Development) {
+            terminal.show(true);
+        }
 
         // Create a memory file system to create cached files.
-        //const fs = await wasm.createInMemoryFileSystem();
+        //const fs = await wasm.createMemoryFileSystem();
         // Create virtual file systems to access workspaces from wasi app
         const mountPoints: MountPointDescriptor[] = [
             { kind: 'vscodeFileSystem', uri: vscode.Uri.joinPath(context.extensionUri, "test"), mountPoint:"/test"}, // For test
             //{ kind: 'vscodeFileSystem', uri: vscode.Uri.file(getTemporaryFolder()), mountPoint:"/temp"},
             { kind: 'workspaceFolder'}, // Workspaces
-            //{ kind: 'inMemoryFileSystem', fileSystem: fs, mountPoint: '/memory' }
+            //{ kind: 'memoryFileSystem', fileSystem: fs, mountPoint: '/memory' }
         ];
         try {
             // Load the WASM module. It is stored alongside the extension's JS code.
@@ -81,12 +83,14 @@ export class ValidatorWasi implements Validator {
             });
             // Run the process and wait for its result.
             // As we are running a server, run it async to not block vs code.
-            this.process.run().then(async (result: any) => {
+            this.process.run().then((result: any) => {
                 if (result !== 0) {
-                    await vscode.window.showErrorMessage(`Process shader-language-server ended with error: ${result}`);
+                    vscode.window.showErrorMessage(`Process shader-language-server ended with error: ${result}`);
                 } else {
-                    await vscode.window.showErrorMessage(`Process shader-language-server ended without error: ${result}`);
+                    vscode.window.showErrorMessage(`Process shader-language-server ended without error: ${result}`);
                 }
+            }, (error) => {
+                vscode.window.showErrorMessage(`Failed to run shader-language-server with error: ${error}`);
             });
         } catch (error : any) {
             // Show an error message if something goes wrong.
@@ -143,7 +147,7 @@ export class ValidatorWasi implements Validator {
             console.log("Received some data: ", string);
             this.onData(string);
         });
-        // Should read std err aswell
+        // stderr is directly redirected to pty.
     }
 
     write(message : string)
@@ -189,14 +193,15 @@ export class ValidatorWasi implements Validator {
         cb: (data: RPCResponse<RPCValidationResponse> | null) => void
     ) {
         const workspace = vscode.workspace.getWorkspaceFolder(document.uri);
-        if (document.uri.scheme === "file" && workspace !== undefined)
+        if ((document.uri.scheme === "file" || document.uri.scheme === "vscode-test-web") && workspace !== undefined)
         {
             this.callbacks[this.currId] = cb;
-            // Somehow rust fs does not support \\
+            // Somehow rust fs does not support \\ & path API keep using them everywhere...
             const relativePath = path.join(
+                '/',
                 workspace.name, 
                 path.relative(workspace?.uri.fsPath.replace(/\\/g, "/"), document.uri.fsPath.replace(/\\/g, "/"))
-            );
+            ).replace(/\\/g, "/");
             
             // If we have a temporary file, pass its URL instead.
             /*const useTemp = temporaryFile !== null;
