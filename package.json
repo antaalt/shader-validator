@@ -3,7 +3,7 @@
   "displayName": "Shader validator",
   "description": "HLSL / GLSL / WGSL linting for vscode",
   "icon": "res/logo-shader-validator.png",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "publisher": "antaalt",
   "repository": {
     "type": "git",
