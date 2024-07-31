@@ -31,9 +31,6 @@
   ],
   "main": "./dist/node/extension",
   "browser": "./dist/web/extension",
-  "extensionDependencies": [
-    "ms-vscode.wasm-wasi-core"
-  ],
   "contributes": {
     "commands": [
       {

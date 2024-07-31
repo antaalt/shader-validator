@@ -34,6 +34,34 @@ function getBaseName(fileName: string) {
 // Your extension is activated the very first time the command is executed
 export async function activate(context: vscode.ExtensionContext)
 {
+    // Install dependencies if running on browser
+    const msWasmWasiCoreName = 'ms-vscode.wasm-wasi-core';
+    const msWasmWasiCore = vscode.extensions.getExtension(msWasmWasiCoreName);
+    if (msWasmWasiCore === undefined && isRunningInBrowser()) 
+    {
+        const message = 'It is required to install Microsoft WASM wasi core for running the shader validator server on the web. Do you want to install it now?';
+        const choice = await vscode.window.showInformationMessage(message, 'Install', 'Not now');
+        if (choice === 'Install') {
+            // Wait for extension to be correctly installed.
+            await vscode.window.withProgress({ location: vscode.ProgressLocation.Notification },
+                (progress) => {
+                    progress.report({ message: "Installing Microsoft WASM wasi core extension" });
+                    return new Promise<void>((resolve, reject) => {
+                        vscode.extensions.onDidChange((e) => {
+                            console.assert(vscode.extensions.getExtension(msWasmWasiCoreName) !== undefined, "Failed to load WASM wasi core.");
+                            resolve();
+                        });
+                        vscode.commands.executeCommand("workbench.extensions.installExtension", msWasmWasiCoreName, {
+                            installPreReleaseVersion: true
+                        });
+                    });
+                },
+            );
+        } else {
+            vscode.window.showErrorMessage("Extension shader-validator failed to install dependencies. It will not launch the validation server.");
+            return; // Extension failed to launch.
+        }
+    }
     // Create temporary folder
     if (!isRunningInBrowser()) {
         fs.mkdirSync(getTemporaryFolder(), { recursive: true });
