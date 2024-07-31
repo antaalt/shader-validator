@@ -64,7 +64,7 @@ export async function activate(context: vscode.ExtensionContext)
     }
     // Create temporary folder
     if (!isRunningInBrowser()) {
-        fs.mkdirSync(getTemporaryFolder(), { recursive: true });
+        fs.mkdir(getTemporaryFolder(), { recursive: true }, e => console.assert(e === null, e));
     }
     // Create validator
     const validator = createValidator();
@@ -265,6 +265,6 @@ export function deactivate(context: vscode.ExtensionContext) {
     // Validator should self destruct thanks to vscode.Disposable
     // Remove temporary files created during extension usage.
     if (!isRunningInBrowser()) {
-        fs.rmSync(getTemporaryFolder(), { recursive: true, force: true });
+        fs.rm(getTemporaryFolder(), { recursive: true, force: true }, e => console.assert(e === null, e));
     }
 }
