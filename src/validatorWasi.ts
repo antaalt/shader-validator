@@ -59,7 +59,6 @@ export class ValidatorWasi implements Validator {
         //const fs = await wasm.createMemoryFileSystem();
         // Create virtual file systems to access workspaces from wasi app
         const mountPoints: MountPointDescriptor[] = [
-            { kind: 'vscodeFileSystem', uri: vscode.Uri.joinPath(context.extensionUri, "test"), mountPoint:"/test"}, // For test
             //{ kind: 'vscodeFileSystem', uri: vscode.Uri.file(getTemporaryFolder()), mountPoint:"/temp"},
             { kind: 'workspaceFolder'}, // Workspaces
             //{ kind: 'memoryFileSystem', fileSystem: fs, mountPoint: '/memory' }
@@ -196,14 +195,16 @@ export class ValidatorWasi implements Validator {
         if ((document.uri.scheme === "file" || document.uri.scheme === "vscode-test-web") && workspace !== undefined)
         {
             this.callbacks[this.currId] = cb;
-            // Somehow rust fs does not support \\ & path API keep using them everywhere...
+            // Somehow wasi fs does not support \\ & vscode path API keep using them everywhere...
+            // Root path is inconsistent aswell. On desktop, wasi-core uses /workspace-name, on web, it uses /workspaces/workspace-name...
             const relativePath = path.join(
-                '/',
+                '/workspaces/',
                 workspace.name, 
                 path.relative(workspace?.uri.fsPath.replace(/\\/g, "/"), document.uri.fsPath.replace(/\\/g, "/"))
             ).replace(/\\/g, "/");
             
             // If we have a temporary file, pass its URL instead.
+            // Should use a local temp folder in workspace for web
             /*const useTemp = temporaryFile !== null;
             const temporaryRelativePath = path.join(
                 "temp",
