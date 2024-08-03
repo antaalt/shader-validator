@@ -4,7 +4,7 @@
   "description": "HLSL / GLSL / WGSL linting for vscode",
   "icon": "res/logo-shader-validator.png",
   "galleryBanner.color": {
-    "color": "#7af3ff",
+    "color": "#9ad0ff",
     "theme": "light"
   },
   "version": "0.0.5",
