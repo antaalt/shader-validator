@@ -20,23 +20,22 @@ jobs:
     # Get tokens: githuhttps://code.visualstudio.com/api/working-with-extensions/publishing-extension#get-a-personal-access-token
     steps:
       - uses: actions/checkout@v4
-      # TODO: Should instead use the value of published data
       - name: Download VSIX
         uses: actions/download-artifact@v4
         with:
           name: extension
-      #- name: Publish to Open VSX Registry
-      #  uses: HaaLeo/publish-vscode-extension@v1
-      #  id: publishToOpenVSX
-      #  with:
-      #    pat: ${{ secrets.OPEN_VSX_TOKEN }}
-      #    extensionFile: shader-validator.vsix # TODO: version in path
-      #- name: Publish to Visual Studio Marketplace
-      #  uses: HaaLeo/publish-vscode-extension@v1
-      #  with:
-      #    pat: ${{ secrets.VS_MARKETPLACE_TOKEN }}
-      #    registryUrl: https://marketplace.visualstudio.com
-      #    extensionFile: ${{ steps.publishToOpenVSX.outputs.vsixPath }}
+      - name: Publish to Open VSX Registry
+        uses: HaaLeo/publish-vscode-extension@v1
+        id: publishToOpenVSX
+        with:
+          pat: ${{ secrets.OPEN_VSX_PAT }}
+          extensionFile: shader-validator.vsix
+      - name: Publish to Visual Studio Marketplace
+        uses: HaaLeo/publish-vscode-extension@v1
+        with:
+          pat: ${{ secrets.MARKETPLACE_PAT }}
+          registryUrl: https://marketplace.visualstudio.com
+          extensionFile: shader-validator.vsix
       - name: Upload assets to release
         run: gh release upload ${{ github.ref_name }} "shader-validator.vsix"
         env:
