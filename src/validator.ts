@@ -1,6 +1,4 @@
 import * as vscode from "vscode";
-import * as os from 'os';
-import * as Path from 'path';
 
 import {
     RPCGetFileTreeResponse,
@@ -14,9 +12,8 @@ export interface ValidationParams {
     defines: {[key: string]: string};
 }
 
-export function getTemporaryFolder() {
-    let tmpDir = os.tmpdir();
-    return `${tmpDir}${Path.sep}shaders-validator${Path.sep}`;
+export function getBaseName(fileName: string) {
+    return fileName.split('\\').pop()?.split('/').pop() || "";
 }
 
 export function getBinaryPath(context : vscode.ExtensionContext, executable : string)
@@ -51,8 +48,8 @@ export interface Validator {
     validateFile(
         document: vscode.TextDocument,
         shadingLanguage: string,
-        temporaryFile: string | null,
         params: ValidationParams,
+        useTemporary: boolean, // For unsaved content
         cb: (data: RPCResponse<RPCValidationResponse> | null) => void
     ): void;
 }

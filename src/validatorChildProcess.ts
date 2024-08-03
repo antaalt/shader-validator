@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
 import * as cp from "child_process";
+import * as fs from "fs";
 
 import {
     RPCGetFileTreeRequest,
@@ -9,8 +10,14 @@ import {
     RPCValidationResponse,
 } from "./rpc";
 
-import { getBinaryPath, ValidationParams, Validator } from "./validator";
-import path = require("path");
+import { getBaseName, getBinaryPath, ValidationParams, Validator } from "./validator";
+import path from "path";
+import os from "os";
+
+export function getTemporaryFolder() {
+    let tmpDir = os.tmpdir();
+    return `${tmpDir}${path.sep}shaders-validator${path.sep}`;
+}
 
 export class ValidatorChildProcess implements Validator {
     server: cp.ChildProcessWithoutNullStreams | null;
@@ -21,9 +28,14 @@ export class ValidatorChildProcess implements Validator {
     { 
         this.server = null;
         this.callbacks = {};
+        // Create temporary folder
+        fs.mkdir(getTemporaryFolder(), { recursive: true }, e => console.assert(e === null, e));
+        
     }
     dispose()
     {
+        // Remove temporary files created during extension usage.
+        fs.rm(getTemporaryFolder(), { recursive: true, force: true }, e => console.assert(e === null, e));
         this.server?.kill();
     }
     async launch(context: vscode.ExtensionContext)
@@ -131,8 +143,8 @@ export class ValidatorChildProcess implements Validator {
     validateFile(
         document: vscode.TextDocument,
         shadingLanguage: string,
-        temporaryFile: string | null,
         params: ValidationParams,
+        useTemporary: boolean,
         cb: (data: RPCResponse<RPCValidationResponse> | null) => void
     ) {
         const workspace = vscode.workspace.getWorkspaceFolder(document.uri);
@@ -141,11 +153,22 @@ export class ValidatorChildProcess implements Validator {
         {
             this.callbacks[this.currId] = cb;
 
+            // Create temporary file if required
+            let tempDir = getTemporaryFolder();
+            let tmpPath = tempDir + getBaseName(document.fileName); // Keep same file
+            if (useTemporary)
+            {
+                // Write content to temporary folder & pass path to linter.
+                fs.writeFileSync(tmpPath, document.getText(), {
+                    flag: "w"
+                });
+            }
+
             const req: RPCValidateFileRequest = {
                 jsonrpc: "2.0",
                 method: "validate_file",
                 params: {
-                    path: temporaryFile || document.uri.fsPath,
+                    path: useTemporary ? tmpPath : document.uri.fsPath,
                     cwd: path.dirname(document.uri.fsPath),
                     shadingLanguage: shadingLanguage,
                     includes: params.includes,

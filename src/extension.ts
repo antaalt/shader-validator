@@ -1,7 +1,6 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
-import * as fs from 'fs';
 import * as cp from "child_process";
 
 import { HLSLCompletionItemProvider } from './provider/completion';
@@ -10,7 +9,7 @@ import { HLSLDefinitionProvider } from './provider/definition';
 import { HLSLSymbolProvider } from './provider/symbol';
 import { ValidatorWasi } from './validatorWasi';
 import { ValidatorChildProcess } from './validatorChildProcess';
-import { getTemporaryFolder, Validator } from './validator';
+import { getBaseName, Validator } from './validator';
 
 function isRunningInBrowser(): boolean {
     return typeof cp.spawn !== 'function';
@@ -24,10 +23,6 @@ function createValidator(): Validator {
     } else {
         return new ValidatorChildProcess();
     }
-}
-
-function getBaseName(fileName: string) {
-    return fileName.split('\\').pop()?.split('/').pop() || "";
 }
 
 // This method is called when your extension is activated
@@ -62,10 +57,6 @@ export async function activate(context: vscode.ExtensionContext)
             return; // Extension failed to launch.
         }
     }
-    // Create temporary folder
-    if (!isRunningInBrowser()) {
-        fs.mkdir(getTemporaryFolder(), { recursive: true }, e => console.assert(e === null, e));
-    }
     // Create validator
     const validator = createValidator();
     // Subscribe for dispose
@@ -81,11 +72,11 @@ export async function activate(context: vscode.ExtensionContext)
     {
         context.subscriptions.push(
             vscode.workspace.onDidSaveTextDocument((doc: vscode.TextDocument) => {
-                lint(validator, doc, null, diagCol);
+                lint(validator, doc, false, diagCol);
             })
         );
     }
-    if (config.get<boolean>("shader.validateOnType") === true && !isRunningInBrowser())
+    if (config.get<boolean>("shader.validateOnType") === true)
     {
         let delay = config.get<number>("shader.validateOnType.delay", 500);
         // This is triggered on save / undo / redo / user typing
@@ -101,13 +92,7 @@ export async function activate(context: vscode.ExtensionContext)
                     }
                     changeTimers.set(fileName, setTimeout(() => {
                         changeTimers.delete(fileName);
-                        // Write content to temporary folder & pass path to linter.
-                        let tempDir = getTemporaryFolder();
-                        let path = tempDir + getBaseName(fileName); // Keep same file
-                        fs.writeFileSync(path, event.document.getText(), {
-                            flag: "w"
-                        });
-                        lint(validator, event.document, path, diagCol);
+                        lint(validator, event.document, true, diagCol);
                     }, delay));
                 }
             })
@@ -123,7 +108,7 @@ export async function activate(context: vscode.ExtensionContext)
         vscode.commands.registerCommand("shader.validateFile", () => {
             let document = vscode.window.activeTextEditor?.document;
             if (document) {
-                lint(validator, document, null, diagCol);
+                lint(validator, document, false, diagCol);
             }
         })
     );
@@ -160,13 +145,13 @@ export async function activate(context: vscode.ExtensionContext)
     {
         context.subscriptions.push(
             vscode.workspace.onDidOpenTextDocument((doc) => {
-                lint(validator, doc, null, diagCol);
+                lint(validator, doc, false, diagCol);
             })
         );
         // Validate on editor open
         let document = vscode.window.activeTextEditor?.document;
         if (document) {
-            lint(validator, document, null, diagCol);
+            lint(validator, document, false, diagCol);
         }
     }
 }
@@ -184,7 +169,7 @@ function getSeverityFromString(severity: string): vscode.DiagnosticSeverity {
 function lint(
   validator: Validator,
   document: vscode.TextDocument,
-  temporaryFile: string | null,
+  useTemporary: boolean,
   diagCol: vscode.DiagnosticCollection
 ) {
     if (document.languageId === "hlsl" || document.languageId === "wgsl" || document.languageId === "glsl") {
@@ -196,7 +181,7 @@ function lint(
             defines[key] = value;
         }
         let params = { includes, defines };
-        validator.validateFile(document, document.languageId, temporaryFile, params, (json) => {
+        validator.validateFile(document, document.languageId, params, useTemporary, (json) => {
             if (document === null) { return; }
             diagCol.delete(document.uri);
             if (!json) { return; }
@@ -263,8 +248,4 @@ function lint(
 // This method is called when your extension is deactivated
 export function deactivate(context: vscode.ExtensionContext) {
     // Validator should self destruct thanks to vscode.Disposable
-    // Remove temporary files created during extension usage.
-    if (!isRunningInBrowser()) {
-        fs.rm(getTemporaryFolder(), { recursive: true, force: true }, e => console.assert(e === null, e));
-    }
 }
