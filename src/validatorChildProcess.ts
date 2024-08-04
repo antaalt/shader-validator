@@ -6,9 +6,19 @@ import {
     RPCGetFileTreeRequest,
     RPCGetFileTreeResponse,
     RPCResponse,
+    RPCUnknownError,
     RPCValidateFileRequest,
     RPCValidationResponse,
 } from "./rpc";
+
+
+import {
+    LanguageClient,
+    LanguageClientOptions,
+    ProtocolNotificationType0,
+    ServerOptions,
+    TransportKind
+} from 'vscode-languageclient/node';
 
 import { getBaseName, getBinaryPath, ValidationParams, Validator } from "./validator";
 import path from "path";
@@ -20,14 +30,15 @@ export function getTemporaryFolder() {
 }
 
 export class ValidatorChildProcess implements Validator {
-    server: cp.ChildProcessWithoutNullStreams | null;
     callbacks: { [key: number]: (data: RPCResponse<any> | null) => void };
     currId: number = 1;
+    client: LanguageClient | null;
 
     constructor()
     { 
-        this.server = null;
+        //this.server = null;
         this.callbacks = {};
+        this.client = null;
         // Create temporary folder
         fs.mkdir(getTemporaryFolder(), { recursive: true }, e => console.assert(e === null, e));
         
@@ -36,28 +47,66 @@ export class ValidatorChildProcess implements Validator {
     {
         // Remove temporary files created during extension usage.
         fs.rm(getTemporaryFolder(), { recursive: true, force: true }, e => console.assert(e === null, e));
-        this.server?.kill();
+        //this.server?.kill();
+        
+        if (!this.client) {
+            return undefined;
+        }
+        return this.client.stop();
     }
     async launch(context: vscode.ExtensionContext)
     {
         const executable = getBinaryPath(context, 'shader_language_server.exe');
-        this.server = cp.spawn(executable.fsPath);
-        this.server.stdin.setDefaultEncoding("utf8");
-        this.server.stdout.setEncoding("utf8");
-        this.server.stderr.setEncoding("utf8");
-        this.server.on("close", (code: number | null, signal: NodeJS.Signals | null) => {
-            console.log("server closing: ", code, signal);
-        });
-        this.server.on("disconnect", () => {
-            console.log("server disconnecting");
-        });
-        this.server.on("error", (err: Error) => {
-            console.log("server erroring: ", err);
-        });
-        let initializeRequest = JSON.stringify({});
-        this.write(`Content-Length: ${initializeRequest.length}\r\n\r\n${initializeRequest}\\r\\n`);
+        let debugOptions = { execArgv: [] };
+        let serverOptions: ServerOptions = {
+            command: executable.fsPath, 
+            transport: TransportKind.stdio,
+            options: {
+                //detached: true,
+                shell: true,
+            }
+        };
+        let clientOptions: LanguageClientOptions = {
+            // Register the server for plain text documents
+            documentSelector: [
+                { scheme: 'file', language: 'hlsl' },
+                { scheme: 'file', language: 'glsl' },
+                { scheme: 'file', language: 'wgsl' },
+            ],
+            synchronize: {
+                // Notify the server about file changes to files contained in the workspace
+                fileEvents: [
+                    vscode.workspace.createFileSystemWatcher('**/.hlsl'),
+                    vscode.workspace.createFileSystemWatcher('**/.glsl'),
+                    vscode.workspace.createFileSystemWatcher('**/.wgsl'),
+                ]
+            }
+        };
 
-        this.listen();
+        this.client = new LanguageClient(
+            'shader-language-server',
+            'Shader language Server',
+            serverOptions,
+            clientOptions
+        );
+        this.client.onNotification("validate_file", (notification: string) => {
+            console.log (notification);
+        });
+
+        context.subscriptions.push(
+            // Handle the "custom-stuff/add" request on the client.
+            this.client.onRequest('custom-stuff/add', (args: { a: number; b: number }) => {
+              return args.a + args.b;
+            }),
+          
+            // The handler can be async.
+            /*this.client.onRequest('custom-stuff/add-to-magic-number', async (args: number) => {
+              return args + (await getMagicNumber());
+            }),*/
+          );
+
+        // Start the client. This will also launch the server
+        await this.client.start();
     }
 
     onData(string: String)
@@ -103,26 +152,34 @@ export class ValidatorChildProcess implements Validator {
 
     listen()
     {
-        this.server?.stdout.on("data", (data: string) => {
+        /*this.server?.stdout.on("data", (data: string) => {
             this.onData(data);
         });
         this.server?.stderr.on("data", (data: string) => {
             this.onError(data);
-        });
+        });*/
     }
 
-    write(message : string)
+    async write(message : string)
     {
+        // Output: Focus on Output View
         console.log("Sending some data: ", message);
-        let res = this.server?.stdin.write(message);
+        const response = await this.client?.sendRequest('validate_file', message).then(edit => {
+            console.log("RES:", edit);
+            //return vscode.workspace.applyEdit(edit);
+        }, err => {
+           console.error('I am error');
+        });
+        console.log("RESPONSE", response);
+        /*let res = this.server?.stdin.write(message);
         if (!res)
         {
             console.error("Failed to create server");
             console.log(this.server);
-        }
+        }*/
     }
 
-    getFileTree(
+    async getFileTree(
         document: vscode.TextDocument,
         shadingLanguage: string,
         params: ValidationParams,
@@ -145,13 +202,13 @@ export class ValidatorChildProcess implements Validator {
                 id: this.currId,
             };
 
-            this.write(JSON.stringify(req) + "\n");
+            await this.write(JSON.stringify(req.params) + "\n");
 
             this.currId += 1;
         }
     }
 
-    validateFile(
+    async validateFile(
         document: vscode.TextDocument,
         shadingLanguage: string,
         params: ValidationParams,
@@ -189,8 +246,24 @@ export class ValidatorChildProcess implements Validator {
                 id: this.currId,
             };
 
-            let request = JSON.stringify(req);
-            this.write(`Content-Length: ${request.length}\r\n\r\n${request}\\r\\n`);
+            const response = await this.client?.sendRequest('validate_file', req.params).then(edit => {
+                console.log("RES:", edit);
+                let result : RPCResponse<RPCValidationResponse> = {
+                    id: 0,
+                    result: edit as RPCValidationResponse,
+                    jsonrpc: "jsonrpc2.0",
+                };
+                cb(result);
+            }, err => {
+                console.log("ERR:", err);
+                let result : RPCResponse<RPCValidationResponse> = {
+                    id: 0,
+                    result: err as RPCValidationResponse,
+                    jsonrpc: "jsonrpc2.0",
+                };
+                cb(result);
+            });
+            //await this.write(`Content-Length: ${request.length}\r\n\r\n${request}\\r\\n`);
             this.currId += 1;
         }
     }
