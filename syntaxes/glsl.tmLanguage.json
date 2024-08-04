@@ -1,6 +1,8 @@
 {
     "name": "GLSL",
     "scopeName": "source.glsl",
+    "fileTypes": [ "glsl" ],
+    "uuid": "34900319-4d23-40ed-8f7c-aabf564ec9d1",
     "patterns": [
         {
             "include": "#line_comments"

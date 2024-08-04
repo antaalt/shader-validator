@@ -1,6 +1,8 @@
 {
     "name": "WGSL",
     "scopeName": "source.wgsl",
+    "fileTypes": [ "wgsl" ],
+    "uuid": "746210e7-d00f-4583-b571-f4cbb6b4f73e",
     "patterns": [
         {
             "include": "#line_comments"
