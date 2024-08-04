@@ -45,6 +45,17 @@ export class ValidatorChildProcess implements Validator {
         this.server.stdin.setDefaultEncoding("utf8");
         this.server.stdout.setEncoding("utf8");
         this.server.stderr.setEncoding("utf8");
+        this.server.on("close", (code: number | null, signal: NodeJS.Signals | null) => {
+            console.log("server closing: ", code, signal);
+        });
+        this.server.on("disconnect", () => {
+            console.log("server disconnecting");
+        });
+        this.server.on("error", (err: Error) => {
+            console.log("server erroring: ", err);
+        });
+        let initializeRequest = JSON.stringify({});
+        this.write(`Content-Length: ${initializeRequest.length}\r\n\r\n${initializeRequest}\\r\\n`);
 
         this.listen();
     }
@@ -163,7 +174,8 @@ export class ValidatorChildProcess implements Validator {
                     flag: "w"
                 });
             }
-
+            // https://code.visualstudio.com/api/language-extensions/language-server-extension-guide
+            // https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/
             const req: RPCValidateFileRequest = {
                 jsonrpc: "2.0",
                 method: "validate_file",
@@ -177,8 +189,8 @@ export class ValidatorChildProcess implements Validator {
                 id: this.currId,
             };
 
-            this.write(JSON.stringify(req) + "\n");
-
+            let request = JSON.stringify(req);
+            this.write(`Content-Length: ${request.length}\r\n\r\n${request}\\r\\n`);
             this.currId += 1;
         }
     }
