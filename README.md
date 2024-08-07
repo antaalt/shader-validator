@@ -2,8 +2,8 @@
 
 
 [![gitHub issues](https://img.shields.io/github/issues/antaalt/shader-validator.svg)](https://github.com/antaalt/shader-validator/issues)
-![vsmarketplace](https://vsmarketplacebadges.dev/version/antaalt.shader-validator.svg)
-[![ppenVSX registry](https://img.shields.io/open-vsx/v/antaalt/shader-validator)](https://open-vsx.org/extension/redhat/vscode-yaml)
+[![vsmarketplace](https://img.shields.io/visual-studio-marketplace/v/antaalt.shader-validator?color=blue&label=vscode%20marketplace)](https://marketplace.visualstudio.com/items?itemName=antaalt.shader-validator)
+[![ppenVSX registry](https://img.shields.io/open-vsx/v/antaalt/shader-validator?color=purple)](https://open-vsx.org/extension/antaalt/shader-validator)
 
 This is a vscode extension allowing syntax highlighting & linting for various shader types. It is using [shader-language-server](https://github.com/antaalt/shader-language-server) to lint shaders using common validator API. Currently, it support:
 
