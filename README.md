@@ -1,5 +1,10 @@
 # Shader validator
 
+
+[![gitHub issues](https://img.shields.io/github/issues/antaalt/shader-validator.svg)](https://github.com/antaalt/shader-validator/issues)
+![vsmarketplace](https://vsmarketplacebadges.dev/version/antaalt.shader-validator.svg)
+[![ppenVSX registry](https://img.shields.io/open-vsx/v/antaalt/shader-validator)](https://open-vsx.org/extension/redhat/vscode-yaml)
+
 This is a vscode extension allowing syntax highlighting & linting for various shader types. It is using [shader-language-server](https://github.com/antaalt/shader-language-server) to lint shaders using common validator API. Currently, it support:
 
 - HLSL (through dxc on desktop, glslang on the web)
