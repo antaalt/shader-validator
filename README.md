@@ -27,13 +27,12 @@ For now, a really basic support for autocompletion is available that will be imp
 
 This extension contributes the following settings:
 
-* `hlsl.autocomplete`: Enable/disable autocomplete.
-* `hlsl.validateOnType`: Enable/disable validate on type.
-* `hlsl.validateOnTypeDelay`: Delay in milliseconds before triggering validate on type.
-* `hlsl.validateOnSave`: Enable/disable this extension.
-* `hlsl.severity`: Select log severity for linting.
-* `hlsl.includes`: All includes for linting.
-* `hlsl.defines`: All macros and their values for linting.
+* `shader-validator.autocomplete`: Enable/disable autocomplete.
+* `shader-validator.validateOnType`: Enable/disable validate on type.
+* `shader-validator.validateOnSave`: Enable/disable this extension.
+* `shader-validator.severity`: Select log severity for linting.
+* `shader-validator.includes`: All includes for linting.
+* `shader-validator.defines`: All macros and their values for linting.
 
 ## Web support
 

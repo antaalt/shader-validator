@@ -43,15 +43,22 @@ export class ValidatorChildProcess implements Validator {
     async launch(context: vscode.ExtensionContext)
     {
         const executable = getBinaryPath(context, 'shader_language_server.exe');
-        let debugOptions = { execArgv: [] };
         let serverOptions: ServerOptions = {
-            command: executable.fsPath, 
-            transport: TransportKind.stdio,
-            options: {
-                //detached: true,
-                //shell: true,
+            run: {
+                command: executable.fsPath, 
+                transport: TransportKind.stdio
+            },
+            debug:{
+                command: executable.fsPath, 
+                transport: TransportKind.stdio,
+                options: {
+                    env: {
+                        "RUST_LOG": "shader_language_server=trace",
+                    }
+                }
             }
         };
+        // Need to send config somehow
         let clientOptions: LanguageClientOptions = {
             // Register the server for plain text documents
             documentSelector: [
@@ -71,14 +78,45 @@ export class ValidatorChildProcess implements Validator {
         };
 
         this.client = new LanguageClient(
-            'shader-language-server',
+            'shader-validator',
             'Shader language Server',
             serverOptions,
-            clientOptions
+            clientOptions,
+            context.extensionMode === vscode.ExtensionMode.Development 
         );
 
         // Start the client. This will also launch the server
         await this.client.start();
+        // Send configuration to server.
+        this.sendConfig();
+        context.subscriptions.push(
+            vscode.workspace.onDidChangeConfiguration((event : vscode.ConfigurationChangeEvent) => {
+                if (event.affectsConfiguration("shader-validator"))
+                {
+                    this.sendConfig();
+                }
+            })
+        );
+    }
+
+    sendConfig() {
+        
+        const config = vscode.workspace.getConfiguration("shader-validator");
+        const validateOnSave = config.get<boolean>("validateOnSave", true);
+        const validateOnType = config.get<boolean>("validateOnType", true);
+        const includes = config.get<string[]>("includes", []);
+        const definesObject = config.get<Object>("defines", {});
+        let defines : {[key: string]: string} = {};
+        for (const [key, value] of Object.entries(definesObject)) {
+            defines[key] = value;
+        }
+        console.log("Sending configuration", includes, defines);
+        this.client?.sendNotification("workspace/didChangeConfiguration", {
+            "includes": includes,
+            "defines": defines,
+            "validateOnType": validateOnType,
+            "validateOnSave": validateOnSave,
+        });
     }
 
     async getFileTree(
