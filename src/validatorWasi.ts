@@ -67,7 +67,7 @@ export class ValidatorWasi implements Validator {
             // Memory options required by wasm32-wasip1-threads target
             const memory : WebAssembly.MemoryDescriptor = {
                 initial: 160, 
-                maximum: 160, 
+                maximum: 1024, // Big enough to handle glslang heavy RAM usage.
                 shared: true
             };
 
