@@ -15,7 +15,7 @@ import {
 import { MemoryFileSystem, MountPointDescriptor, ProcessOptions, Readable, Stdio, Wasm, WasmProcess, WasmPseudoterminal, Writable } from "@vscode/wasm-wasi";
 import path = require("path");
 import { getBaseName, getBinaryPath, ValidationParams, Validator } from "./validator";
-import { LanguageClient, LanguageClientOptions, ServerOptions } from "vscode-languageclient/node";
+import { DidChangeConfigurationNotification, LanguageClient, LanguageClientOptions, ServerOptions } from "vscode-languageclient/node";
 
 export class ValidatorWasi implements Validator {
     process: WasmProcess | null;
@@ -87,7 +87,11 @@ export class ValidatorWasi implements Validator {
 
         // Now we start client
         const clientOptions: LanguageClientOptions = {
-            documentSelector: [{ language: 'plaintext' }],
+            documentSelector: [
+                { scheme: 'file', language: 'hlsl' },
+                { scheme: 'file', language: 'glsl' },
+                { scheme: 'file', language: 'wgsl' },
+            ],
             outputChannel: channel,
             uriConverters: createUriConverters()
         };
@@ -100,6 +104,21 @@ export class ValidatorWasi implements Validator {
             clientOptions
         );
         await this.client.start();
+        // Send configuration to server.
+        // TODO: should this be registered by server instead ?
+        await this.client?.sendNotification(DidChangeConfigurationNotification.type, {
+            settings: "", // Required as server expect some empty params
+        });
+        context.subscriptions.push(
+            vscode.workspace.onDidChangeConfiguration(async (event : vscode.ConfigurationChangeEvent) => {
+                if (event.affectsConfiguration("shader-validator"))
+                {
+                    await this.client?.sendNotification(DidChangeConfigurationNotification.type, {
+                        settings: "",
+                    });
+                }
+            })
+        );
     }
 
     onData(string: String)

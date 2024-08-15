@@ -13,6 +13,7 @@ import {
 
 
 import {
+    DidChangeConfigurationNotification,
     LanguageClient,
     LanguageClientOptions,
     ProtocolNotificationType0,
@@ -58,23 +59,13 @@ export class ValidatorChildProcess implements Validator {
                 }
             }
         };
-        // Need to send config somehow
         let clientOptions: LanguageClientOptions = {
-            // Register the server for plain text documents
+            // Register the server for shader documents
             documentSelector: [
                 { scheme: 'file', language: 'hlsl' },
                 { scheme: 'file', language: 'glsl' },
                 { scheme: 'file', language: 'wgsl' },
-            ],
-            synchronize: {
-                // Notify the server about file changes to files contained in the workspace
-                fileEvents: [
-                    // TODO: handle variant extension
-                    vscode.workspace.createFileSystemWatcher('**/.hlsl'),
-                    vscode.workspace.createFileSystemWatcher('**/.glsl'),
-                    vscode.workspace.createFileSystemWatcher('**/.wgsl'),
-                ]
-            }
+            ]
         };
 
         this.client = new LanguageClient(
@@ -87,36 +78,21 @@ export class ValidatorChildProcess implements Validator {
 
         // Start the client. This will also launch the server
         await this.client.start();
+
         // Send configuration to server.
-        this.sendConfig();
+        await this.client?.sendNotification(DidChangeConfigurationNotification.type, {
+            settings: "", // Required as server expect some empty params
+        });
         context.subscriptions.push(
-            vscode.workspace.onDidChangeConfiguration((event : vscode.ConfigurationChangeEvent) => {
+            vscode.workspace.onDidChangeConfiguration(async (event : vscode.ConfigurationChangeEvent) => {
                 if (event.affectsConfiguration("shader-validator"))
                 {
-                    this.sendConfig();
+                    await this.client?.sendNotification(DidChangeConfigurationNotification.type, {
+                        settings: "",
+                    });
                 }
             })
         );
-    }
-
-    sendConfig() {
-        
-        const config = vscode.workspace.getConfiguration("shader-validator");
-        const validateOnSave = config.get<boolean>("validateOnSave", true);
-        const validateOnType = config.get<boolean>("validateOnType", true);
-        const includes = config.get<string[]>("includes", []);
-        const definesObject = config.get<Object>("defines", {});
-        let defines : {[key: string]: string} = {};
-        for (const [key, value] of Object.entries(definesObject)) {
-            defines[key] = value;
-        }
-        console.log("Sending configuration", includes, defines);
-        this.client?.sendNotification("workspace/didChangeConfiguration", {
-            "includes": includes,
-            "defines": defines,
-            "validateOnType": validateOnType,
-            "validateOnSave": validateOnSave,
-        });
     }
 
     async getFileTree(
