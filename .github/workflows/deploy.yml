@@ -26,12 +26,16 @@ jobs:
           name: extension
       - name: Publish to Open VSX Registry
         uses: HaaLeo/publish-vscode-extension@v1
+        # Dont publish pre-release
+        if: github.event_name == 'release' && github.event.action == 'released' 
         id: publishToOpenVSX
         with:
           pat: ${{ secrets.OPEN_VSX_PAT }}
           extensionFile: shader-validator.vsix
       - name: Publish to Visual Studio Marketplace
         uses: HaaLeo/publish-vscode-extension@v1
+        # Dont publish pre-release
+        if: github.event_name == 'release' && github.event.action == 'released' 
         with:
           pat: ${{ secrets.MARKETPLACE_PAT }}
           registryUrl: https://marketplace.visualstudio.com
