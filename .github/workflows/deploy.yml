@@ -2,7 +2,7 @@ name: Deploy and publish Extension
 
 on:
   release:
-    types: [published]
+    types: [released]
 
 # https://github.com/marketplace/actions/publish-vs-code-extension
 # https://code.visualstudio.com/api/working-with-extensions/continuous-integration
@@ -24,20 +24,14 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: extension
-      - run: echo "Deploying a prerelease"
-        if: ${{ github.event.release.prerelease }}
-      - run: echo "Deploying a release"
-        if: ${{ !github.event.release.prerelease }}
       #- name: Publish to Open VSX Registry
       #  uses: HaaLeo/publish-vscode-extension@v1
-      #  if: ${{ !github.event.release.prerelease }}
       #  id: publishToOpenVSX
       #  with:
       #    pat: ${{ secrets.OPEN_VSX_PAT }}
       #    extensionFile: shader-validator.vsix
       #- name: Publish to Visual Studio Marketplace
       #  uses: HaaLeo/publish-vscode-extension@v1
-      #  if: ${{ !github.event.release.prerelease }}
       #  with:
       #    pat: ${{ secrets.MARKETPLACE_PAT }}
       #    registryUrl: https://marketplace.visualstudio.com
