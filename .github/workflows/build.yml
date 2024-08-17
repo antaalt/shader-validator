@@ -44,6 +44,7 @@ jobs:
           preRelease: true
           fileName: 'shader_language_server.zip'
           extract: true
+          out-file-path: './bin'
           token: '${{ secrets.GH_PAT }}'
       - name: Download dxc dll.
         uses: robinraju/release-downloader@v1.11
