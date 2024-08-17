@@ -17,27 +17,31 @@ jobs:
     runs-on: ubuntu-latest
 
     # Handle secrets: https://docs.github.com/fr/actions/security-guides/using-secrets-in-github-actions
-    # Get tokens: githuhttps://code.visualstudio.com/api/working-with-extensions/publishing-extension#get-a-personal-access-token
+    # Get tokens: https://code.visualstudio.com/api/working-with-extensions/publishing-extension#get-a-personal-access-token
     steps:
       - uses: actions/checkout@v4
       - name: Download VSIX
         uses: actions/download-artifact@v4
         with:
           name: extension
-      - name: Publish to Open VSX Registry
-        uses: HaaLeo/publish-vscode-extension@v1
-        if: !github.event.release.prerelease
-        id: publishToOpenVSX
-        with:
-          pat: ${{ secrets.OPEN_VSX_PAT }}
-          extensionFile: shader-validator.vsix
-      - name: Publish to Visual Studio Marketplace
-        uses: HaaLeo/publish-vscode-extension@v1
-        if: !github.event.release.prerelease
-        with:
-          pat: ${{ secrets.MARKETPLACE_PAT }}
-          registryUrl: https://marketplace.visualstudio.com
-          extensionFile: shader-validator.vsix
+      - run: echo "Deploying a prerelease"
+        if: ${{ github.event.release.prerelease }}
+      - run: echo "Deploying a release"
+        if: ${{ !github.event.release.prerelease }}
+      #- name: Publish to Open VSX Registry
+      #  uses: HaaLeo/publish-vscode-extension@v1
+      #  if: ${{ !github.event.release.prerelease }}
+      #  id: publishToOpenVSX
+      #  with:
+      #    pat: ${{ secrets.OPEN_VSX_PAT }}
+      #    extensionFile: shader-validator.vsix
+      #- name: Publish to Visual Studio Marketplace
+      #  uses: HaaLeo/publish-vscode-extension@v1
+      #  if: ${{ !github.event.release.prerelease }}
+      #  with:
+      #    pat: ${{ secrets.MARKETPLACE_PAT }}
+      #    registryUrl: https://marketplace.visualstudio.com
+      #    extensionFile: shader-validator.vsix
       - name: Upload assets to release
         run: gh release upload ${{ github.ref_name }} "shader-validator.vsix"
         env:
