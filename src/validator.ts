@@ -1,22 +1,20 @@
 import * as vscode from "vscode";
 
 import {
-    RPCGetFileTreeResponse,
-    RPCResponse,
-    RPCValidationResponse,
-} from "./rpc";
+    createStdioOptions,
+    createUriConverters,
+    startServer
+} from '@vscode/wasm-wasi-lsp';
+import { MountPointDescriptor, ProcessOptions, Wasm } from "@vscode/wasm-wasi";
+import {
+    DidChangeConfigurationNotification,
+    LanguageClient,
+    LanguageClientOptions,
+    ServerOptions,
+    TransportKind
+} from 'vscode-languageclient/node';
 
-
-export interface ValidationParams {
-    includes: string[];
-    defines: {[key: string]: string};
-}
-
-export function getBaseName(fileName: string) {
-    return fileName.split('\\').pop()?.split('/').pop() || "";
-}
-
-export function getBinaryPath(context : vscode.ExtensionContext, executable : string)
+function getBinaryPath(context : vscode.ExtensionContext, executable : string)
 {
     // process might be undefined on the web.
     if (typeof process !== 'undefined' && context.extensionMode === vscode.ExtensionMode.Development) {
@@ -33,23 +31,136 @@ export function getBinaryPath(context : vscode.ExtensionContext, executable : st
         return vscode.Uri.joinPath(context.extensionUri, "bin/" + executable);
     }
 }
+async function requestConfiguration(context: vscode.ExtensionContext, client: LanguageClient) {
+    // Send empty configuration to notify of change in config. 
+    // Server should then request a configuration to client that vscode should understand and answer.
+    await client.sendNotification(DidChangeConfigurationNotification.type, {
+        settings: "", // Required as server expect some empty params
+    });
+    context.subscriptions.push(
+        vscode.workspace.onDidChangeConfiguration(async (event : vscode.ConfigurationChangeEvent) => {
+            if (event.affectsConfiguration("shader-validator"))
+            {
+                client.sendNotification(DidChangeConfigurationNotification.type, {
+                    settings: "",
+                });
+            }
+        })
+    );
+}
+export async function createLanguageClientStandard(context: vscode.ExtensionContext) {
+    const executable = getBinaryPath(context, 'shader_language_server.exe');
+    let serverOptions: ServerOptions = {
+        run: {
+            command: executable.fsPath, 
+            transport: TransportKind.stdio
+        },
+        debug:{
+            command: executable.fsPath, 
+            transport: TransportKind.stdio,
+            options: {
+                env: {
+                    "RUST_LOG": "shader_language_server=trace",
+                }
+            }
+        }
+    };
+    let clientOptions: LanguageClientOptions = {
+        // Register the server for shader documents
+        documentSelector: [
+            { scheme: 'file', language: 'hlsl' },
+            { scheme: 'file', language: 'glsl' },
+            { scheme: 'file', language: 'wgsl' },
+        ]
+    };
 
-export interface Validator {
+    let client = new LanguageClient(
+        'shader-validator',
+        'Shader language server',
+        serverOptions,
+        clientOptions,
+        context.extensionMode === vscode.ExtensionMode.Development 
+    );
 
-    dispose(): void;
+    // Start the client. This will also launch the server
+    await client.start();
 
-    launch(context: vscode.ExtensionContext): void;
-    getFileTree(
-        document: vscode.TextDocument,
-        shadingLanguage: string,
-        params: ValidationParams,
-        cb: (data: RPCResponse<RPCGetFileTreeResponse | null> | null) => void
-    ): void;
-    validateFile(
-        document: vscode.TextDocument,
-        shadingLanguage: string,
-        params: ValidationParams,
-        useTemporary: boolean, // For unsaved content
-        cb: (data: RPCResponse<RPCValidationResponse> | null) => void
-    ): void;
+    // Ensure configuration is sent
+    await requestConfiguration(context, client);
+
+    return client;
+}
+
+export async function createLanguageClientWASI(context: vscode.ExtensionContext) {
+    const channel = vscode.window.createOutputChannel('Shader language Server WASI');
+
+    const serverOptions: ServerOptions = async () => {
+        // Load the WASM API
+        const wasm: Wasm = await Wasm.load();
+        // Create virtual file systems to access workspaces from wasi app
+        const mountPoints: MountPointDescriptor[] = [
+            { kind: 'workspaceFolder'}, // Workspaces
+        ];
+        // Load the WASM module. It is stored alongside the extension's JS code.
+        // So we can use VS Code's file system API to load it. Makes it
+        // independent of whether the code runs in the desktop or the web.
+        // TODO: need to bundle the wasm within the extension
+        const executable = getBinaryPath(context, 'shader_language_server.wasm');
+        const bits = await vscode.workspace.fs.readFile(executable);
+        const module = await WebAssembly.compile(bits);
+
+        const options : ProcessOptions = {
+            stdio: createStdioOptions(),
+            env:{
+                "RUST_LOG": "shader_language_server=trace",
+            },
+            mountPoints: mountPoints
+        };
+        // Memory options required by wasm32-wasip1-threads target
+        const memory : WebAssembly.MemoryDescriptor = {
+            initial: 160, 
+            maximum: 1024, // Big enough to handle glslang heavy RAM usage.
+            shared: true
+        };
+
+        // Create a WASM process.
+        const process = await wasm.createProcess('shader-validator', module, memory, options);
+        
+        // Hook stderr to the output channel
+        const decoder = new TextDecoder('utf-8');
+        process.stderr!.onData(data => {
+            channel.appendLine("[shader_language_server]" + decoder.decode(data));
+        });
+        process.stdout!.onData(data => {
+            channel.appendLine("[shader_language_server]" + decoder.decode(data));
+        });
+        return startServer(process);
+    };
+
+    // Now we start client
+    const clientOptions: LanguageClientOptions = {
+        documentSelector: [
+            { scheme: 'file', language: 'hlsl' },
+            { scheme: 'file', language: 'glsl' },
+            { scheme: 'file', language: 'wgsl' },
+        ],
+        outputChannel: channel,
+        uriConverters: createUriConverters()
+    };
+
+
+    let client = new LanguageClient(
+        'shader-validator',
+        'Shader language server WASI',
+        serverOptions,
+        clientOptions
+    );
+    
+    // Start the client. This will also launch the server
+    await client.start();
+
+    // Ensure configuration is sent
+    await requestConfiguration(context, client);
+
+    return client;
 }

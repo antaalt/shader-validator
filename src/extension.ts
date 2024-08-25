@@ -3,21 +3,20 @@
 import * as vscode from 'vscode';
 import * as cp from "child_process";
 
-import { ValidatorWasi } from './validatorWasi';
-import { ValidatorChildProcess } from './validatorChildProcess';
-import { getBaseName, Validator } from './validator';
+import { createLanguageClientWASI, createLanguageClientStandard } from './validator';
+import { LanguageClient } from 'vscode-languageclient/node';
 
 function isRunningInBrowser(): boolean {
     return typeof cp.spawn !== 'function';
 }
 
-function createValidator(): Validator {
+async function createValidator(context: vscode.ExtensionContext): Promise<LanguageClient> {
     // Create validator
     // Web does not support child process, use wasi instead.
     if (isRunningInBrowser()) {
-        return new ValidatorWasi();
+        return createLanguageClientWASI(context);
     } else {
-        return new ValidatorChildProcess();
+        return createLanguageClientStandard(context);
     }
 }
 
@@ -54,10 +53,9 @@ export async function activate(context: vscode.ExtensionContext)
         }
     }
     // Create validator
-    const validator = createValidator();
+    const validator = await createValidator(context);
     // Subscribe for dispose
     context.subscriptions.push(vscode.Disposable.from(validator));
-    await validator.launch(context);
 }
 
 
