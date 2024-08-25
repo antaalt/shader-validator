@@ -53,13 +53,14 @@ export async function createLanguageClientStandard(context: vscode.ExtensionCont
     let serverOptions: ServerOptions = {
         run: {
             command: executable.fsPath, 
-            transport: TransportKind.stdio
+            transport: TransportKind.stdio,
         },
         debug:{
             command: executable.fsPath, 
             transport: TransportKind.stdio,
             options: {
                 env: {
+                    // eslint-disable-next-line @typescript-eslint/naming-convention
                     "RUST_LOG": "shader_language_server=trace",
                 }
             }
@@ -93,6 +94,7 @@ export async function createLanguageClientStandard(context: vscode.ExtensionCont
 
 export async function createLanguageClientWASI(context: vscode.ExtensionContext) {
     const channel = vscode.window.createOutputChannel('Shader language Server WASI');
+    context.subscriptions.push(channel);
 
     const serverOptions: ServerOptions = async () => {
         // Load the WASM API
@@ -111,8 +113,9 @@ export async function createLanguageClientWASI(context: vscode.ExtensionContext)
 
         const options : ProcessOptions = {
             stdio: createStdioOptions(),
-            env:{
-                "RUST_LOG": "shader_language_server=trace",
+            env: {
+                // eslint-disable-next-line @typescript-eslint/naming-convention
+                "RUST_LOG": "trace", // server name is not shader_language_server in WASI, looks like an issue...
             },
             mountPoints: mountPoints
         };
@@ -129,10 +132,10 @@ export async function createLanguageClientWASI(context: vscode.ExtensionContext)
         // Hook stderr to the output channel
         const decoder = new TextDecoder('utf-8');
         process.stderr!.onData(data => {
-            channel.appendLine("[shader_language_server]" + decoder.decode(data));
+            channel.appendLine("[shader_language_server::error]" + decoder.decode(data));
         });
         process.stdout!.onData(data => {
-            channel.appendLine("[shader_language_server]" + decoder.decode(data));
+            channel.appendLine("[shader_language_server::data]" + decoder.decode(data));
         });
         return startServer(process);
     };
@@ -153,7 +156,8 @@ export async function createLanguageClientWASI(context: vscode.ExtensionContext)
         'shader-validator',
         'Shader language server WASI',
         serverOptions,
-        clientOptions
+        clientOptions,
+        context.extensionMode === vscode.ExtensionMode.Development 
     );
     
     // Start the client. This will also launch the server
