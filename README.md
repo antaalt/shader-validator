@@ -23,9 +23,9 @@ This extension provide syntax highlighting for HLSL, GLSL & WGSL. It also provid
 ### Linting
 
 You cant lint your code in real time through this extension:
-- WGSL uses [Naga](https://github.com/gfx-rs/naga) as backend for linting
-- GLSL uses [glslang-rs](https://github.com/SnowflakePowered/glslang-rs) as backend. It provide complete linting for GLSL trough glslang API bindings from C.
-- HLSL uses [hassle-rs](https://github.com/Traverse-Research/hassle-rs) as backend. It provides bindings to directx shader compiler in rust.
+- WGSL relies on Naga.
+- GLSL relies on Glslang.
+- HLSL relies on DirectX shader compiler on desktop, Glslang on the web (see below).
 
 ### Autocompletion
 
