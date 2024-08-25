@@ -1,15 +1,18 @@
 # Shader validator
 
-
 [![gitHub issues](https://img.shields.io/github/issues/antaalt/shader-validator.svg)](https://github.com/antaalt/shader-validator/issues)
 [![vsmarketplace](https://img.shields.io/visual-studio-marketplace/v/antaalt.shader-validator?color=blue&label=vscode%20marketplace)](https://marketplace.visualstudio.com/items?itemName=antaalt.shader-validator)
 [![ppenVSX registry](https://img.shields.io/open-vsx/v/antaalt/shader-validator?color=purple)](https://open-vsx.org/extension/antaalt/shader-validator)
 
-This is a vscode extension allowing syntax highlighting & linting for various shader types. It is using [shader-language-server](https://github.com/antaalt/shader-language-server) to lint shaders using common validator API. Currently, it support:
+This is a vscode extension allowing syntax highlighting & linting for HLSL / GLSL / WGSL shaders. It is using [shader-language-server](https://github.com/antaalt/shader-language-server) to lint shaders using common validator API.
 
-- HLSL (through dxc on desktop, glslang on the web)
-- GLSL (through glslang)
-- WGSL (through naga)
+Currently, it support some features and languages:
+
+|Language|Syntax Highlighting|Diagnostics|Completion|Signature|Hover|Goto|
+|--------|-------------------|-----------|----------|---------|-----|----|
+|GLSL    |✅                 |✅        |✅        |✅      |✅   |✅ |
+|HLSL    |✅                 |✅        |❌        |❌      |❌   |❌ |
+|WGSL    |✅                 |✅        |❌        |❌      |❌   |❌ |
 
 ## Features
 
@@ -26,19 +29,30 @@ You cant lint your code in real time through this extension:
 
 ### Autocompletion
 
-For now, a really basic support for autocompletion is available that will be improved with time.
+The extension will suggest you symbols from your file as you type.
+
+### Sigature
+
+View available signatures for your function as you type it.
+
+### Hover
+
+View informations relative to an element by hovering it.
+
+### Goto
+
+Go to your declaration definition by clicking on it.
 
 ## Extension Settings
 
 This extension contributes the following settings:
 
-* `hlsl.autocomplete`: Enable/disable autocomplete.
-* `hlsl.validateOnType`: Enable/disable validate on type.
-* `hlsl.validateOnTypeDelay`: Delay in milliseconds before triggering validate on type.
-* `hlsl.validateOnSave`: Enable/disable this extension.
-* `hlsl.severity`: Select log severity for linting.
-* `hlsl.includes`: All includes for linting.
-* `hlsl.defines`: All macros and their values for linting.
+* `shader-validator.autocomplete`: Enable/disable completion suggestion.
+* `shader-validator.validateOnType`: Enable/disable validate on type.
+* `shader-validator.validateOnSave`: Enable/disable validate on save.
+* `shader-validator.severity`: Select minimal log severity for linting.
+* `shader-validator.includes`: All custom includes for linting.
+* `shader-validator.defines`: All custom macros and their values for linting.
 
 ## Web support
 

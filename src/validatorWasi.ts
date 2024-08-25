@@ -7,64 +7,50 @@ import {
     RPCValidateFileRequest,
     RPCValidationResponse,
 } from "./rpc";
-import { MemoryFileSystem, MountPointDescriptor, Readable, Stdio, Wasm, WasmProcess, WasmPseudoterminal, Writable } from "@vscode/wasm-wasi/v1";
+import {
+    createStdioOptions,
+    createUriConverters,
+    startServer
+} from '@vscode/wasm-wasi-lsp';
+import { MemoryFileSystem, MountPointDescriptor, ProcessOptions, Readable, Stdio, Wasm, WasmProcess, WasmPseudoterminal, Writable } from "@vscode/wasm-wasi";
 import path = require("path");
 import { getBaseName, getBinaryPath, ValidationParams, Validator } from "./validator";
+import { DidChangeConfigurationNotification, LanguageClient, LanguageClientOptions, ServerOptions } from "vscode-languageclient/node";
 
 export class ValidatorWasi implements Validator {
-    callbacks: { [key: number]: (data: RPCResponse<any> | null) => void };
-    currId: number = 1;
-    pty: WasmPseudoterminal | null;
-    outProcess: Readable | null;
-    inProcess: Writable | null;
     process: WasmProcess | null;
-    fs: MemoryFileSystem | null;
+    client: LanguageClient | null;
 
     constructor()
     { 
-        this.callbacks = {};
-        this.pty = null;
         this.process = null;
-        this.outProcess = null;
-        this.inProcess = null;
-        this.fs = null;
+        this.client = null;
     }
     dispose()
     {
-        this.process?.terminate();
+        
+        if (this.client)
+        {
+            this.client.stop().then(_ => {}, e => {
+                console.error(e);
+            });
+
+            this.process?.terminate().then(_ => {}, e => {
+                console.error(e);
+            });
+        }
     }
     async launch(context: vscode.ExtensionContext)
     {
-        // Load the WASM API
-        const wasm: Wasm = await Wasm.load();
+        const channel = vscode.window.createOutputChannel('shader-language-server-wasi');
 
-        const pty = wasm.createPseudoterminal();
-        this.outProcess = wasm.createReadable();
-        this.inProcess = wasm.createWritable();
-        const stdio : Stdio = {
-            in:  {kind: "pipeIn", pipe: this.inProcess},
-            out: {kind: "pipeOut", pipe: this.outProcess},
-            err: {kind: "terminal", terminal: pty}
-        };
-        
-        const terminal = vscode.window.createTerminal({
-            name: 'Shader language server',
-            pty,
-            isTransient: true
-        });
-        // Only for debug.
-        if (context.extensionMode === vscode.ExtensionMode.Development) {
-            terminal.show(true);
-        }
-
-        // Create a memory file system to create cached files.
-        this.fs = await wasm.createMemoryFileSystem();
-        // Create virtual file systems to access workspaces from wasi app
-        const mountPoints: MountPointDescriptor[] = [
-            { kind: 'workspaceFolder'}, // Workspaces
-            { kind: 'memoryFileSystem', fileSystem: this.fs, mountPoint: '/memory' }
-        ];
-        try {
+        const serverOptions: ServerOptions = async () => {
+            // Load the WASM API
+            const wasm: Wasm = await Wasm.load();
+            // Create virtual file systems to access workspaces from wasi app
+            const mountPoints: MountPointDescriptor[] = [
+                { kind: 'workspaceFolder'}, // Workspaces
+            ];
             // Load the WASM module. It is stored alongside the extension's JS code.
             // So we can use VS Code's file system API to load it. Makes it
             // independent of whether the code runs in the desktop or the web.
@@ -73,68 +59,70 @@ export class ValidatorWasi implements Validator {
             const bits = await vscode.workspace.fs.readFile(executable);
             const module = await WebAssembly.compile(bits);
 
-            // Create a WASM process.
-            this.process = await wasm.createProcess('shader-language-server', module, 
-            {
-                stdio: stdio,
-                args:[],
+            const options : ProcessOptions = {
+                stdio: createStdioOptions(),
                 env:{},
-                mountPoints: mountPoints,
+                mountPoints: mountPoints
+            };
+            // Memory options required by wasm32-wasip1-threads target
+            const memory : WebAssembly.MemoryDescriptor = {
+                initial: 160, 
+                maximum: 1024, // Big enough to handle glslang heavy RAM usage.
+                shared: true
+            };
+
+            // Create a WASM process.
+            this.process = await wasm.createProcess('shader-language-server', module, memory, options);
+            
+            // Hook stderr to the output channel
+            const decoder = new TextDecoder('utf-8');
+            this.process.stderr!.onData(data => {
+                channel.append(decoder.decode(data));
             });
-            // Run the process and wait for its result.
-            // As we are running a server, run it async to not block vs code.
-            this.process.run().then((result: any) => {
-                if (result !== 0) {
-                    vscode.window.showErrorMessage(`Process shader-language-server ended with error: ${result}`);
-                } else {
-                    vscode.window.showErrorMessage(`Process shader-language-server ended without error: ${result}`);
+            this.process.stdout!.onData(data => {
+                channel.append(decoder.decode(data));
+            });
+            return startServer(this.process);
+        };
+
+        // Now we start client
+        const clientOptions: LanguageClientOptions = {
+            documentSelector: [
+                { scheme: 'file', language: 'hlsl' },
+                { scheme: 'file', language: 'glsl' },
+                { scheme: 'file', language: 'wgsl' },
+            ],
+            outputChannel: channel,
+            uriConverters: createUriConverters()
+        };
+
+
+        this.client = new LanguageClient(
+            'shader-language-server',
+            'Shader language server WASI',
+            serverOptions,
+            clientOptions
+        );
+        await this.client.start();
+        // Send configuration to server.
+        // TODO: should this be registered by server instead ?
+        await this.client?.sendNotification(DidChangeConfigurationNotification.type, {
+            settings: "", // Required as server expect some empty params
+        });
+        context.subscriptions.push(
+            vscode.workspace.onDidChangeConfiguration(async (event : vscode.ConfigurationChangeEvent) => {
+                if (event.affectsConfiguration("shader-validator"))
+                {
+                    await this.client?.sendNotification(DidChangeConfigurationNotification.type, {
+                        settings: "",
+                    });
                 }
-            }, (error) => {
-                vscode.window.showErrorMessage(`Failed to run shader-language-server with error: ${error}`);
-            });
-        } catch (error : any) {
-            // Show an error message if something goes wrong.
-            await vscode.window.showErrorMessage(error.message);
-            return; // Do not launch server.
-        }
-        this.pty = pty;
-        this.listen();
+            })
+        );
     }
 
     onData(string: String)
     {
-        const messages = string.split("\n").filter((msg) => msg.length !== 0);
-        
-        messages.forEach((message) => 
-        {
-            try
-            {
-                let json: RPCResponse<any> = JSON.parse(message);
-                if (json && json.jsonrpc === "2.0" && typeof json.id === "number")
-                {
-                    let cb = this.callbacks[json.id];
-                    if (cb) 
-                    {
-                        if ((json as any).error)
-                        {
-                            vscode.window.showErrorMessage(
-                                `${JSON.stringify(json, null, "\t")}`
-                            );
-                            cb(null);
-                        }
-                        else 
-                        {
-                            cb(json);
-                        }
-                        delete this.callbacks[json.id];
-                    }
-                }
-            }
-            catch(e)
-            {
-                console.error(e, string, message);
-            }
-        });
     }
     onError(string: String)
     {
@@ -142,18 +130,10 @@ export class ValidatorWasi implements Validator {
 
     listen()
     {
-        this.outProcess?.onData((data : Uint8Array)=> {
-            const string = new TextDecoder().decode(data);
-            console.log("Received some data: ", string);
-            this.onData(string);
-        });
-        // stderr is directly redirected to pty.
     }
 
     write(message : string)
     {
-        console.log("Sending some data: ", message);
-        this.inProcess?.write(message);
     }
 
     getFileTree(
@@ -162,27 +142,6 @@ export class ValidatorWasi implements Validator {
         params:ValidationParams,
         cb: (data: RPCResponse<RPCGetFileTreeResponse | null> | null) => void
     ) {
-        if (document.uri.scheme === "file")
-        {
-            this.callbacks[this.currId] = cb;
-
-            const req: RPCGetFileTreeRequest = {
-                jsonrpc: "2.0",
-                method: "get_file_tree",
-                params: {
-                    path: document.uri.fsPath,
-                    cwd: path.dirname(document.uri.fsPath),
-                    shadingLanguage: shadingLanguage,
-                    includes: params.includes,
-                    defines: params.defines,
-                },
-                id: this.currId,
-            };
-
-            this.write(JSON.stringify(req) + "\n");
-
-            this.currId += 1;
-        }
     }
 
     validateFile(
@@ -192,43 +151,5 @@ export class ValidatorWasi implements Validator {
         useTemporary: boolean,
         cb: (data: RPCResponse<RPCValidationResponse> | null) => void
     ) {
-        const workspace = vscode.workspace.getWorkspaceFolder(document.uri);
-        if ((document.uri.scheme === "file" || document.uri.scheme === "vscode-test-web") && workspace !== undefined)
-        {
-            this.callbacks[this.currId] = cb;
-            // Somehow wasi fs does not support \\ & vscode path API keep using them everywhere...
-            // Root path is inconsistent aswell. On desktop, wasi-core uses /workspace-name, on web, it uses /workspaces/workspace-name...
-            const relativePath = path.join(
-                '/workspaces/',
-                workspace.name, 
-                path.relative(workspace?.uri.fsPath.replace(/\\/g, "/"), document.uri.fsPath.replace(/\\/g, "/"))
-            ).replace(/\\/g, "/");
-            
-            const tmpRelativePath = path.join(
-                '/memory/',
-                getBaseName(document.fileName)
-            ).replace(/\\/g, "/");
-            if (useTemporary)
-            {
-                this.fs?.createFile(getBaseName(document.fileName), new TextEncoder().encode(document.getText()));
-            }
-            
-            const req: RPCValidateFileRequest = {
-                jsonrpc: "2.0",
-                method: "validate_file",
-                params: {
-                    path: useTemporary ? tmpRelativePath : relativePath,
-                    cwd: path.dirname(relativePath),
-                    shadingLanguage: shadingLanguage,
-                    includes: params.includes,
-                    defines: params.defines,
-                },
-                id: this.currId,
-            };
-
-            this.write(JSON.stringify(req) + "\n");
-
-            this.currId += 1;
-        }
     }
 }

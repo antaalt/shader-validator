@@ -44,6 +44,7 @@ jobs:
           preRelease: true
           fileName: 'shader_language_server.zip'
           extract: true
+          out-file-path: './bin'
           token: '${{ secrets.GH_PAT }}'
       - name: Download dxc dll.
         uses: robinraju/release-downloader@v1.11
@@ -59,13 +60,13 @@ jobs:
       - name: Copy dxc dll to bin.
         run: cp ./dxc/bin/x64/dxcompiler.dll ./bin/dxcompiler.dll && cp ./dxc/bin/x64/dxil.dll ./bin/dxil.dll
       - run: rm -rf ./dxc
-      - run: rm shader_language_server.zip
+      - run: rm ./bin/shader_language_server.zip
       # VScode need a framebuffer to run test. So create one.
       - run: sudo apt-get install xvfb
       - name: Test extension
         run: xvfb-run --auto-servernum npm test
       - name: Package extension
-        run: vsce package
+        run: vsce package # Should add --pre-release for publishing pre-release
       - name: Get version
         run: echo "PACKAGE_VERSION=$(npm pkg get version | sed 's/"//g')" >> $GITHUB_ENV
       - name: Check version

@@ -1,0 +1,26 @@
+name: Deploy Pre-Release Extension
+
+on:
+  release:
+    types: [prereleased]
+
+jobs:
+  build:
+    uses: ./.github/workflows/build.yml
+    secrets: inherit # for GH_PAT
+
+  predeploy:
+    permissions: write-all
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download VSIX
+        uses: actions/download-artifact@v4
+        with:
+          name: extension
+      - name: Upload assets to release
+        run: gh release upload ${{ github.ref_name }} "shader-validator.vsix"
+        env:
+          GH_TOKEN: ${{ github.token }}

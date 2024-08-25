@@ -7,7 +7,7 @@
     "color": "#9ad0ff",
     "theme": "light"
   },
-  "version": "0.0.5",
+  "version": "0.1.0",
   "publisher": "antaalt",
   "repository": {
     "type": "git",
@@ -96,27 +96,22 @@
     "configuration": {
       "title": "Shader Validator",
       "properties": {
-        "shader.autocomplete": {
+        "shader-validator.autocomplete": {
           "description": "Autocomplete shader code as you type",
           "type": "boolean",
           "default": true
         },
-        "shader.validateOnType": {
+        "shader-validator.validateOnType": {
           "description": "Validate shader as you type.",
           "type": "boolean",
           "default": true
         },
-        "shader.validateOnTypeDelay": {
-          "description": "Number of milliseconds before validation is triggered.",
-          "type": "number",
-          "default": 500
-        },
-        "shader.validateOnSave": {
+        "shader-validator.validateOnSave": {
           "description": "Validate shader when you save a file.",
           "type": "boolean",
           "default": true
         },
-        "shader.severity": {
+        "shader-validator.severity": {
           "type": "string",
           "description": "Minimum linting severity. Set it lower to display some hints aswell. Might not be supported by all languages.",
           "default": "info",
@@ -128,7 +123,7 @@
             "hint"
           ]
         },
-        "shader.includes": {
+        "shader-validator.includes": {
           "description": "Include paths to look up for includes.",
           "type": "array",
           "items": {
@@ -136,12 +131,28 @@
           },
           "default": []
         },
-        "shader.defines": {
+        "shader-validator.defines": {
           "description": "Preprocessor variables and values.",
           "type": "object",
           "additionalProperties": {
             "type": "string"
           }
+        },
+        "shader-validator.trace.server": {
+          "type": "string",
+          "scope": "window",
+          "enum": [
+            "off",
+            "messages",
+            "verbose"
+          ],
+          "enumDescriptions": [
+            "No traces",
+            "Error only",
+            "Full log"
+          ],
+          "default": "verbose",
+          "description": "Trace requests to the shader-language-server (this is usually overly verbose and not recommended for regular users)."
         }
       }
     }
@@ -176,8 +187,10 @@
     "webpack-cli": "^5.1.4"
   },
   "dependencies": {
-    "@vscode/wasm-wasi": "1.0.0-pre.2",
+    "@vscode/wasm-wasi": "^0.13.0-pre.1",
+    "@vscode/wasm-wasi-lsp": "^0.1.0-pre.6",
     "os-browserify": "^0.3.0",
-    "path-browserify": "^1.0.1"
+    "path-browserify": "^1.0.1",
+    "vscode-languageclient": "^10.0.0-next.3"
   }
 }

@@ -2,7 +2,7 @@ name: Deploy and publish Extension
 
 on:
   release:
-    types: [created] # TODO: on publish instead
+    types: [released]
 
 # https://github.com/marketplace/actions/publish-vs-code-extension
 # https://code.visualstudio.com/api/working-with-extensions/continuous-integration
@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
 
     # Handle secrets: https://docs.github.com/fr/actions/security-guides/using-secrets-in-github-actions
-    # Get tokens: githuhttps://code.visualstudio.com/api/working-with-extensions/publishing-extension#get-a-personal-access-token
+    # Get tokens: https://code.visualstudio.com/api/working-with-extensions/publishing-extension#get-a-personal-access-token
     steps:
       - uses: actions/checkout@v4
       - name: Download VSIX
@@ -26,12 +26,16 @@ jobs:
           name: extension
       - name: Publish to Open VSX Registry
         uses: HaaLeo/publish-vscode-extension@v1
+        # Dont publish pre-release
+        if: github.event_name == 'release' && github.event.action == 'released' 
         id: publishToOpenVSX
         with:
           pat: ${{ secrets.OPEN_VSX_PAT }}
           extensionFile: shader-validator.vsix
       - name: Publish to Visual Studio Marketplace
         uses: HaaLeo/publish-vscode-extension@v1
+        # Dont publish pre-release
+        if: github.event_name == 'release' && github.event.action == 'released' 
         with:
           pat: ${{ secrets.MARKETPLACE_PAT }}
           registryUrl: https://marketplace.visualstudio.com
