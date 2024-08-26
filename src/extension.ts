@@ -10,7 +10,7 @@ function isRunningInBrowser(): boolean {
     return typeof cp.spawn !== 'function';
 }
 
-async function createValidator(context: vscode.ExtensionContext): Promise<LanguageClient> {
+async function createLanguageClient(context: vscode.ExtensionContext): Promise<LanguageClient> {
     // Create validator
     // Web does not support child process, use wasi instead.
     if (isRunningInBrowser()) {
@@ -53,7 +53,7 @@ export async function activate(context: vscode.ExtensionContext)
         }
     }
     // Create validator
-    const validator = await createValidator(context);
+    const client = await createLanguageClient(context);
     // Subscribe for dispose
     context.subscriptions.push(vscode.Disposable.from(validator));
 }

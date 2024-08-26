@@ -41,7 +41,7 @@ async function requestConfiguration(context: vscode.ExtensionContext, client: La
         vscode.workspace.onDidChangeConfiguration(async (event : vscode.ConfigurationChangeEvent) => {
             if (event.affectsConfiguration("shader-validator"))
             {
-                client.sendNotification(DidChangeConfigurationNotification.type, {
+                await client.sendNotification(DidChangeConfigurationNotification.type, {
                     settings: "",
                 });
             }
@@ -91,14 +91,14 @@ export async function createLanguageClientStandard(context: vscode.ExtensionCont
 
     return client;
 }
-
 export async function createLanguageClientWASI(context: vscode.ExtensionContext) {
     const channel = vscode.window.createOutputChannel('Shader language Server WASI');
     context.subscriptions.push(channel);
+    
+    // Load the WASM API
+    const wasm: Wasm = await Wasm.load();
 
     const serverOptions: ServerOptions = async () => {
-        // Load the WASM API
-        const wasm: Wasm = await Wasm.load();
         // Create virtual file systems to access workspaces from wasi app
         const mountPoints: MountPointDescriptor[] = [
             { kind: 'workspaceFolder'}, // Workspaces
@@ -115,9 +115,11 @@ export async function createLanguageClientWASI(context: vscode.ExtensionContext)
             stdio: createStdioOptions(),
             env: {
                 // eslint-disable-next-line @typescript-eslint/naming-convention
-                "RUST_LOG": "trace", // server name is not shader_language_server in WASI, looks like an issue...
+                // Setting RUST_LOG seems to stall the process......
+                //"RUST_LOG": "shader_language_server=trace",
             },
-            mountPoints: mountPoints
+            mountPoints: mountPoints,
+            trace: true,
         };
         // Memory options required by wasm32-wasip1-threads target
         const memory : WebAssembly.MemoryDescriptor = {
@@ -127,17 +129,21 @@ export async function createLanguageClientWASI(context: vscode.ExtensionContext)
         };
 
         // Create a WASM process.
-        const process = await wasm.createProcess('shader-validator', module, memory, options);
+        const wasmProcess = await wasm.createProcess('shader-validator', module, memory, options);
         
         // Hook stderr to the output channel
         const decoder = new TextDecoder('utf-8');
-        process.stderr!.onData(data => {
-            channel.appendLine("[shader_language_server::error]" + decoder.decode(data));
+        wasmProcess.stderr!.onData(data => {
+            const text = decoder.decode(data);
+            console.log("Received error:", text);
+            channel.appendLine("[shader_language_server::error]" + text);
         });
-        process.stdout!.onData(data => {
-            channel.appendLine("[shader_language_server::data]" + decoder.decode(data));
+        wasmProcess.stdout!.onData(data => {
+            const text = decoder.decode(data);
+            console.log("Received data:", text);
+            channel.appendLine("[shader_language_server::data]" + text);
         });
-        return startServer(process);
+        return startServer(wasmProcess);
     };
 
     // Now we start client
@@ -148,7 +154,8 @@ export async function createLanguageClientWASI(context: vscode.ExtensionContext)
             { scheme: 'file', language: 'wgsl' },
         ],
         outputChannel: channel,
-        uriConverters: createUriConverters()
+        uriConverters: createUriConverters(),
+		traceOutputChannel: channel,
     };
 
 
@@ -161,7 +168,11 @@ export async function createLanguageClientWASI(context: vscode.ExtensionContext)
     );
     
     // Start the client. This will also launch the server
-    await client.start();
+    try {
+		await client.start();
+	} catch (error) {
+		client.error(`Start failed`, error, 'force');
+	}
 
     // Ensure configuration is sent
     await requestConfiguration(context, client);
