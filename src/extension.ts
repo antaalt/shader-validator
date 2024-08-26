@@ -55,7 +55,7 @@ export async function activate(context: vscode.ExtensionContext)
     // Create validator
     const client = await createLanguageClient(context);
     // Subscribe for dispose
-    context.subscriptions.push(vscode.Disposable.from(validator));
+    context.subscriptions.push(vscode.Disposable.from(client));
 }
 
 
