@@ -31,14 +31,18 @@ jobs:
           content="${content//$'\n'/'%0A'}"
           content="${content//$'\r'/'%0D'}"
           # end of optional handling for multi line json
-          echo "SERVER_VERSION=${fromJson(content).server_version}" >> $GITHUB_ENV
+          echo "PACKAGE_JSON=$content" >> $GITHUB_ENV
       - name: Display requested server version
-        run: echo $SERVER_VERSION
+        run: echo '${{ fromJson(env.PACKAGE_JSON).server_version }}'
+        env:
+          PACKAGE_JSON: echo $PACKAGE_JSON
       - name: Download shader language server.
         uses: robinraju/release-downloader@v1.11
+        env:
+          PACKAGE_JSON: echo $PACKAGE_JSON
         with:
           repository: 'antaalt/shader-language-server'
-          tag: 'v$SERVER_VERSION'
+          tag: ${{ format('v{0}', fromJson(env.PACKAGE_JSON).server_version) }}
           fileName: 'shader_language_server.zip'
           extract: true
           out-file-path: './bin'
