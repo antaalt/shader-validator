@@ -31,7 +31,7 @@ jobs:
           content="${content//$'\n'/'%0A'}"
           content="${content//$'\r'/'%0D'}"
           # end of optional handling for multi line json
-          echo "SERVER_VERSION=$(fromJson(steps.get_package_json.outputs.packageJson).server_version)" >> $GITHUB_ENV
+          echo "SERVER_VERSION=${fromJson(steps.get_package_json.outputs.packageJson).server_version}" >> $GITHUB_ENV
       - name: Display requested server version
         run: echo $SERVER_VERSION
       - name: Download shader language server.
