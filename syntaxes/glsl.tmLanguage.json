@@ -2,6 +2,7 @@
     "name": "GLSL",
     "scopeName": "source.glsl",
     "fileTypes": [ "glsl" ],
+    "author": ["antaalt"],
     "uuid": "34900319-4d23-40ed-8f7c-aabf564ec9d1",
     "patterns": [
         {

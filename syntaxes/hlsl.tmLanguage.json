@@ -2,6 +2,7 @@
     "name": "HLSL",
     "scopeName": "source.hlsl",
     "fileTypes": [ "hlsl" ],
+    "author": ["antaalt"],
     "uuid": "75ae6133-98c4-45a5-ac1b-0c31e8af330c",
     "patterns": [
         {
@@ -482,12 +483,12 @@
                 {
                     "comment": "constant keyword",
                     "name": "keyword.declaration.hlsl",
-                    "match": "\\b(unsigned|signed|cbuffer|tbuffer|namespace)\\b"
+                    "match": "\\b(unsigned|signed|namespace)\\b"
                 },
                 {
                     "comment": "struct keyword",
                     "name": "keyword.declaration.struct.hlsl",
-                    "match": "\\b(struct|class|interface)\\s+(\\[[a-z]+\\]\\s+)?([a-zA-Z][a-zA-Z0-9_]*)?(\\s+:\\s+[a-zA-Z][a-zA-Z0-9_]*)?",
+                    "match": "\\b(struct|class|interface|cbuffer|tbuffer)\\s+(\\[[a-z]+\\]\\s+)?([a-zA-Z][a-zA-Z0-9_]*)?(\\s+:\\s+[a-zA-Z][a-zA-Z0-9_]*)?",
                     "captures": {
                         "1": {
                             "name": "keyword.declaration.struct.hlsl"
