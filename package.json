@@ -8,6 +8,7 @@
     "theme": "light"
   },
   "version": "0.1.2",
+  "server_version": "0.1.2",
   "publisher": "antaalt",
   "repository": {
     "type": "git",
@@ -162,10 +163,9 @@
     "compile": "webpack --mode development",
     "watch": "webpack --mode development --watch",
     "package": "webpack --mode production --devtool hidden-source-map",
-    "compile-tests": "webpack --mode development && tsc -p . --outDir out",
     "open-in-browser": "vscode-test-web --extensionDevelopmentPath=. .",
-    "pretest": "npm run compile-tests",
-    "test": "vscode-test",
+    "pretest": "webpack --mode development && tsc -p . --outDir out",
+    "test": "node ./out/test/runTest.js",
     "lint": "eslint src --ext ts"
   },
   "devDependencies": {

@@ -2,7 +2,7 @@ name: Deploy and publish Extension
 
 on:
   release:
-    types: [released]
+    types: [released, prereleased]
 
 # https://github.com/marketplace/actions/publish-vs-code-extension
 # https://code.visualstudio.com/api/working-with-extensions/continuous-integration

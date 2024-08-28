@@ -21,27 +21,23 @@ jobs:
       - name: Install VSCE
         run: npm i -g vsce
       - run: mkdir ./bin
-      # Should download artifact instead of release if available.
-      #- uses: actions/download-artifact@v4
-      #  with:
-      #    name: desktop
-      #    path: ./bin
-          # The GitHub token used to authenticate with the GitHub API.
-          # This is required when downloading artifacts from a different repository or from a different workflow run.
-          # Optional. If unspecified, the action will download artifacts from the current repo and the current workflow run.
-      #    github-token: ${{ secrets.GH_PAT }} # token with actions:read permissions on target repo
-      #    repository: antaalt/shader_language_server
-
-          # The id of the workflow run where the desired download artifact was uploaded from.
-          # If github-token is specified, this is the run that artifacts will be downloaded from.
-          # Optional. Default is ${{ github.run_id }}
-      #    run-id: # we cant have latest...
+      - name: Read package JSON
+        id: get_package_json
+        run: |
+          content=`cat ./package.json`
+          # the following lines are only required for multi line json
+          content="${content//'%'/'%25'}"
+          content="${content//$'\n'/'%0A'}"
+          content="${content//$'\r'/'%0D'}"
+          # end of optional handling for multi line json
+          echo "::set-output name=packageJson::$content"
+      - name: Display requested server version
+        run: echo '${{ fromJson(steps.get_package_json.outputs.packageJson).server_version }}'
       - name: Download shader language server.
         uses: robinraju/release-downloader@v1.11
         with:
           repository: 'antaalt/shader-language-server'
-          latest: true
-          preRelease: true
+          tag: ${{ format('v{0}', fromJson(steps.get_package_json.outputs.packageJson).server_version) }}
           fileName: 'shader_language_server.zip'
           extract: true
           out-file-path: './bin'
@@ -55,14 +51,17 @@ jobs:
           extract: true
           out-file-path: './dxc'
       - run: ls .
-      - run: ls ./bin
-      - run: ls ./dxc
       - name: Copy dxc dll to bin.
         run: cp ./dxc/bin/x64/dxcompiler.dll ./bin/dxcompiler.dll && cp ./dxc/bin/x64/dxil.dll ./bin/dxil.dll
-      - run: rm -rf ./dxc
-      - run: rm ./bin/shader_language_server.zip
+      - name: Remove dxc dependencies
+        run: rm -rf ./dxc
+      - name: Remove shader language server dependencies
+        run: rm ./bin/shader_language_server.zip
+      #- name: Get server version # Need linux build for that to execute server, or switch to windows.
+      #  run: echo "SERVER_VERSION=$(./bin/shader_language_server.exe --version | sed 's/shader_language_server v//g')" >> $GITHUB_ENV
       # VScode need a framebuffer to run test. So create one.
-      - run: sudo apt-get install xvfb
+      - name: Create framebuffer to run test
+        run: sudo apt-get install xvfb
       - name: Test extension
         run: xvfb-run --auto-servernum npm test
       - name: Package extension
