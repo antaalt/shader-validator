@@ -31,7 +31,9 @@ jobs:
           content="${content//$'\n'/'%0A'}"
           content="${content//$'\r'/'%0D'}"
           # end of optional handling for multi line json
-          echo "packageJson=${content}" >> $GITHUB_OUTPUT
+          echo "::set-output name=packageJson::$content" # This is deprecated, should change
+          # This below should work and is not deprecated but it does not...
+          #echo "packageJson=${content}" >> $GITHUB_OUTPUT
       - name: Display requested server version
         run: echo '${{ fromJson(steps.get_package_json.outputs.packageJson).server_version }}'
         env:
