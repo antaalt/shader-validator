@@ -31,9 +31,9 @@ jobs:
           content="${content//$'\n'/'%0A'}"
           content="${content//$'\r'/'%0D'}"
           # end of optional handling for multi line json
-          echo "PACKAGE_JSON=$content" >> $GITHUB_ENV
+          echo "packageJson=${content}" >> $GITHUB_OUTPUT
       - name: Display requested server version
-        run: echo '${{ fromJson(env.PACKAGE_JSON).server_version }}'
+        run: echo '${{ fromJson(steps.get_package_json.outputs.packageJson).server_version }}'
         env:
           PACKAGE_JSON: echo $PACKAGE_JSON
       - name: Download shader language server.
@@ -42,7 +42,7 @@ jobs:
           PACKAGE_JSON: echo $PACKAGE_JSON
         with:
           repository: 'antaalt/shader-language-server'
-          tag: ${{ format('v{0}', fromJson(env.PACKAGE_JSON).server_version) }}
+          tag: ${{ format('v{0}', fromJson(steps.get_package_json.outputs.packageJson).server_version) }}
           fileName: 'shader_language_server.zip'
           extract: true
           out-file-path: './bin'
