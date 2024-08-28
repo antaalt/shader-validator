@@ -5,18 +5,19 @@ import * as assert from 'assert';
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
+import { getRootFolder } from './utils';
 
 function doesBinaryExist(binary : string) : boolean {
-	// Depending on platform, we have different cwd...
-	// https://github.com/microsoft/vscode-test/issues/17
-	let binFolder = process.platform === 'win32' ? "../../bin/" : "./bin/";
-	let executablePath = path.join(binFolder, binary);
-	console.log(`Checking presence of ${executablePath} from ${process.cwd()}`);
+	let executablePath = path.join(getRootFolder(), "bin", binary);
+	//console.log(`Checking presence of ${executablePath} from ${process.cwd()}`);
 	return fs.existsSync(executablePath);
 }
 
-suite('Extension Test Suite', () => {
-	vscode.window.showInformationMessage('Start all tests.');
+suite('Binary Test Suite', () => {
+	vscode.window.showInformationMessage('Start all binary tests.');
+	suiteTeardown(() => {
+		vscode.window.showInformationMessage('All binary tests done!');
+	});
 
 	test('Check wasm binary', () => {
 		assert.ok(doesBinaryExist("shader_language_server.wasm"));

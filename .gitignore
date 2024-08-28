@@ -6,7 +6,6 @@ node_modules
 .vscode-test-web/
 *.vsix
 examples/
-test/
 
 ### Binary ###
 # Do not upload binary on Git, uses SHADER_LANGUAGE_SERVER_EXECUTABLE env variable to 
