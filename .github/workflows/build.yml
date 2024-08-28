@@ -20,7 +20,8 @@ jobs:
         run: npm ci
       - name: Install VSCE
         run: npm i -g vsce
-      - run: mkdir ./bin
+      - name: Create bin folder
+        run: mkdir ./bin
       - name: Read package JSON
         id: get_package_json
         run: |
@@ -30,14 +31,14 @@ jobs:
           content="${content//$'\n'/'%0A'}"
           content="${content//$'\r'/'%0D'}"
           # end of optional handling for multi line json
-          echo "packageJson=$content" >> $GITHUB_OUTPUT
+          echo "SERVER_VERSION={fromJson(steps.get_package_json.outputs.packageJson).server_version}" >> $GITHUB_ENV
       - name: Display requested server version
-        run: echo '${{ fromJson(steps.get_package_json.outputs.packageJson).server_version }}'
+        run: echo $SERVER_VERSION
       - name: Download shader language server.
         uses: robinraju/release-downloader@v1.11
         with:
           repository: 'antaalt/shader-language-server'
-          tag: ${{ format('v{0}', fromJson(steps.get_package_json.outputs.packageJson).server_version) }}
+          tag: 'v$SERVER_VERSION'
           fileName: 'shader_language_server.zip'
           extract: true
           out-file-path: './bin'
@@ -50,7 +51,8 @@ jobs:
           fileName: 'dxc_2024_05_24.zip'
           extract: true
           out-file-path: './dxc'
-      - run: ls .
+      - name: List file in folder.
+        run: ls .
       - name: Copy dxc dll to bin.
         run: cp ./dxc/bin/x64/dxcompiler.dll ./bin/dxcompiler.dll && cp ./dxc/bin/x64/dxil.dll ./bin/dxil.dll
       - name: Remove dxc dependencies
