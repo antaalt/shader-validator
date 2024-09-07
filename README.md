@@ -8,11 +8,17 @@ This is a vscode extension allowing syntax highlighting & linting for HLSL / GLS
 
 Currently, it support some features and languages:
 
-|Language|Syntax Highlighting|Diagnostics|Completion|Signature|Hover|Goto|
-|--------|-------------------|-----------|----------|---------|-----|----|
-|GLSL    |✅                 |✅        |✅        |✅      |✅   |✅ |
-|HLSL    |✅                 |✅        |❌        |❌      |❌   |❌ |
-|WGSL    |✅                 |✅        |❌        |❌      |❌   |❌ |
+- Syntax Highlighting: Provide improved syntax highlighting for code.
+- Diagnostic: Provide errors & warning as user type code.
+- Symbol provider: provide goto, completion, hover & signature.
+    - Local symbols: Provide all user created symbols.
+    - Intrinsics symbols: Provide all languages provided intrinsics symbols.
+
+|Language|Syntax Highlighting|Diagnostics|Local symbols|Intrinsics symbols|
+|--------|-------------------|-----------|-------------|------------------|
+|GLSL    |✅                 |✅        |✅           |✅               |
+|HLSL    |✅                 |✅        |✅           |🚧               |
+|WGSL    |✅                 |✅        |❌           |❌               |
 
 ## Features
 
@@ -29,7 +35,7 @@ You cant lint your code in real time through this extension:
 
 ### Autocompletion
 
-The extension will suggest you symbols from your file as you type.
+The extension will suggest you symbols from your file and intrinsics as you type.
 
 ### Sigature
 
@@ -37,7 +43,7 @@ View available signatures for your function as you type it.
 
 ### Hover
 
-View informations relative to an element by hovering it.
+View informations relative to a symbol by hovering it.
 
 ### Goto
 
