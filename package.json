@@ -7,8 +7,8 @@
     "color": "#9ad0ff",
     "theme": "light"
   },
-  "version": "0.2.0",
-  "server_version": "0.2.0",
+  "version": "0.2.1",
+  "server_version": "0.2.1",
   "publisher": "antaalt",
   "repository": {
     "type": "git",
@@ -177,7 +177,7 @@
     "@typescript-eslint/parser": "^5.45.0",
     "@vscode/test-cli": "^0.0.10",
     "@vscode/test-electron": "^2.4.1",
-    "@vscode/test-web": "^0.0.56",
+    "@vscode/test-web": "^0.0.60",
     "eslint": "^8.28.0",
     "glob": "^8.0.3",
     "mocha": "^10.1.0",
