@@ -114,9 +114,10 @@ export async function createLanguageClientWASI(context: vscode.ExtensionContext)
         const options : ProcessOptions = {
             stdio: createStdioOptions(),
             env: {
-                // eslint-disable-next-line @typescript-eslint/naming-convention
                 // Setting RUST_LOG seems to stall the process......
-                //"RUST_LOG": "shader_language_server=trace",
+                //"RUST_LOG": "shader_language_server=trace", // eslint-disable-line @typescript-eslint/naming-convention
+                // https://github.com/rust-lang/rust/issues/117440
+                //"RUST_MIN_STACK": "65535", // eslint-disable-line @typescript-eslint/naming-convention
             },
             mountPoints: mountPoints,
             trace: true,

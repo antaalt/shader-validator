@@ -32,7 +32,7 @@ export async function activate(context: vscode.ExtensionContext)
     const msWasmWasiCore = vscode.extensions.getExtension(msWasmWasiCoreName);
     if (msWasmWasiCore === undefined && shouldUseWasiServer()) 
     {
-        const message = 'It is required to install Microsoft WASM wasi core for running the shader validator server on the web. Do you want to install it now?';
+        const message = 'It is required to install Microsoft WASM WASI core extension for running the shader validator server on the web. Do you want to install it now?';
         const choice = await vscode.window.showInformationMessage(message, 'Install', 'Not now');
         if (choice === 'Install') {
             // Wait for extension to be correctly installed.

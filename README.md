@@ -4,7 +4,7 @@
 [![vsmarketplace](https://img.shields.io/visual-studio-marketplace/v/antaalt.shader-validator?color=blue&label=vscode%20marketplace)](https://marketplace.visualstudio.com/items?itemName=antaalt.shader-validator)
 [![ppenVSX registry](https://img.shields.io/open-vsx/v/antaalt/shader-validator?color=purple)](https://open-vsx.org/extension/antaalt/shader-validator)
 
-This is a vscode extension allowing syntax highlighting & linting for HLSL / GLSL / WGSL shaders. It is using [shader-language-server](https://github.com/antaalt/shader-language-server) to lint shaders using common validator API.
+This is a vscode extension allowing syntax highlighting, linting & symbol providing for HLSL / GLSL / WGSL shaders. It is using [shader-language-server](https://github.com/antaalt/shader-language-server) to lint shaders using common validator API.
 
 Currently, it support some features and languages:
 
@@ -59,6 +59,12 @@ This extension contributes the following settings:
 * `shader-validator.severity`: Select minimal log severity for linting.
 * `shader-validator.includes`: All custom includes for linting.
 * `shader-validator.defines`: All custom macros and their values for linting.
+
+## Platform support
+
+This extension is supported on every platform, but some limitations are to be expected on some:
+- Windows: full feature set.
+- Mac & Linux: Rely on WASI version of server, same as web, see web support for limitations.
 
 ## Web support
 
