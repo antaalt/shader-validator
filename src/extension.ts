@@ -6,14 +6,17 @@ import * as cp from "child_process";
 import { createLanguageClientWASI, createLanguageClientStandard } from './validator';
 import { LanguageClient } from 'vscode-languageclient/node';
 
-function isRunningInBrowser(): boolean {
-    return typeof cp.spawn !== 'function';
+function shouldUseWasiServer(): boolean {
+    // For now, server only compiled for windows, so use WASI version on other platforms.
+    const isWindows = typeof process !== 'undefined' && process.platform === "win32";
+    const isRunningOnWeb = typeof cp.spawn !== 'function';
+    return isRunningOnWeb || !isWindows;
 }
 
 async function createLanguageClient(context: vscode.ExtensionContext): Promise<LanguageClient> {
     // Create validator
     // Web does not support child process, use wasi instead.
-    if (isRunningInBrowser()) {
+    if (shouldUseWasiServer()) {
         return createLanguageClientWASI(context);
     } else {
         return createLanguageClientStandard(context);
@@ -27,7 +30,7 @@ export async function activate(context: vscode.ExtensionContext)
     // Install dependencies if running on browser
     const msWasmWasiCoreName = 'ms-vscode.wasm-wasi-core';
     const msWasmWasiCore = vscode.extensions.getExtension(msWasmWasiCoreName);
-    if (msWasmWasiCore === undefined && isRunningInBrowser()) 
+    if (msWasmWasiCore === undefined && shouldUseWasiServer()) 
     {
         const message = 'It is required to install Microsoft WASM wasi core for running the shader validator server on the web. Do you want to install it now?';
         const choice = await vscode.window.showInformationMessage(message, 'Install', 'Not now');
@@ -41,9 +44,7 @@ export async function activate(context: vscode.ExtensionContext)
                             console.assert(vscode.extensions.getExtension(msWasmWasiCoreName) !== undefined, "Failed to load WASM wasi core.");
                             resolve();
                         });
-                        vscode.commands.executeCommand("workbench.extensions.installExtension", msWasmWasiCoreName, {
-                            installPreReleaseVersion: true
-                        });
+                        vscode.commands.executeCommand("workbench.extensions.installExtension", msWasmWasiCoreName);
                     });
                 },
             );
