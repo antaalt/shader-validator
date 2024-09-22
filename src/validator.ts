@@ -4,8 +4,8 @@ import {
     createStdioOptions,
     createUriConverters,
     startServer
-} from '@vscode/wasm-wasi-lsp';
-import { MountPointDescriptor, ProcessOptions, Wasm } from "@vscode/wasm-wasi";
+} from './wasm-wasi-lsp'; // Should import from @vscode/wasm-wasi-lsp, but version not based on last released wasm-wasi version
+import { MountPointDescriptor, ProcessOptions, Wasm } from "@vscode/wasm-wasi/v1";
 import {
     DidChangeConfigurationNotification,
     LanguageClient,
