@@ -50,23 +50,20 @@ async function requestConfiguration(context: vscode.ExtensionContext, client: La
 }
 export async function createLanguageClientStandard(context: vscode.ExtensionContext) {
     const executable = getBinaryPath(context, 'shader_language_server.exe');
-    let serverOptions: ServerOptions = {
-        run: {
-            command: executable.fsPath, 
-            transport: TransportKind.stdio,
-        },
-        debug:{
-            command: executable.fsPath, 
-            transport: TransportKind.stdio,
-            options: {
-                env: {
-                    // eslint-disable-next-line @typescript-eslint/naming-convention
-                    "RUST_LOG": "shader_language_server=trace",
-                }
-            }
+    const trace = vscode.workspace.getConfiguration("shader-validator").get<string>("trace.server");
+    const defaultEnv = {};
+    const env = (trace === "verbose") ? {
+        ...defaultEnv,
+        "RUST_LOG": "shader_language_server=trace", // eslint-disable-line @typescript-eslint/naming-convention
+    } : defaultEnv;
+    const serverOptions: ServerOptions = {
+        command: executable.fsPath, 
+        transport: TransportKind.stdio,
+        options: {
+            env: env
         }
     };
-    let clientOptions: LanguageClientOptions = {
+    const clientOptions: LanguageClientOptions = {
         // Register the server for shader documents
         documentSelector: [
             { scheme: 'file', language: 'hlsl' },
@@ -111,14 +108,20 @@ export async function createLanguageClientWASI(context: vscode.ExtensionContext)
         const bits = await vscode.workspace.fs.readFile(executable);
         const module = await WebAssembly.compile(bits);
 
+        
+        const trace = vscode.workspace.getConfiguration("shader-validator").get<string>("trace.server");
+        const defaultEnv = {
+            // https://github.com/rust-lang/rust/issues/117440
+            //"RUST_MIN_STACK": "65535", // eslint-disable-line @typescript-eslint/naming-convention
+        };
+        const env = (trace === "verbose") ? {
+            ...defaultEnv,
+            "RUST_LOG": "shader_language_server=trace", // eslint-disable-line @typescript-eslint/naming-convention
+        } : defaultEnv;
+
         const options : ProcessOptions = {
             stdio: createStdioOptions(),
-            env: {
-                // Setting RUST_LOG seems to stall the process......
-                //"RUST_LOG": "shader_language_server=trace", // eslint-disable-line @typescript-eslint/naming-convention
-                // https://github.com/rust-lang/rust/issues/117440
-                //"RUST_MIN_STACK": "65535", // eslint-disable-line @typescript-eslint/naming-convention
-            },
+            env: env,
             mountPoints: mountPoints,
             trace: true,
         };
