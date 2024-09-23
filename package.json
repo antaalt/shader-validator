@@ -7,8 +7,8 @@
     "color": "#9ad0ff",
     "theme": "light"
   },
-  "version": "0.2.3",
-  "server_version": "0.2.3",
+  "version": "0.2.4",
+  "server_version": "0.2.4",
   "publisher": "antaalt",
   "repository": {
     "type": "git",
