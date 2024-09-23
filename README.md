@@ -59,6 +59,9 @@ This extension contributes the following settings:
 * `shader-validator.severity`: Select minimal log severity for linting.
 * `shader-validator.includes`: All custom includes for linting.
 * `shader-validator.defines`: All custom macros and their values for linting.
+* `shader-validator.hlsl.shaderModel`: Specify the shader model to target for HLSL
+* `shader-validator.glsl.targetClient`: Specify the OpenGL or Vulkan version for GLSL
+* `shader-validator.glsl.spirvVersion`: Specify the SPIRV version to target for GLSL
 
 ## Platform support
 
@@ -68,7 +71,7 @@ This extension is supported on every platform, but some limitations are to be ex
 
 ## Web support
 
-This extension run on the web on [vscode.dev](https://vscode.dev/). It is relying on the [WebAssembly Execution engine](https://marketplace.visualstudio.com/items?itemName=ms-vscode.wasm-wasi-core). Because of this restriction, we can't use dxc on the web as it does not compile to WASI and instead rely on glslang, which is more limited in linting (Only support SM 5.0, same as FXC, while DXC support SM 6.0 and more).
+This extension run on the web on [vscode.dev](https://vscode.dev/). It is relying on the [WebAssembly Execution engine](https://marketplace.visualstudio.com/items?itemName=ms-vscode.wasm-wasi-core). Because of this restriction, we can't use dxc on the web as it does not compile to WASI and instead rely on glslang, which is more limited in linting (Only support some basic features of SM 6.0, while DXC support all newly added SM (current 6.8)).
 
 ## Credits
 

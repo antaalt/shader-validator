@@ -94,69 +94,155 @@
         "path": "./syntaxes/wgsl.tmLanguage.json"
       }
     ],
-    "configuration": {
-      "title": "Shader Validator",
-      "properties": {
-        "shader-validator.autocomplete": {
-          "description": "Autocomplete shader code as you type",
-          "type": "boolean",
-          "default": true
-        },
-        "shader-validator.validateOnType": {
-          "description": "Validate shader as you type.",
-          "type": "boolean",
-          "default": true
-        },
-        "shader-validator.validateOnSave": {
-          "description": "Validate shader when you save a file.",
-          "type": "boolean",
-          "default": true
-        },
-        "shader-validator.severity": {
-          "type": "string",
-          "description": "Minimum linting severity. Set it lower to display some hints aswell. Might not be supported by all languages.",
-          "default": "info",
-          "enum": [
-            "none",
-            "error",
-            "warning",
-            "info",
-            "hint"
-          ]
-        },
-        "shader-validator.includes": {
-          "description": "Include paths to look up for includes.",
-          "type": "array",
-          "items": {
-            "type": "string"
+    "configuration": [
+      {
+        "title": "Common",
+        "properties": {
+          "shader-validator.autocomplete": {
+            "description": "Autocomplete shader code as you type",
+            "type": "boolean",
+            "default": true
           },
-          "default": []
-        },
-        "shader-validator.defines": {
-          "description": "Preprocessor variables and values.",
-          "type": "object",
-          "additionalProperties": {
-            "type": "string"
+          "shader-validator.validateOnType": {
+            "description": "Validate shader as you type.",
+            "type": "boolean",
+            "default": true
+          },
+          "shader-validator.validateOnSave": {
+            "description": "Validate shader when you save a file.",
+            "type": "boolean",
+            "default": true
+          },
+          "shader-validator.severity": {
+            "type": "string",
+            "description": "Minimum linting severity. Set it lower to display some hints aswell. Might not be supported by all languages.",
+            "default": "info",
+            "enum": [
+              "none",
+              "error",
+              "warning",
+              "info",
+              "hint"
+            ]
+          },
+          "shader-validator.includes": {
+            "description": "Include paths to look up for includes.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "default": []
+          },
+          "shader-validator.defines": {
+            "description": "Preprocessor variables and values.",
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
           }
-        },
-        "shader-validator.trace.server": {
-          "type": "string",
-          "scope": "window",
-          "enum": [
-            "off",
-            "messages",
-            "verbose"
-          ],
-          "enumDescriptions": [
-            "No traces",
-            "Error only",
-            "Full log"
-          ],
-          "default": "verbose",
-          "description": "Trace requests to the shader-language-server (this is usually overly verbose and not recommended for regular users)."
+        }
+      },
+      {
+        "title": "Hlsl",
+        "properties": {
+          "shader-validator.hlsl.shaderModel": {
+            "type": "string",
+            "description": "Shader model targeted for DXC HLSL (DXC only support up to sm 6.0).",
+            "default": "ShaderModel6_8",
+            "enum": [
+              "ShaderModel6",
+              "ShaderModel6_1",
+              "ShaderModel6_2",
+              "ShaderModel6_3",
+              "ShaderModel6_4",
+              "ShaderModel6_5",
+              "ShaderModel6_6",
+              "ShaderModel6_7",
+              "ShaderModel6_8"
+            ],
+            "enumItemLabels": [
+              "sm 6.0",
+              "sm 6.1",
+              "sm 6.2",
+              "sm 6.3",
+              "sm 6.4",
+              "sm 6.5",
+              "sm 6.6",
+              "sm 6.7",
+              "sm 6.8"
+            ]
+          }
+        }
+      },
+      {
+        "title": "Glsl",
+        "properties": {
+          "shader-validator.glsl.targetClient": {
+            "type": "string",
+            "description": "Shader client for GLSL.",
+            "default": "Vulkan1_3",
+            "enum": [
+              "Vulkan1_0",
+              "Vulkan1_1",
+              "Vulkan1_2",
+              "Vulkan1_3",
+              "OpenGL450"
+            ],
+            "enumItemLabels": [
+              "Vulkan 1.0",
+              "Vulkan 1.1",
+              "Vulkan 1.2",
+              "Vulkan 1.3",
+              "OpenGL 4.5"
+            ]
+          },
+          "shader-validator.glsl.spirvVersion": {
+            "type": "string",
+            "description": "SPIRV version targeted for GLSL.",
+            "default": "SPIRV1_6",
+            "enum": [
+              "SPIRV1_0",
+              "SPIRV1_1",
+              "SPIRV1_2",
+              "SPIRV1_3",
+              "SPIRV1_4",
+              "SPIRV1_5",
+              "SPIRV1_6"
+            ],
+            "enumItemLabels": [
+              "Spirv 1.0",
+              "Spirv 1.1",
+              "Spirv 1.2",
+              "Spirv 1.3",
+              "Spirv 1.4",
+              "Spirv 1.5",
+              "Spirv 1.6"
+            ]
+          }
+        }
+      },
+      {
+        "title": "Debug",
+        "properties": {
+          "shader-validator.trace.server": {
+            "type": "string",
+            "scope": "window",
+            "enum": [
+              "off",
+              "messages",
+              "verbose"
+            ],
+            "enumDescriptions": [
+              "No traces",
+              "Error only",
+              "Full log"
+            ],
+            "default": "off",
+            "description": "Trace requests to the shader-language-server (this is usually overly verbose and not recommended for regular users)."
+          }
         }
       }
-    }
+    ]
   },
   "scripts": {
     "vscode:prepublish": "webpack --mode production",
