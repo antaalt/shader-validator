@@ -24,20 +24,20 @@ Currently, it support some features and languages:
 
 ### Syntax highlighting
 
-This extension provide syntax highlighting for HLSL, GLSL & WGSL. It also provides some really basic auto completion.
+This extension provide improved syntax highlighting for HLSL, GLSL & WGSL than the base one in VS code.
 
 ### Linting
 
 You cant lint your code in real time through this extension:
-- WGSL relies on Naga.
 - GLSL relies on Glslang.
 - HLSL relies on DirectX shader compiler on desktop, Glslang on the web (see below).
+- WGSL relies on Naga.
 
 ### Autocompletion
 
 The extension will suggest you symbols from your file and intrinsics as you type.
 
-### Sigature
+### Signature
 
 View available signatures for your function as you type it.
 
@@ -53,13 +53,16 @@ Go to your declaration definition by clicking on it.
 
 This extension contributes the following settings:
 
-* `shader-validator.autocomplete`: Enable/disable completion suggestion.
 * `shader-validator.validateOnType`: Enable/disable validate on type.
 * `shader-validator.validateOnSave`: Enable/disable validate on save.
 * `shader-validator.severity`: Select minimal log severity for linting.
 * `shader-validator.includes`: All custom includes for linting.
 * `shader-validator.defines`: All custom macros and their values for linting.
+
+HLSL specific settings: 
 * `shader-validator.hlsl.shaderModel`: Specify the shader model to target for HLSL
+
+GLSL specific settings:
 * `shader-validator.glsl.targetClient`: Specify the OpenGL or Vulkan version for GLSL
 * `shader-validator.glsl.spirvVersion`: Specify the SPIRV version to target for GLSL
 
