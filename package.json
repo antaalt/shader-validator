@@ -12,7 +12,7 @@
   "publisher": "antaalt",
   "repository": {
     "type": "git",
-    "url": "https://github.com/antaalt/hlsl-validator"
+    "url": "https://github.com/antaalt/shader-validator"
   },
   "engines": {
     "vscode": "^1.88.0"
@@ -171,6 +171,28 @@
               "sm 6.7",
               "sm 6.8"
             ]
+          },
+          "shader-validator.hlsl.version": {
+            "type": "string",
+            "description": "HLSL version for DXC.",
+            "default": "V2021",
+            "enum": [
+              "V2016",
+              "V2017",
+              "V2018",
+              "V2021"
+            ],
+            "enumItemLabels": [
+              "2016",
+              "2017",
+              "2018",
+              "2021"
+            ]
+          },
+          "shader-validator.hlsl.enable16bitTypes": {
+            "type": "boolean",
+            "description": "Enable 16 bits types. Only supported with sm >= 6.2 & HLSL version >= 2018.",
+            "default": false
           }
         }
       },
