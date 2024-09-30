@@ -14,11 +14,11 @@ Currently, it support some features and languages:
     - Local symbols: Provide all user created symbols (function, constant, types...).
     - Intrinsics symbols: Provide all languages provided intrinsics symbols.
 
-|Language|Syntax Highlighting|Diagnostics|Local symbols|Intrinsics symbols|
-|--------|-------------------|-----------|-------------|------------------|
-|GLSL    |✅                 |✅        |✅           |✅               |
-|HLSL    |✅                 |✅        |✅           |🚧               |
-|WGSL    |✅                 |✅        |❌           |❌               |
+|Language|Syntax Highlighting|Diagnostics |Local symbols|Intrinsics symbols|
+|--------|-------------------|------------|-------------|------------------|
+|GLSL    |✅                 |✅(glslang)|✅           |✅               |
+|HLSL    |✅                 |✅(DXC)    |✅           |✅               |
+|WGSL    |✅                 |✅(Naga)   |❌           |❌               |
 
 ## Features
 
@@ -61,6 +61,8 @@ This extension contributes the following settings:
 
 HLSL specific settings: 
 * `shader-validator.hlsl.shaderModel`: Specify the shader model to target for HLSL
+* `shader-validator.hlsl.version`: Specify the HLSL version
+* `shader-validator.hlsl.enable16bitTypes`: Enable 16 bit types support with HLSL
 
 GLSL specific settings:
 * `shader-validator.glsl.targetClient`: Specify the OpenGL or Vulkan version for GLSL
