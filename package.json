@@ -52,6 +52,10 @@
           ".fx",
           ".fxh"
         ],
+        "icon": {
+          "light": "./res/icons/hlsl-icon.svg",
+          "dark": "./res/icons/hlsl-icon.svg"
+        },
         "configuration": "./language-configuration.json"
       },
       {
@@ -67,6 +71,10 @@
           ".tesc",
           ".tese"
         ],
+        "icon": {
+          "light": "./res/icons/glsl-icon.svg",
+          "dark": "./res/icons/glsl-icon.svg"
+        },
         "configuration": "./language-configuration.json"
       },
       {
@@ -74,6 +82,10 @@
         "extensions": [
           ".wgsl"
         ],
+        "icon": {
+          "light": "./res/icons/wgsl-icon.svg",
+          "dark": "./res/icons/wgsl-icon.svg"
+        },
         "configuration": "./language-configuration.json"
       }
     ],
