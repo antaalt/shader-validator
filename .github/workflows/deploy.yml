@@ -10,6 +10,8 @@ jobs:
   build:
     uses: ./.github/workflows/build.yml
     secrets: inherit # for GH_PAT
+    with:
+      prerelease: ${{ github.event_name == 'release' && github.event.action == 'released' }}
 
   deploy:
     permissions: write-all

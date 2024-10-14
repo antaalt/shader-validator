@@ -6,6 +6,11 @@ on:
     pull_request:
       branches: [ "main" ]
     workflow_call:
+      inputs:
+        prerelease:
+          required: false
+          type: boolean
+          default: false
 
 jobs:
   build:
@@ -73,7 +78,11 @@ jobs:
       - name: Test extension
         run: xvfb-run --auto-servernum npm test
       - name: Package extension
-        run: vsce package # Should add --pre-release for publishing pre-release
+        if: ${{ !inputs.prerelease }}
+        run: vsce package
+      - name: Package pre-release extension
+        if: ${{ inputs.prerelease }}
+        run: vsce package --pre-release
       - name: Get version
         run: echo "PACKAGE_VERSION=$(npm pkg get version | sed 's/"//g')" >> $GITHUB_ENV
       - name: Check version
