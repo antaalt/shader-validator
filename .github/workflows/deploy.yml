@@ -10,8 +10,6 @@ jobs:
   build:
     uses: ./.github/workflows/build.yml
     secrets: inherit # for GH_PAT
-    with:
-      prerelease: ${{ !(github.event_name == 'release' && github.event.action == 'released') }}
 
   deploy:
     permissions: write-all
@@ -28,20 +26,20 @@ jobs:
           name: extension
       - name: Publish to Open VSX Registry
         uses: HaaLeo/publish-vscode-extension@v1
-        # Dont publish pre-release
+        # Dont publish pre-release, vscode marketplace dont support semver != major.minor.patch
+        if: github.event_name == 'release' && github.event.action == 'released' 
         id: publishToOpenVSX
         with:
           pat: ${{ secrets.OPEN_VSX_PAT }}
           extensionFile: shader-validator.vsix
-          preRelease: ${{ !(github.event_name == 'release' && github.event.action == 'released') }}
       - name: Publish to Visual Studio Marketplace
         uses: HaaLeo/publish-vscode-extension@v1
         # Dont publish pre-release
+        if: github.event_name == 'release' && github.event.action == 'released' 
         with:
           pat: ${{ secrets.MARKETPLACE_PAT }}
           registryUrl: https://marketplace.visualstudio.com
           extensionFile: shader-validator.vsix
-          preRelease: ${{ !(github.event_name == 'release' && github.event.action == 'released') }}
       - name: Upload assets to release
         run: gh release upload ${{ github.ref_name }} "shader-validator.vsix"
         env:
