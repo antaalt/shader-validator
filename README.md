@@ -53,8 +53,8 @@ Go to your declaration definition by clicking on it.
 
 This extension contributes the following settings:
 
-* `shader-validator.validateOnType`: Enable/disable validate on type.
-* `shader-validator.validateOnSave`: Enable/disable validate on save.
+* `shader-validator.validate`: Enable/disable validation with common API.
+* `shader-validator.symbols`: Enable/disable symbol inspection & providers.
 * `shader-validator.severity`: Select minimal log severity for linting.
 * `shader-validator.includes`: All custom includes for linting.
 * `shader-validator.defines`: All custom macros and their values for linting.

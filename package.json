@@ -110,18 +110,13 @@
       {
         "title": "Common",
         "properties": {
-          "shader-validator.autocomplete": {
-            "description": "Autocomplete shader code as you type",
+          "shader-validator.validate": {
+            "description": "Validate shader as you type with common validator API.",
             "type": "boolean",
             "default": true
           },
-          "shader-validator.validateOnType": {
-            "description": "Validate shader as you type.",
-            "type": "boolean",
-            "default": true
-          },
-          "shader-validator.validateOnSave": {
-            "description": "Validate shader when you save a file.",
+          "shader-validator.symbols": {
+            "description": "Provide symbol inspection with providers (goto, hover, completion...)",
             "type": "boolean",
             "default": true
           },
