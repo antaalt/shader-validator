@@ -54,6 +54,7 @@ export async function createLanguageClientStandard(context: vscode.ExtensionCont
     const defaultEnv = {};
     const env = (trace === "verbose") ? {
         ...defaultEnv,
+        "RUST_BACKTRACE": "1", // eslint-disable-line 
         "RUST_LOG": "shader_language_server=trace", // eslint-disable-line @typescript-eslint/naming-convention
     } : defaultEnv;
     const serverOptions: ServerOptions = {
@@ -116,6 +117,7 @@ export async function createLanguageClientWASI(context: vscode.ExtensionContext)
         };
         const env = (trace === "verbose") ? {
             ...defaultEnv,
+            "RUST_BACKTRACE": "1", // eslint-disable-line 
             "RUST_LOG": "shader_language_server=trace", // eslint-disable-line @typescript-eslint/naming-convention
         } : defaultEnv;
 
