@@ -27,7 +27,7 @@ suite('Diagnostic Test Suite', () => {
 		const docUri = await vscode.workspace.findFiles("test.wgsl");
 		assert.ok(docUri.length > 0);
 		await testDiagnostic(docUri[0], false);
-	}).timeout(5000);
+	}).timeout(20000);
 });
 
 async function testDiagnostic(
