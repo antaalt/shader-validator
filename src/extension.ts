@@ -53,6 +53,10 @@ export async function activate(context: vscode.ExtensionContext)
             return; // Extension failed to launch.
         }
     }
+
+    context.subscriptions.push(vscode.commands.registerCommand("shader-validator.validateFile", (data: string = 'current') => {
+        vscode.window.showInformationMessage("Cannot validate file manually for now");
+    }));
     // Create validator
     const client = await createLanguageClient(context);
     // Subscribe for dispose

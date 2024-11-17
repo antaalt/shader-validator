@@ -29,7 +29,7 @@
     "wgsl"
   ],
   "activationEvents": [
-    "onCommand:shader.validateFile",
+    "onCommand:shader-validator.validateFile",
     "onLanguage:glsl",
     "onLanguage:wgsl",
     "onLanguage:hlsl"
@@ -39,8 +39,8 @@
   "contributes": {
     "commands": [
       {
-        "command": "shader.validateFile",
-        "title": "Validate file"
+        "command": "shader-validator.validateFile",
+        "title": "Shader validator: Validate file"
       }
     ],
     "languages": [
@@ -50,7 +50,9 @@
           ".hlsl",
           ".hlsli",
           ".fx",
-          ".fxh"
+          ".fxh",
+          "ush",
+          "usf"
         ],
         "icon": {
           "light": "./res/icons/hlsl-icon.svg",
