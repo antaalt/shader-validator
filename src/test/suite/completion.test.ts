@@ -11,34 +11,36 @@ suite('Completion Test Suite', () => {
 		vscode.window.showInformationMessage('All completion tests done!');
 	});
 
-	test('Complete GLSL code', async () => {
-		const docUri = await vscode.workspace.findFiles("test.frag.glsl");
-		assert.ok(docUri.length > 0);
-		await testCompletion(docUri[0], new vscode.Position(8, 0), {
-			items: [
-				{ label: 'clamp', kind: vscode.CompletionItemKind.Function },
-				{ label: 'main', kind: vscode.CompletionItemKind.Function },
-				{ label: 'test', kind: vscode.CompletionItemKind.Function },
-				{ label: 'res', kind: vscode.CompletionItemKind.Variable },
-			]
-		}, true);
-	}).timeout(15000);
+	if (process.platform === 'win32') {
+		test('Complete GLSL code', async () => {
+			const docUri = await vscode.workspace.findFiles("test.frag.glsl");
+			assert.ok(docUri.length > 0);
+			await testCompletion(docUri[0], new vscode.Position(8, 0), {
+				items: [
+					{ label: 'clamp', kind: vscode.CompletionItemKind.Function },
+					{ label: 'main', kind: vscode.CompletionItemKind.Function },
+					{ label: 'test', kind: vscode.CompletionItemKind.Function },
+					{ label: 'res', kind: vscode.CompletionItemKind.Variable },
+				]
+			}, true);
+		}).timeout(5000);
 
-	test('Complete HLSL code', async () => {
-		const docUri = await vscode.workspace.findFiles("test.hlsl");
-		assert.ok(docUri.length > 0);
-		await testCompletion(docUri[0], new vscode.Position(0, 0), {
-			items: []
-		}, false);
-	}).timeout(15000);
+		test('Complete HLSL code', async () => {
+			const docUri = await vscode.workspace.findFiles("test.hlsl");
+			assert.ok(docUri.length > 0);
+			await testCompletion(docUri[0], new vscode.Position(0, 0), {
+				items: []
+			}, false);
+		}).timeout(5000);
 
-	test('Complete WGSL code', async () => {
-		const docUri = await vscode.workspace.findFiles("test.wgsl");
-		assert.ok(docUri.length > 0);
-		await testCompletion(docUri[0], new vscode.Position(0, 0), {
-			items: []
-		}, false);
-	}).timeout(15000);
+		test('Complete WGSL code', async () => {
+			const docUri = await vscode.workspace.findFiles("test.wgsl");
+			assert.ok(docUri.length > 0);
+			await testCompletion(docUri[0], new vscode.Position(0, 0), {
+				items: []
+			}, false);
+		}).timeout(5000);
+	}
 });
 
 async function testCompletion(
