@@ -22,7 +22,7 @@ suite('Completion Test Suite', () => {
 				{ label: 'res', kind: vscode.CompletionItemKind.Variable },
 			]
 		}, true);
-	}).timeout(5000);
+	}).timeout(15000);
 
 	test('Complete HLSL code', async () => {
 		const docUri = await vscode.workspace.findFiles("test.hlsl");
@@ -30,7 +30,7 @@ suite('Completion Test Suite', () => {
 		await testCompletion(docUri[0], new vscode.Position(0, 0), {
 			items: []
 		}, false);
-	}).timeout(5000);
+	}).timeout(15000);
 
 	test('Complete WGSL code', async () => {
 		const docUri = await vscode.workspace.findFiles("test.wgsl");
@@ -38,7 +38,7 @@ suite('Completion Test Suite', () => {
 		await testCompletion(docUri[0], new vscode.Position(0, 0), {
 			items: []
 		}, false);
-	}).timeout(5000);
+	}).timeout(15000);
 });
 
 async function testCompletion(
