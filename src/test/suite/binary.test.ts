@@ -19,9 +19,9 @@ suite('Binary Test Suite', () => {
 		vscode.window.showInformationMessage('All binary tests done!');
 	});
 
-	//test('Check wasm binary', () => {
-	//	assert.ok(doesBinaryExist("shader_language_server.wasm"));
-	//});
+	test('Check wasm binary', () => {
+		assert.ok(doesBinaryExist("shader_language_server.wasm"));
+	});
 	test('Check windows binary', () => {
 		assert.ok(doesBinaryExist("shader_language_server.exe"));
 	});
