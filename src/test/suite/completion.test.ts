@@ -15,7 +15,7 @@ suite('Completion Test Suite', () => {
 		test('Complete GLSL code', async () => {
 			const docUri = await vscode.workspace.findFiles("test.frag.glsl");
 			assert.ok(docUri.length > 0);
-			await testCompletion(docUri[0], new vscode.Position(0, 0), {
+			await testCompletion(docUri[0], new vscode.Position(8, 0), {
 				items: [
 					{ label: 'clamp', kind: vscode.CompletionItemKind.Function },
 					{ label: 'main', kind: vscode.CompletionItemKind.Function },
