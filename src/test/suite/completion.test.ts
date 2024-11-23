@@ -11,8 +11,7 @@ suite('Completion Test Suite', () => {
 		vscode.window.showInformationMessage('All completion tests done!');
 	});
 
-	//if (process.platform === 'win32')
-	{
+	if (process.platform === 'win32') {
 		test('Complete GLSL code', async () => {
 			const docUri = await vscode.workspace.findFiles("test.frag.glsl");
 			assert.ok(docUri.length > 0);

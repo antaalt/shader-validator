@@ -10,8 +10,7 @@ suite('Diagnostic Test Suite', () => {
 	suiteTeardown(() => {
 		vscode.window.showInformationMessage('All diagnostics tests done!');
 	});
-	//if (process.platform === 'win32')
-	{
+	if (process.platform === 'win32') {
 		test('Diagnostic GLSL code', async () => {
 			const docUri = await vscode.workspace.findFiles("test.frag.glsl");
 			assert.ok(docUri.length > 0);
