@@ -8,11 +8,11 @@ This is a vscode extension allowing syntax highlighting, linting & symbol provid
 
 Currently, it support some features and languages:
 
-- Syntax Highlighting: Provide improved syntax highlighting for code.
-- Diagnostic: Provide errors & warning as user type code.
-- Symbol provider: provide goto, completion, hover & signature.
-    - Local symbols: Provide all user created symbols (function, constant, types...).
-    - Intrinsics symbols: Provide all languages provided intrinsics symbols.
+-   Syntax Highlighting: Provide improved syntax highlighting for code.
+-   Diagnostic: Provide errors & warning as user type code.
+-   Symbol provider: provide goto, completion, hover & signature.
+    -   Local symbols: Provide all user created symbols (function, constant, types...).
+    -   Intrinsics symbols: Provide all languages provided intrinsics symbols.
 
 |Language|Syntax Highlighting|Diagnostics |Local symbols|Intrinsics symbols|
 |--------|-------------------|------------|-------------|------------------|
@@ -29,9 +29,10 @@ This extension provide improved syntax highlighting for HLSL, GLSL & WGSL than t
 ### Linting
 
 You cant lint your code in real time through this extension:
-- GLSL relies on Glslang.
-- HLSL relies on DirectX shader compiler on desktop, Glslang on the web (see below).
-- WGSL relies on Naga.
+
+-   GLSL relies on Glslang.
+-   HLSL relies on DirectX shader compiler on desktop, Glslang on the web (see below).
+-   WGSL relies on Naga.
 
 ### Autocompletion
 
@@ -53,28 +54,28 @@ Go to your declaration definition by clicking on it.
 
 This extension contributes the following settings:
 
-* `shader-validator.validate`: Enable/disable validation with common API.
-* `shader-validator.symbols`: Enable/disable symbol inspection & providers.
-* `shader-validator.severity`: Select minimal log severity for linting.
-* `shader-validator.includes`: All custom includes for linting.
-* `shader-validator.defines`: All custom macros and their values for linting.
+*   `shader-validator.validate`: Enable/disable validation with common API.
+*   `shader-validator.symbols`: Enable/disable symbol inspection & providers.
+*   `shader-validator.severity`: Select minimal log severity for linting.
+*   `shader-validator.includes`: All custom includes for linting.
+*   `shader-validator.defines`: All custom macros and their values for linting.
 
 ### HLSL specific settings: 
 
-* `shader-validator.hlsl.shaderModel`: Specify the shader model to target for HLSL
-* `shader-validator.hlsl.version`: Specify the HLSL version
-* `shader-validator.hlsl.enable16bitTypes`: Enable 16 bit types support with HLSL
+*   `shader-validator.hlsl.shaderModel`: Specify the shader model to target for HLSL
+*   `shader-validator.hlsl.version`: Specify the HLSL version
+*   `shader-validator.hlsl.enable16bitTypes`: Enable 16 bit types support with HLSL
 
 ### GLSL specific settings:
 
-* `shader-validator.glsl.targetClient`: Specify the OpenGL or Vulkan version for GLSL
-* `shader-validator.glsl.spirvVersion`: Specify the SPIRV version to target for GLSL
+*   `shader-validator.glsl.targetClient`: Specify the OpenGL or Vulkan version for GLSL
+*   `shader-validator.glsl.spirvVersion`: Specify the SPIRV version to target for GLSL
 
 ## Platform support
 
 This extension is supported on every platform, but some limitations are to be expected on some:
-- Windows: full feature set.
-- Mac & Linux: Rely on WASI version of server, same as web, see web support for limitations.
+-   Windows: full feature set.
+-   Mac & Linux: Rely on WASI version of server, same as web, see web support for limitations.
 
 ## Web support
 

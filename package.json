@@ -1,9 +1,9 @@
 {
   "name": "shader-validator",
   "displayName": "Shader validator",
-  "description": "HLSL / GLSL / WGSL linting for vscode",
+  "description": "HLSL / GLSL / WGSL language server for vscode",
   "icon": "res/logo-shader-validator.png",
-  "galleryBanner.color": {
+  "galleryBanner": {
     "color": "#9ad0ff",
     "theme": "light"
   },
@@ -22,8 +22,7 @@
   ],
   "keywords": [
     "shader",
-    "lint",
-    "validate",
+    "lsp",
     "hlsl",
     "glsl",
     "wgsl"
