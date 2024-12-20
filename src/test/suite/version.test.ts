@@ -10,7 +10,7 @@ import { getRootFolder } from './utils';
 suite('Server version Test Suite', () => {
     test('Check windows server version', () => {
         if (process.platform === 'win32') {
-            const executablePath = path.join(getRootFolder(), "bin/shader_language_server.exe");
+            const executablePath = path.join(getRootFolder(), "bin/shader-language-server.exe");
             let server = cp.spawn(executablePath, [
                 "--version"
             ]);
@@ -18,7 +18,7 @@ suite('Server version Test Suite', () => {
             const decoder = new TextDecoder('utf-8');
             server.stdout.on('data', (data) => {
                 const text = decoder.decode(data);
-                assert.equal(text, "shader_language_server v" + version, `Incompatible version: ${version}`);
+                assert.equal(text, "shader-language-server v" + version, `Incompatible version: ${version}`);
             });
             server.stderr.on('data', (data) => {
                 assert.fail(`stderr: ${data}`);

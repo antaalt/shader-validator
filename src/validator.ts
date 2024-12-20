@@ -49,13 +49,13 @@ async function requestConfiguration(context: vscode.ExtensionContext, client: La
     );
 }
 export async function createLanguageClientStandard(context: vscode.ExtensionContext) {
-    const executable = getBinaryPath(context, 'shader_language_server.exe');
+    const executable = getBinaryPath(context, 'shader-language-server.exe');
     const trace = vscode.workspace.getConfiguration("shader-validator").get<string>("trace.server");
     const defaultEnv = {};
     const env = (trace === "verbose") ? {
         ...defaultEnv,
         "RUST_BACKTRACE": "1", // eslint-disable-line 
-        "RUST_LOG": "shader_language_server=trace", // eslint-disable-line @typescript-eslint/naming-convention
+        "RUST_LOG": "shader-language-server=trace", // eslint-disable-line @typescript-eslint/naming-convention
     } : defaultEnv;
     const serverOptions: ServerOptions = {
         command: executable.fsPath, 
@@ -75,7 +75,7 @@ export async function createLanguageClientStandard(context: vscode.ExtensionCont
 
     let client = new LanguageClient(
         'shader-validator',
-        'Shader language server',
+        'Shrimp language server',
         serverOptions,
         clientOptions,
         context.extensionMode === vscode.ExtensionMode.Development 
@@ -90,7 +90,7 @@ export async function createLanguageClientStandard(context: vscode.ExtensionCont
     return client;
 }
 export async function createLanguageClientWASI(context: vscode.ExtensionContext) {
-    const channel = vscode.window.createOutputChannel('Shader language Server WASI');
+    const channel = vscode.window.createOutputChannel('Shrimp language Server WASI');
     context.subscriptions.push(channel);
     
     // Load the WASM API
@@ -105,7 +105,7 @@ export async function createLanguageClientWASI(context: vscode.ExtensionContext)
         // So we can use VS Code's file system API to load it. Makes it
         // independent of whether the code runs in the desktop or the web.
         // TODO: need to bundle the wasm within the extension
-        const executable = getBinaryPath(context, 'shader_language_server.wasm');
+        const executable = getBinaryPath(context, 'shader-language-server.wasm');
         const bits = await vscode.workspace.fs.readFile(executable);
         const module = await WebAssembly.compile(bits);
 
@@ -118,7 +118,7 @@ export async function createLanguageClientWASI(context: vscode.ExtensionContext)
         const env = (trace === "verbose") ? {
             ...defaultEnv,
             "RUST_BACKTRACE": "1", // eslint-disable-line 
-            "RUST_LOG": "shader_language_server=trace", // eslint-disable-line @typescript-eslint/naming-convention
+            "RUST_LOG": "shader-language-server=trace", // eslint-disable-line @typescript-eslint/naming-convention
         } : defaultEnv;
 
         const options : ProcessOptions = {
@@ -142,12 +142,12 @@ export async function createLanguageClientWASI(context: vscode.ExtensionContext)
         wasmProcess.stderr!.onData(data => {
             const text = decoder.decode(data);
             console.log("Received error:", text);
-            channel.appendLine("[shader_language_server::error]" + text);
+            channel.appendLine("[shader-language-server::error]" + text);
         });
         wasmProcess.stdout!.onData(data => {
             const text = decoder.decode(data);
             console.log("Received data:", text);
-            channel.appendLine("[shader_language_server::data]" + text);
+            channel.appendLine("[shader-language-server::data]" + text);
         });
         return startServer(wasmProcess);
     };
@@ -167,7 +167,7 @@ export async function createLanguageClientWASI(context: vscode.ExtensionContext)
 
     let client = new LanguageClient(
         'shader-validator',
-        'Shader language server WASI',
+        'Shrimp language server WASI',
         serverOptions,
         clientOptions,
         context.extensionMode === vscode.ExtensionMode.Development 

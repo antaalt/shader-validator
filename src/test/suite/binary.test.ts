@@ -20,10 +20,10 @@ suite('Binary Test Suite', () => {
 	});
 
 	test('Check wasm binary', () => {
-		assert.ok(doesBinaryExist("shader_language_server.wasm"));
+		assert.ok(doesBinaryExist("shader-language-server.wasm"));
 	});
 	test('Check windows binary', () => {
-		assert.ok(doesBinaryExist("shader_language_server.exe"));
+		assert.ok(doesBinaryExist("shader-language-server.exe"));
 	});
 	test('Check dxc dependencies', () => {
 		// Dxc need these dll or it will crash.

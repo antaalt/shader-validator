@@ -48,9 +48,9 @@ jobs:
         env:
           PACKAGE_JSON: echo $PACKAGE_JSON
         with:
-          repository: 'antaalt/shader-language-server'
+          repository: 'antaalt/shader-sense'
           tag: ${{ format('v{0}', fromJson(steps.get_package_json.outputs.packageJson).server_version) }}
-          fileName: 'shader_language_server.zip'
+          fileName: 'shader-language-server.zip'
           extract: true
           out-file-path: './bin'
           token: '${{ secrets.GH_PAT }}'
@@ -69,9 +69,9 @@ jobs:
       - name: Remove dxc dependencies
         run: rm -rf ./dxc
       - name: Remove shader language server dependencies
-        run: rm ./bin/shader_language_server.zip
+        run: rm ./bin/shader-language-server.zip
       #- name: Get server version # Need linux build for that to execute server, or switch to windows.
-      #  run: echo "SERVER_VERSION=$(./bin/shader_language_server.exe --version | sed 's/shader_language_server v//g')" >> $GITHUB_ENV
+      #  run: echo "SERVER_VERSION=$(./bin/shader-language-server.exe --version | sed 's/shader-language-server v//g')" >> $GITHUB_ENV
       # VScode need a framebuffer to run test. So create one.
       - name: Create framebuffer to run test
         run: sudo apt-get install xvfb
