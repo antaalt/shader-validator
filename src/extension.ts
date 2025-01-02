@@ -1,39 +1,20 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
-import * as cp from "child_process";
 
-import { createLanguageClientWASI, createLanguageClientStandard } from './validator';
-import { LanguageClient } from 'vscode-languageclient/node';
+import { createLanguageClient, getServerPlatform, ServerPlatform } from './validator';
 import { dumpAstRequest } from './request';
-
-function shouldUseWasiServer(): boolean {
-    // For now, server only compiled for windows, so use WASI version on other platforms.
-    const isWindows = typeof process !== 'undefined' && process.platform === "win32";
-    const isRunningOnWeb = typeof cp.spawn !== 'function';
-    return isRunningOnWeb || !isWindows;
-}
-
-async function createLanguageClient(context: vscode.ExtensionContext): Promise<LanguageClient> {
-    // Create validator
-    // Web does not support child process, use wasi instead.
-    if (shouldUseWasiServer()) {
-        return createLanguageClientWASI(context);
-    } else {
-        return createLanguageClientStandard(context);
-    }
-}
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export async function activate(context: vscode.ExtensionContext)
 {
-    // Install dependencies if running on browser
+    // Install dependencies if running on wasi
     const msWasmWasiCoreName = 'ms-vscode.wasm-wasi-core';
     const msWasmWasiCore = vscode.extensions.getExtension(msWasmWasiCoreName);
-    if (msWasmWasiCore === undefined && shouldUseWasiServer()) 
+    if (msWasmWasiCore === undefined && getServerPlatform() === ServerPlatform.wasi) 
     {
-        const message = 'It is required to install Microsoft WASM WASI core extension for running the shader validator server on the web. Do you want to install it now?';
+        const message = 'It is required to install Microsoft WASM WASI core extension for running the shader validator server on wasi. Do you want to install it now?';
         const choice = await vscode.window.showInformationMessage(message, 'Install', 'Not now');
         if (choice === 'Install') {
             // Wait for extension to be correctly installed.
@@ -54,12 +35,16 @@ export async function activate(context: vscode.ExtensionContext)
             return; // Extension failed to launch.
         }
     }
-    // Create validator
+    // Create language client
     const client = await createLanguageClient(context);
+    if (client === null) {
+        vscode.window.showErrorMessage("Failed to launch shader-validator language server.");
+        return;
+    }
     // Subscribe for dispose
     context.subscriptions.push(vscode.Disposable.from(client));
-    
 
+    // Subscribe commands
     context.subscriptions.push(vscode.commands.registerCommand("shader-validator.validateFile", (data: string = 'current') => {
         vscode.window.showInformationMessage("Cannot validate file manually for now");
     }));

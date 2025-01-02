@@ -25,8 +25,6 @@ jobs:
         run: npm ci
       - name: Install VSCE
         run: npm i -g vsce
-      - name: Create bin folder
-        run: mkdir ./bin
       - name: Read package JSON
         id: get_package_json
         run: |
@@ -43,35 +41,27 @@ jobs:
         run: echo '${{ fromJson(steps.get_package_json.outputs.packageJson).server_version }}'
         env:
           PACKAGE_JSON: echo $PACKAGE_JSON
-      - name: Download shader language server.
+      - name: Download windows shader language server.
         uses: robinraju/release-downloader@v1.11
         env:
           PACKAGE_JSON: echo $PACKAGE_JSON
         with:
           repository: 'antaalt/shader-sense'
           tag: ${{ format('v{0}', fromJson(steps.get_package_json.outputs.packageJson).server_version) }}
-          fileName: 'shader-language-server.zip'
-          extract: true
-          out-file-path: './bin'
+          fileName: '*.zip'
           token: '${{ secrets.GH_PAT }}'
-      - name: Download dxc dll.
-        uses: robinraju/release-downloader@v1.11
-        with:
-          repository: 'microsoft/DirectXShaderCompiler'
-          tag: v1.8.2405
-          fileName: 'dxc_2024_05_24.zip'
-          extract: true
-          out-file-path: './dxc'
-      - name: List file in folder.
-        run: ls .
-      - name: Copy dxc dll to bin.
-        run: cp ./dxc/bin/x64/dxcompiler.dll ./bin/dxcompiler.dll && cp ./dxc/bin/x64/dxil.dll ./bin/dxil.dll
-      - name: Remove dxc dependencies
-        run: rm -rf ./dxc
-      - name: Remove shader language server dependencies
-        run: rm ./bin/shader-language-server.zip
-      #- name: Get server version # Need linux build for that to execute server, or switch to windows.
-      #  run: echo "SERVER_VERSION=$(./bin/shader-language-server.exe --version | sed 's/shader-language-server v//g')" >> $GITHUB_ENV
+      - name: Create bin folder
+        run: mkdir ./bin
+      - name: Copy windows binaries to bin
+        run: mkdir ./bin/windows && unzip shader-language-server-windows.zip -d ./bin/windows && rm ./bin/shader-language-server-windows.zip
+      - name: Copy linux binaries to bin
+        run: mkdir ./bin/linux && unzip shader-language-server-linux.zip -d ./bin/linux && rm ./bin/shader-language-server-linux.zip
+      - name: Copy macos binaries to bin
+        run: mkdir ./bin/macos && unzip shader-language-server-macos.zip -d ./bin/macos && rm ./bin/shader-language-server-macos.zip
+      - name: Copy wasi binaries to bin
+        run: mkdir ./bin/wasi && unzip shader-language-server-wasi.zip -d ./bin/wasi && rm ./bin/shader-language-server-wasi.zip
+      - name: Get server version
+        run: echo "SERVER_VERSION=$(./bin/linux/shader-language-server --version | sed 's/shader-language-server v//g')" >> $GITHUB_ENV
       # VScode need a framebuffer to run test. So create one.
       - name: Create framebuffer to run test
         run: sudo apt-get install xvfb
