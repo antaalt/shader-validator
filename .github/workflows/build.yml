@@ -53,13 +53,13 @@ jobs:
       - name: Create bin folder
         run: mkdir ./bin
       - name: Copy windows binaries to bin
-        run: mkdir ./bin/windows && unzip shader-language-server-windows.zip -d ./bin/windows && rm ./bin/shader-language-server-windows.zip
+        run: mkdir ./bin/windows && unzip shader-language-server-windows.zip -d ./bin/windows && rm ./shader-language-server-windows.zip
       - name: Copy linux binaries to bin
-        run: mkdir ./bin/linux && unzip shader-language-server-linux.zip -d ./bin/linux && rm ./bin/shader-language-server-linux.zip
+        run: mkdir ./bin/linux && unzip shader-language-server-linux.zip -d ./bin/linux && rm ./shader-language-server-linux.zip
       - name: Copy macos binaries to bin
-        run: mkdir ./bin/macos && unzip shader-language-server-macos.zip -d ./bin/macos && rm ./bin/shader-language-server-macos.zip
+        run: mkdir ./bin/macos && unzip shader-language-server-macos.zip -d ./bin/macos && rm ./shader-language-server-macos.zip
       - name: Copy wasi binaries to bin
-        run: mkdir ./bin/wasi && unzip shader-language-server-wasi.zip -d ./bin/wasi && rm ./bin/shader-language-server-wasi.zip
+        run: mkdir ./bin/wasi && unzip shader-language-server-wasi.zip -d ./bin/wasi && rm ./shader-language-server-wasi.zip
       - name: Get server version
         run: echo "SERVER_VERSION=$(./bin/linux/shader-language-server --version | sed 's/shader-language-server v//g')" >> $GITHUB_ENV
       # VScode need a framebuffer to run test. So create one.
