@@ -20,14 +20,24 @@ suite('Binary Test Suite', () => {
 	});
 
 	test('Check wasm binary', () => {
-		assert.ok(doesBinaryExist("shader-language-server.wasm"));
+		assert.ok(doesBinaryExist("wasi/shader-language-server.wasm"));
 	});
 	test('Check windows binary', () => {
-		assert.ok(doesBinaryExist("shader-language-server.exe"));
-	});
-	test('Check dxc dependencies', () => {
+		assert.ok(doesBinaryExist("windows/shader-language-server.exe"));
 		// Dxc need these dll or it will crash.
-		assert.ok(doesBinaryExist("dxcompiler.dll"));
-		assert.ok(doesBinaryExist("dxil.dll"));
+		assert.ok(doesBinaryExist("windows/dxcompiler.dll"));
+		assert.ok(doesBinaryExist("windows/dxil.dll"));
+	});
+	test('Check linux binary', () => {
+		assert.ok(doesBinaryExist("linux/shader-language-server.exe"));
+		// Dxc need these dll or it will crash.
+		assert.ok(doesBinaryExist("linux/libdxcompiler.so"));
+		assert.ok(doesBinaryExist("linux/libdxil.so"));
+	});
+	test('Check macos binary', () => {
+		assert.ok(doesBinaryExist("macos/shader-language-server.exe"));
+		// Dxc need these dll or it will crash.
+		assert.ok(doesBinaryExist("macos/libdxcompiler.so"));
+		assert.ok(doesBinaryExist("macos/libdxil.so"));
 	});
 });

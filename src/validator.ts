@@ -22,7 +22,7 @@ export enum ServerPlatform {
     macOS,
     wasi,
 }
-function getPlatformBinaryPath(platform: ServerPlatform) : string {
+function getPlatformBinaryDirectory(platform: ServerPlatform) : string {
     switch (platform) {
         case ServerPlatform.windows:
             return "bin/windows/";
@@ -45,6 +45,9 @@ function getPlatformBinaryName(platform: ServerPlatform) : string {
         case ServerPlatform.wasi:
             return "shader-language-server.wasm";
     }
+}
+export function getPlatformBinaryPath(platform: ServerPlatform) : string {
+    return getPlatformBinaryDirectory(platform) + getPlatformBinaryName(platform);
 }
 
 export function isRunningOnWeb() : boolean {
@@ -78,12 +81,12 @@ function getBinaryPath(context : vscode.ExtensionContext, platform : ServerPlatf
             console.info(`SHADER_LANGUAGE_SERVER_EXECUTABLE_PATH found: ${process.env.SHADER_LANGUAGE_SERVER_EXECUTABLE_PATH}`);
             return vscode.Uri.file(process.env.SHADER_LANGUAGE_SERVER_EXECUTABLE_PATH + '/' + getPlatformBinaryName(platform));
         } else {
-            console.warn(`SHADER_LANGUAGE_SERVER_EXECUTABLE_PATH environment variable not found. Trying to launch ./bin/${getPlatformBinaryPath(platform)}/${getPlatformBinaryName(platform)}.`);
-            return vscode.Uri.joinPath(context.extensionUri, getPlatformBinaryPath(platform) + getPlatformBinaryName(platform));
+            console.warn(`SHADER_LANGUAGE_SERVER_EXECUTABLE_PATH environment variable not found. Trying to launch ./bin/${getPlatformBinaryPath(platform)}.`);
+            return vscode.Uri.joinPath(context.extensionUri, getPlatformBinaryPath(platform));
         }
     } else { // Running in production or test mode
         // CI is handling the copy to bin folder to avoid storage of exe on git.
-        return vscode.Uri.joinPath(context.extensionUri, getPlatformBinaryPath(platform) + getPlatformBinaryName(platform));
+        return vscode.Uri.joinPath(context.extensionUri, getPlatformBinaryPath(platform));
     }
 }
 async function requestConfiguration(context: vscode.ExtensionContext, client: LanguageClient) {
