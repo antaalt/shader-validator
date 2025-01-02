@@ -9,7 +9,7 @@ import { getRootFolder } from './utils';
 import { getPlatformBinaryPath, getServerPlatform } from '../../validator';
 
 suite('Server version Test Suite', () => {
-    test('Check windows server version', () => {
+    test('Check server version', () => {
         let platform = getServerPlatform();
         let server = cp.spawn(getPlatformBinaryPath(platform), [
             "--version"
