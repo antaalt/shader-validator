@@ -40,6 +40,10 @@
       {
         "command": "shader-validator.validateFile",
         "title": "Shader validator: Validate file"
+      },
+      {
+        "command": "shader-validator.dumpAst",
+        "title": "Shader validator: Dump ast"
       }
     ],
     "languages": [

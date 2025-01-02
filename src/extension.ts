@@ -5,6 +5,7 @@ import * as cp from "child_process";
 
 import { createLanguageClientWASI, createLanguageClientStandard } from './validator';
 import { LanguageClient } from 'vscode-languageclient/node';
+import { dumpAstRequest } from './request';
 
 function shouldUseWasiServer(): boolean {
     // For now, server only compiled for windows, so use WASI version on other platforms.
@@ -53,14 +54,31 @@ export async function activate(context: vscode.ExtensionContext)
             return; // Extension failed to launch.
         }
     }
-
-    context.subscriptions.push(vscode.commands.registerCommand("shader-validator.validateFile", (data: string = 'current') => {
-        vscode.window.showInformationMessage("Cannot validate file manually for now");
-    }));
     // Create validator
     const client = await createLanguageClient(context);
     // Subscribe for dispose
     context.subscriptions.push(vscode.Disposable.from(client));
+    
+
+    context.subscriptions.push(vscode.commands.registerCommand("shader-validator.validateFile", (data: string = 'current') => {
+        vscode.window.showInformationMessage("Cannot validate file manually for now");
+    }));
+    context.subscriptions.push(vscode.commands.registerCommand("shader-validator.dumpAst", (data: string = 'current') => {
+        let activeTextEditor = vscode.window.activeTextEditor;
+        if (activeTextEditor !== null) {
+            console.log(activeTextEditor);
+            client.sendRequest(dumpAstRequest, {
+                uri: activeTextEditor?.document.uri.toString() // TODO: need to pass correctly formatted path.
+            }).then((value: string | null) => {
+                console.log(value);
+                client.outputChannel.appendLine(value || "No AST to dump");
+            }, (reason: any) => {
+                client.outputChannel.appendLine("Failed to get ast: " + reason);
+            });
+        } else {
+            client.outputChannel.appendLine("No active file for dumping ast");
+        }
+    }));
 }
 
 

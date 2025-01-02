@@ -55,7 +55,7 @@ export async function createLanguageClientStandard(context: vscode.ExtensionCont
     const env = (trace === "verbose") ? {
         ...defaultEnv,
         "RUST_BACKTRACE": "1", // eslint-disable-line 
-        "RUST_LOG": "shader-language-server=trace", // eslint-disable-line @typescript-eslint/naming-convention
+        "RUST_LOG": "shader_language_server=trace", // eslint-disable-line @typescript-eslint/naming-convention
     } : defaultEnv;
     const serverOptions: ServerOptions = {
         command: executable.fsPath, 
@@ -75,7 +75,7 @@ export async function createLanguageClientStandard(context: vscode.ExtensionCont
 
     let client = new LanguageClient(
         'shader-validator',
-        'Shrimp language server',
+        'Shader language server',
         serverOptions,
         clientOptions,
         context.extensionMode === vscode.ExtensionMode.Development 
@@ -90,7 +90,8 @@ export async function createLanguageClientStandard(context: vscode.ExtensionCont
     return client;
 }
 export async function createLanguageClientWASI(context: vscode.ExtensionContext) {
-    const channel = vscode.window.createOutputChannel('Shrimp language Server WASI');
+    const channelName = 'Shader language Server WASI'; // For trace option, need same name
+    const channel = vscode.window.createOutputChannel(channelName);
     context.subscriptions.push(channel);
     
     // Load the WASM API
@@ -167,7 +168,7 @@ export async function createLanguageClientWASI(context: vscode.ExtensionContext)
 
     let client = new LanguageClient(
         'shader-validator',
-        'Shrimp language server WASI',
+        channelName,
         serverOptions,
         clientOptions,
         context.extensionMode === vscode.ExtensionMode.Development 
