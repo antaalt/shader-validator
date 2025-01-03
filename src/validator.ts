@@ -22,7 +22,14 @@ export enum ServerPlatform {
     macOS,
     wasi,
 }
-function getPlatformBinaryDirectory(platform: ServerPlatform) : string {
+
+export function isRunningOnWeb() : boolean {
+    // Web environment is detected with no fallback on child process which is not supported there.
+    return typeof cp.spawn !== 'function' || typeof process === 'undefined';
+}
+
+function getPlatformBinaryDirectoryPath(platform: ServerPlatform) : string {
+    // CI is handling the copy to bin folder to avoid storage of exe on git.
     switch (platform) {
         case ServerPlatform.windows:
             return "bin/windows/";
@@ -46,13 +53,28 @@ function getPlatformBinaryName(platform: ServerPlatform) : string {
             return "shader-language-server.wasm";
     }
 }
-export function getPlatformBinaryPath(platform: ServerPlatform) : string {
-    return getPlatformBinaryDirectory(platform) + getPlatformBinaryName(platform);
+function getPlatformBinaryDirectoryUri(context: vscode.ExtensionContext, platform: ServerPlatform) : vscode.Uri {
+    // process is undefined on the wasi.
+    if (platform !== ServerPlatform.wasi && context.extensionMode === vscode.ExtensionMode.Development) {
+        console.info("Running extension in dev mode. Looking for environment variable SHADER_LANGUAGE_SERVER_EXECUTABLE_PATH targetting server.");
+        if (process.env.SHADER_LANGUAGE_SERVER_EXECUTABLE_PATH !== undefined) {
+            console.info(`SHADER_LANGUAGE_SERVER_EXECUTABLE_PATH found: ${process.env.SHADER_LANGUAGE_SERVER_EXECUTABLE_PATH}`);
+            return vscode.Uri.joinPath(context.extensionUri, process.env.SHADER_LANGUAGE_SERVER_EXECUTABLE_PATH + '/');
+        } else {
+            console.warn('SHADER_LANGUAGE_SERVER_EXECUTABLE_PATH environment variable not found. Trying to launch from bin folder');
+            return vscode.Uri.joinPath(context.extensionUri, getPlatformBinaryDirectoryPath(platform));
+        }
+    } else { // Running in production or test mode
+        return vscode.Uri.joinPath(context.extensionUri, getPlatformBinaryDirectoryPath(platform));
+    }
 }
-
-export function isRunningOnWeb() : boolean {
-    // Web environment is detected with no fallback on child process which is not supported there.
-    return typeof cp.spawn !== 'function' || typeof process === 'undefined';
+// Relative path from extension directory
+export function getPlatformBinaryPath(platform: ServerPlatform) : string {
+    return getPlatformBinaryDirectoryPath(platform) + getPlatformBinaryName(platform);
+}
+// Absolute path as uri
+export function getPlatformBinaryUri(context: vscode.ExtensionContext, platform: ServerPlatform) : vscode.Uri {
+    return vscode.Uri.joinPath(getPlatformBinaryDirectoryUri(context, platform), getPlatformBinaryName(platform));
 }
 
 export function getServerPlatform() : ServerPlatform {
@@ -72,23 +94,6 @@ export function getServerPlatform() : ServerPlatform {
     }
 }
 
-function getBinaryPath(context : vscode.ExtensionContext, platform : ServerPlatform) : vscode.Uri
-{
-    // process might be undefined on the web.
-    if (typeof process !== 'undefined' && context.extensionMode === vscode.ExtensionMode.Development) {
-        console.info("Running extension in dev mode. Looking for environment variable SHADER_LANGUAGE_SERVER_EXECUTABLE_PATH targetting server.");
-        if (process.env.SHADER_LANGUAGE_SERVER_EXECUTABLE_PATH !== undefined) {
-            console.info(`SHADER_LANGUAGE_SERVER_EXECUTABLE_PATH found: ${process.env.SHADER_LANGUAGE_SERVER_EXECUTABLE_PATH}`);
-            return vscode.Uri.file(process.env.SHADER_LANGUAGE_SERVER_EXECUTABLE_PATH + '/' + getPlatformBinaryName(platform));
-        } else {
-            console.warn(`SHADER_LANGUAGE_SERVER_EXECUTABLE_PATH environment variable not found. Trying to launch ./bin/${getPlatformBinaryPath(platform)}.`);
-            return vscode.Uri.joinPath(context.extensionUri, getPlatformBinaryPath(platform));
-        }
-    } else { // Running in production or test mode
-        // CI is handling the copy to bin folder to avoid storage of exe on git.
-        return vscode.Uri.joinPath(context.extensionUri, getPlatformBinaryPath(platform));
-    }
-}
 async function requestConfiguration(context: vscode.ExtensionContext, client: LanguageClient) {
     // Send empty configuration to notify of change in config. 
     // Server should then request a configuration to client that vscode should understand and answer.
@@ -118,7 +123,7 @@ export async function createLanguageClient(context: vscode.ExtensionContext): Pr
     }
 }
 async function createLanguageClientStandard(context: vscode.ExtensionContext, platform : ServerPlatform) : Promise<LanguageClient | null> {
-    const executable = getBinaryPath(context, platform);
+    const executable = getPlatformBinaryUri(context, platform);
     const trace = vscode.workspace.getConfiguration("shader-validator").get<string>("trace.server");
     const defaultEnv = {};
     const env = (trace === "verbose") ? {
@@ -130,6 +135,7 @@ async function createLanguageClientStandard(context: vscode.ExtensionContext, pl
         command: executable.fsPath, 
         transport: TransportKind.stdio,
         options: {
+            cwd: getPlatformBinaryDirectoryUri(context, platform).fsPath,
             env: env
         }
     };
@@ -174,7 +180,7 @@ async function createLanguageClientWASI(context: vscode.ExtensionContext) : Prom
         // Load the WASM module. It is stored alongside the extension's JS code.
         // So we can use VS Code's file system API to load it. Makes it
         // independent of whether the code runs in the desktop or the web.
-        const executable = getBinaryPath(context, ServerPlatform.wasi);
+        const executable = getPlatformBinaryUri(context, ServerPlatform.wasi);
         const bits = await vscode.workspace.fs.readFile(executable);
         const module = await WebAssembly.compile(bits);
 

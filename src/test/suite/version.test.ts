@@ -11,7 +11,7 @@ import { getPlatformBinaryPath, getServerPlatform } from '../../validator';
 suite('Server version Test Suite', () => {
     test('Check server version', () => {
         let platform = getServerPlatform();
-        let server = cp.spawn(getPlatformBinaryPath(platform), [
+        let server = cp.spawn(getRootFolder() + getPlatformBinaryPath(platform), [
             "--version"
         ]);
         const version = vscode.extensions.getExtension('antaalt.shader-validator')!.packageJSON.server_version;
