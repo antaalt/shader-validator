@@ -87,7 +87,8 @@ export function getServerPlatform() : ServerPlatform {
             case "linux":
                 return ServerPlatform.linux;
             case "darwin":
-                return ServerPlatform.macOS;
+                return ServerPlatform.wasi; // For now, use WASI as I cannot test on MAC.
+                //return ServerPlatform.macOS;
             default:
                 return ServerPlatform.wasi; // Not supported. Fallback to WASI.
         }
