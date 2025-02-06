@@ -12,6 +12,9 @@
             "include": "#block_comments"
         },
         {
+            "include": "#qualifiers"
+        },
+        {
             "include": "#keywords"
         },
         {
@@ -161,6 +164,9 @@
                             "include": "#block_comments"
                         },
                         {
+                            "include": "#qualifiers"
+                        },
+                        {
                             "include": "#keywords"
                         },
                         {
@@ -211,6 +217,9 @@
                         },
                         {
                             "include": "#block_comments"
+                        },
+                        {
+                            "include": "#qualifiers"
                         },
                         {
                             "include": "#keywords"
@@ -407,25 +416,55 @@
                     "comment": "technique type",
                     "name": "storage.type.fx.technique.hlsl",
                     "match": "\\b(technique|Technique|technique10|technique11|pass)\\b"
-                },
-                {
-                    "comment": "Custom type",
-                    "name": "entity.name.type.hlsl",
-                    "match": "\\b([A-Z][A-Za-z0-9_]*)\\b"
-                },
-                {
-                    "comment": "Custom macro",
-                    "name": "constant.character.preprocessor.hlsl",
-                    "match": "\\b([A-Z_][A-Z0-9_]*)\\b"
                 }
             ]
         },
         "variables": {
             "patterns": [
                 {
-                    "comment": "variables",
-                    "name": "variable.other.hlsl",
-                    "match": "\\b(?<!(?<!\\.)\\.)(?:r#(?!(crate|[Ss]elf|super)))?[a-z0-9_]+\\b"
+                    "comment": "struct declaration",
+                    "name": "keyword.declaration.struct.hlsl",
+                    "match": "\\b(struct|class|interface|cbuffer|tbuffer)\\s+(\\[[a-z]+\\]\\s+)?([a-zA-Z][a-zA-Z0-9_]*)?(\\s+:\\s+[a-zA-Z][a-zA-Z0-9_]*)?",
+                    "captures": {
+                        "1": {
+                            "name": "keyword.declaration.struct.hlsl"
+                        },
+                        "2": {
+                            "name": "constant.language.attribute.hlsl"
+                        },
+                        "3": {
+                            "name": "entity.name.type.hlsl"
+                        }
+                    }
+                },
+                {
+                    "comment": "variable declaration",
+                    "name": "keyword.declaration.variable.hlsl",
+                    "match": "\\b(([\\w]+)\\s+)*([\\w]+)(\\<([\\w]+)\\>)?\\s+([\\w]+)\\b",
+                    "captures": {
+                        "1": {
+                            "name": "keyword.declaration.qualifier.hlsl",
+                            "patterns": [
+                                {
+                                    "include": "#qualifiers"
+                                }
+                            ]
+                        },
+                        "3": {
+                            "name": "entity.name.type.hlsl",
+                            "patterns": [
+                                {
+                                    "include": "#types"
+                                }
+                            ]
+                        },
+                        "5": {
+                            "name": "entity.name.type.hlsl"
+                        },
+                        "6": {
+                            "name": "variable.other.hlsl"
+                        }
+                    }
                 }
             ]
         },
@@ -463,12 +502,41 @@
                 }
             ]
         },
+        "qualifiers": {
+            "patterns": [
+                {
+                    "comment": "other qualifier",
+                    "name": "keyword.qualifier.hlsl",
+                    "match": "\\b(const|volatile|uniform|unorm|unsigned|signed)\\b"
+                },
+                {
+                    "comment": "type modifier for float",
+                    "name": "keyword.declaration.float.hlsl",
+                    "match": "\\b(snorm|unorm)\\b"
+                },
+                {
+                    "comment": "type modifier for interpolation",
+                    "name": "keyword.declaration.hlsl",
+                    "match": "\\b(centroid|linear|nointerpolation|noperspective|sample)\\b"
+                },
+                {
+                    "comment": "type modifier for geometry shader",
+                    "name": "keyword.declaration.hlsl",
+                    "match": "\\b(lineadj|line|point|triangle|triangleadj)\\b"
+                },
+                {
+                    "comment": "common qualifier",
+                    "name": "keyword.qualifier.hlsl",
+                    "match": "\\b(column_major|const|export|extern|globallycoherent|groupshared|inline|inout|in|out|precise|row_major|shared|static|uniform|volatile)\\b"
+                }
+            ]
+        },
         "keywords": {
             "patterns": [
                 {
                     "comment": "other keywords",
                     "name": "keyword.control.hlsl",
-                    "match": "\\b(const|goto|void|volatile|break|typedef|using|case|continue|default|discard|else|export|do|enum|for|function|if|private|return|switch|uniform|unorm|while|workgroup|operator)\\b"
+                    "match": "\\b(goto|void|break|typedef|using|case|continue|default|discard|else|export|do|enum|for|function|if|private|return|switch|while|workgroup|operator)\\b"
                 },
                 {
                     "comment": "reserved keywords",
@@ -478,32 +546,7 @@
                 {
                     "comment": "type keyword",
                     "name": "keyword.declaration.type.hlsl",
-                    "match": "\\b(type|typename|template)\\b"
-                },
-                {
-                    "comment": "constant keyword",
-                    "name": "keyword.declaration.hlsl",
-                    "match": "\\b(unsigned|signed|namespace)\\b"
-                },
-                {
-                    "comment": "struct keyword",
-                    "name": "keyword.declaration.struct.hlsl",
-                    "match": "\\b(struct|class|interface|cbuffer|tbuffer)\\s+(\\[[a-z]+\\]\\s+)?([a-zA-Z][a-zA-Z0-9_]*)?(\\s+:\\s+[a-zA-Z][a-zA-Z0-9_]*)?",
-                    "captures": {
-                        "1": {
-                            "name": "keyword.declaration.struct.hlsl"
-                        },
-                        "2": {
-                            "name": "constant.language.attribute.hlsl"
-                        },
-                        "3": {
-                            "name": "entity.name.type.hlsl"
-                        },
-                        "5": {
-                            "name": "entity.name.type.hlsl"
-                        }
-                    }
-                    
+                    "match": "\\b(type|typename|template|namespace)\\b"
                 },
                 {
                     "comment": "logical operators",
@@ -551,39 +594,14 @@
                     "match": "->"
                 },
                 {
-                    "comment": "type modifier",
-                    "name": "keyword.declaration.hlsl",
-                    "match": "\\b(column_major|const|export|extern|globallycoherent|groupshared|inline|inout|in|out|precise|row_major|shared|static|uniform|volatile)\\b"
-                },
-                {
-                    "comment": "type modifier",
-                    "name": "keyword.declaration.hlsl",
-                    "match": "\\b(column_major|const|export|extern|globallycoherent|groupshared|inline|inout|in|out|precise|row_major|shared|static|uniform|volatile)\\b"
-                },
-                {
                     "comment": "compiler operator",
                     "name": "keyword.declaration.hlsl",
                     "match": "\\b(sizeof|offsetof|static_assert|decltype|__decltype|_Static_assert)\\b"
                 },
                 {
-                    "comment": "type modifier for float",
-                    "name": "keyword.declaration.float.hlsl",
-                    "match": "\\b(snorm|unorm)\\b"
-                },
-                {
                     "comment": "type modifier for storage",
                     "name": "keyword.declaration.hlsl",
                     "match": "\\b(packoffset|register)\\b"
-                },
-                {
-                    "comment": "type modifier for interpolation",
-                    "name": "keyword.declaration.hlsl",
-                    "match": "\\b(centroid|linear|nointerpolation|noperspective|sample)\\b"
-                },
-                {
-                    "comment": "type modifier for geometry shader",
-                    "name": "keyword.declaration.hlsl",
-                    "match": "\\b(lineadj|line|point|triangle|triangleadj)\\b"
                 },
                 {
                     "comment": "preprocessor",
