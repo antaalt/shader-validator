@@ -13,12 +13,13 @@ Currently, it support some features and languages:
 -   Symbol provider: provide goto, completion, hover & signature.
     -   Local symbols: Provide all user created symbols (function, constant, types...).
     -   Intrinsics symbols: Provide all languages provided intrinsics symbols.
+-   Regions: Detect inactive regions in code due to preprocessor and grey them out.
 
-|Language|Syntax Highlighting|Diagnostics |Local symbols|Intrinsics symbols|
-|--------|-------------------|------------|-------------|------------------|
-|GLSL    |✅                 |✅(glslang)|✅           |✅               |
-|HLSL    |✅                 |✅(DXC)    |✅           |✅               |
-|WGSL    |✅                 |✅(Naga)   |❌           |❌               |
+|Language|Syntax Highlighting|Diagnostics |Local symbols|Intrinsics symbols|Regions|
+|--------|-------------------|------------|-------------|------------------|-------|
+|GLSL    |✅                 |✅(glslang)|✅           |✅               |❌     |
+|HLSL    |✅                 |✅(DXC)    |✅           |✅               |✅     |
+|WGSL    |✅                 |✅(Naga)   |❌           |❌               |❌     |
 
 ## Features
 
@@ -26,7 +27,9 @@ Currently, it support some features and languages:
 
 This extension provide improved syntax highlighting for HLSL, GLSL & WGSL than the base one in VS code.
 
-### Linting
+![syntax-highlighting](res/doc/syntax-highlighting.png)
+
+### Diagnostics
 
 You cant lint your code in real time through this extension:
 
@@ -34,21 +37,37 @@ You cant lint your code in real time through this extension:
 -   HLSL relies on DirectX shader compiler on desktop, Glslang on the web (see below).
 -   WGSL relies on Naga.
 
+![diagnostic](res/doc/diagnostic.png)
+
 ### Autocompletion
 
 The extension will suggest you symbols from your file and intrinsics as you type.
+
+![diagnostic](res/doc/completion.png)
 
 ### Signature
 
 View available signatures for your function as you type it.
 
+![diagnostic](res/doc/signature.png)
+
 ### Hover
 
 View informations relative to a symbol by hovering it.
 
+![diagnostic](res/doc/hover.png)
+
 ### Goto
 
 Go to your declaration definition by clicking on it.
+
+![diagnostic](res/doc/goto.png)
+
+### Regions
+
+Grey out inactive regions depending on currently declared preprocessor.
+
+![diagnostic](res/doc/inactive-regions.png)
 
 ## Extension Settings
 
@@ -59,6 +78,7 @@ This extension contributes the following settings:
 *   `shader-validator.severity`: Select minimal log severity for linting.
 *   `shader-validator.includes`: All custom includes for linting.
 *   `shader-validator.defines`: All custom macros and their values for linting.
+*   `shader-validator.regions`: Enable inactive regions parsing & filtering.
 
 ### HLSL specific settings: 
 
@@ -75,7 +95,8 @@ This extension contributes the following settings:
 
 This extension is supported on every platform, but some limitations are to be expected on some:
 -   Windows: full feature set.
--   Mac & Linux: Rely on WASI version of server, same as web, see web support for limitations.
+-   Linux: full feature set.
+-   Mac: Rely on WASI version of server, same as web, see web support for limitations.
 
 ## Web support
 

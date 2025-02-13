@@ -7,8 +7,8 @@
     "color": "#9ad0ff",
     "theme": "light"
   },
-  "version": "0.4.2",
-  "server_version": "0.4.2",
+  "version": "0.5.0-pre1",
+  "server_version": "0.5.0-pre1",
   "publisher": "antaalt",
   "repository": {
     "type": "git",
@@ -151,6 +151,11 @@
             "additionalProperties": {
               "type": "string"
             }
+          },
+          "shader-validator.regions": {
+            "description": "Grey out inactive regions (BETA, expect some issues).",
+            "type": "boolean",
+            "default": false
           }
         }
       },
