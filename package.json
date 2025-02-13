@@ -36,16 +36,6 @@
   "main": "./dist/node/extension",
   "browser": "./dist/web/extension",
   "contributes": {
-    "commands": [
-      {
-        "command": "shader-validator.validateFile",
-        "title": "Shader validator: Validate file"
-      },
-      {
-        "command": "shader-validator.dumpAst",
-        "title": "Shader validator: Dump ast"
-      }
-    ],
     "languages": [
       {
         "id": "hlsl",
@@ -276,7 +266,65 @@
           }
         }
       }
-    ]
+    ],
+    "commands": [
+      {
+        "command": "shader-validator.validateFile",
+        "title": "Shader validator: Validate file"
+      },
+      {
+        "command": "shader-validator.dumpAst",
+        "title": "Shader validator: Dump ast"
+      },
+      {
+        "command": "shader-validator.refreshEntry",
+        "title": "Shader validator: Refresh",
+        "icon": {
+          "light": "res/icons/hlsl-icon.svg",
+          "dark": "res/icons/hlsl-icon.svg"
+        }
+      },
+      {
+        "command": "shader-validator.deleteEntry",
+        "title": "Shader validator: Delete",
+        "icon": {
+          "light": "res/icons/hlsl-icon.svg",
+          "dark": "res/icons/hlsl-icon.svg"
+        }
+      }
+    ],
+    "menus": {
+        "view/title": [
+            {
+                "command": "shader-validator.refreshEntry",
+                "when": "view == nodeDependencies",
+                "group": "navigation"
+            }
+        ],
+        "view/item/context": [
+            {
+                 "command": "shader-validator.deleteEntry",
+                 "when": "view == shader-validator && viewItem == dependency"
+             }
+         ]
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "shader-validator",
+          "title": "Shader validator",
+          "icon": "res/icons/hlsl-icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "shader-validator": [
+        {
+          "id": "shader-validator",
+          "name": "Shader validator"
+        }
+      ]
+    }
   },
   "scripts": {
     "vscode:prepublish": "webpack --mode production",
