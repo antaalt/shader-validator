@@ -277,6 +277,10 @@
         "title": "Shader validator: Dump ast"
       },
       {
+        "command": "shader-validator.setEntryPoint",
+        "title": "Shader validator: Set entry point"
+      },
+      {
         "command": "shader-validator.refreshEntry",
         "title": "Shader validator: Refresh",
         "icon": {
@@ -320,8 +324,12 @@
     "views": {
       "shader-validator": [
         {
-          "id": "shader-validator",
-          "name": "Shader validator"
+          "id": "shader-validator-entry-points",
+          "name": "Entry points"
+        },
+        {
+          "id": "shader-validator-view",
+          "name": "something else"
         }
       ]
     }

@@ -11,10 +11,13 @@ import {
     DidChangeConfigurationNotification,
     LanguageClient,
     LanguageClientOptions,
+    Middleware,
+    ProvideDocumentSymbolsSignature,
     ServerOptions,
     TransportKind
 } from 'vscode-languageclient/node';
-import assert from "assert";
+import { EntryPointTreeDataProvider } from "./entry-point";
+import { sidebar } from "./extension";
 
 export enum ServerPlatform {
     windows,
@@ -112,6 +115,15 @@ async function requestConfiguration(context: vscode.ExtensionContext, client: La
         })
     );
 }
+function getMiddleware() : Middleware {
+    return {
+        provideDocumentSymbols: (document: vscode.TextDocument, token: vscode.CancellationToken, next: ProvideDocumentSymbolsSignature) : vscode.ProviderResult<vscode.SymbolInformation[] | vscode.DocumentSymbol[]> => {
+            // For retrieving entry points.
+            return sidebar.provideDocumentSymbol(document, token, next);
+        },
+    };
+}
+
 
 export async function createLanguageClient(context: vscode.ExtensionContext): Promise<LanguageClient | null> {
     // Create validator
@@ -146,7 +158,8 @@ async function createLanguageClientStandard(context: vscode.ExtensionContext, pl
             { scheme: 'file', language: 'hlsl' },
             { scheme: 'file', language: 'glsl' },
             { scheme: 'file', language: 'wgsl' },
-        ]
+        ],
+        middleware: getMiddleware()
     };
 
     let client = new LanguageClient(
@@ -238,6 +251,7 @@ async function createLanguageClientWASI(context: vscode.ExtensionContext) : Prom
         outputChannel: channel,
         uriConverters: createUriConverters(),
 		traceOutputChannel: channel,
+        middleware: getMiddleware()
     };
 
 
