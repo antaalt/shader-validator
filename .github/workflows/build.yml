@@ -74,7 +74,7 @@ jobs:
       - name: Package extension
         if: ${{ !inputs.prerelease }}
         run: vsce package
-      - name: Package extension
+      - name: Package prerelease extension
         if: ${{ inputs.prerelease }}
         run: vsce package --pre-release
       - name: Get version

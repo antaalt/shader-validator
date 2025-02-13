@@ -2,7 +2,7 @@ name: Deploy and publish Extension
 
 on:
   release:
-    types: [released, prereleased]
+    types: [published]
 
 # https://github.com/marketplace/actions/publish-vs-code-extension
 # https://code.visualstudio.com/api/working-with-extensions/continuous-integration
@@ -11,7 +11,7 @@ jobs:
     uses: ./.github/workflows/build.yml
     secrets: inherit # for GH_PAT
     with:
-      prerelease: ${{ !(github.event_name == 'release' && github.event.action == 'released') }}
+      prerelease: ${{ github.event.release.prerelease }}
 
   deploy:
     permissions: write-all
@@ -32,11 +32,11 @@ jobs:
         with:
           pat: ${{ secrets.OPEN_VSX_PAT }}
           extensionFile: shader-validator.vsix
-          preRelease: ${{ !(github.event_name == 'release' && github.event.action == 'released') }}
+          preRelease: ${{ github.event.release.prerelease }}
       - name: Publish to Visual Studio Marketplace
         uses: HaaLeo/publish-vscode-extension@v1
         # Dont publish pre-release here, vscode marketplace dont support semver != major.minor.patch
-        if: github.event_name == 'release' && github.event.action == 'released' 
+        if: ${{ !github.event.release.prerelease }}
         with:
           pat: ${{ secrets.MARKETPLACE_PAT }}
           registryUrl: https://marketplace.visualstudio.com
