@@ -121,6 +121,9 @@ function getMiddleware() : Middleware {
             // For retrieving entry points.
             return sidebar.provideDocumentSymbol(document, token, next);
         },
+        didClose: (data: vscode.TextDocument, next: (data:vscode.TextDocument) => Promise<void>) => {
+            return sidebar.didCloseDocument(data, next);
+        }
     };
 }
 

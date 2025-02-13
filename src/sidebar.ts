@@ -26,14 +26,21 @@ export class Sidebar {
         
         context.subscriptions.push(vscode.window.registerTreeDataProvider('shader-validator-entry-points', this.provider));
     }
-
-    provideDocumentSymbol(document: vscode.TextDocument, token: vscode.CancellationToken, next: ProvideDocumentSymbolsSignature) : Promise<vscode.SymbolInformation[] | vscode.DocumentSymbol[] | null | undefined> {
+    // TODO: should we instead plug on workspace symbols ?
+    // What about updates ?
+    async provideDocumentSymbol(document: vscode.TextDocument, token: vscode.CancellationToken, next: ProvideDocumentSymbolsSignature) : Promise<vscode.SymbolInformation[] | vscode.DocumentSymbol[] | null | undefined> {
         return this.provider.documentSymbolProvider(document, token, next);
+    }
+    async didCloseDocument(document: vscode.TextDocument, next: (data: vscode.TextDocument) => Promise<void>) : Promise<void> {
+        this.provider.delete(document.uri);
     }
 
     private updateDecorations() {
         if (this.activeEditor) {
+            
             // TODO: read current active entry points instead.
+            //let entryPoints = this.provider.getEntryPoint(this.activeEditor.document.uri);
+
             const decoration0 = { range: new vscode.Range(new vscode.Position(5, 0), new vscode.Position(5, 0)), hoverMessage: 'Icon decoration' };
             const decoration1 = { range: new vscode.Range(new vscode.Position(10, 2), new vscode.Position(10, 10)), hoverMessage: 'Small decoration' };
             const decoration2 = { range: new vscode.Range(new vscode.Position(12, 0), new vscode.Position(12, 5)), hoverMessage: 'Large decoration' };
