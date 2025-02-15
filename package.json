@@ -316,7 +316,7 @@
             {
               "command": "shader-validator.editMenu",
               "group": "inline@2",
-              "when": "view == shader-validator-variants && (viewItem == variant || viewItem == include || viewItem == define)"
+              "when": "view == shader-validator-variants && (viewItem == variant || viewItem == include || viewItem == define || viewItem == stage)"
             },
             {
               "command": "shader-validator.deleteMenu",

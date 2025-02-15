@@ -22,6 +22,29 @@ export type ShaderVariantIncludeList = {
     includes: ShaderVariantInclude[],
 };
 
+export enum ShaderStage {
+    auto,
+    vertex,
+    fragment,
+    compute,
+    tesselationControl,
+    tesselationEvaluation,
+    mesh,
+    task,
+    geometry,
+    rayGeneration,
+    closestHit,
+    anyHit,
+    callable,
+    miss,
+    intersect,
+}
+
+export type ShaderVariantStage = {
+    kind: 'stage',
+    stage: ShaderStage,
+};
+
 // This should be shadervariant.
 export type ShaderVariant = {
     kind: 'variant',
@@ -29,6 +52,7 @@ export type ShaderVariant = {
     name: string,
     isActive: boolean,
     // Per variant data
+    stage: ShaderVariantStage,
     defines: ShaderVariantDefineList,
     includes: ShaderVariantIncludeList,
 };
@@ -39,7 +63,7 @@ export type ShaderVariantFile = {
     variants: ShaderVariant[],
 };
 
-export type ShaderVariantNode = ShaderVariant | ShaderVariantFile | ShaderVariantDefineList | ShaderVariantIncludeList | ShaderVariantDefine | ShaderVariantInclude;
+export type ShaderVariantNode = ShaderVariant | ShaderVariantFile | ShaderVariantDefineList | ShaderVariantIncludeList | ShaderVariantDefine | ShaderVariantInclude | ShaderVariantStage;
 
 export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<ShaderVariantNode> {
 
@@ -75,19 +99,29 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
             item.contextValue = element.kind;
             return item;
         } else if (element.kind === 'defineList') {
-            let item = new vscode.TreeItem("Defines", vscode.TreeItemCollapsibleState.Expanded);
+            let item = new vscode.TreeItem("defines", vscode.TreeItemCollapsibleState.Expanded);
+            item.iconPath = new vscode.ThemeIcon('keyboard');
             item.contextValue = element.kind;
             return item;
         } else if (element.kind === 'includeList') {
-            let item = new vscode.TreeItem("Includes", vscode.TreeItemCollapsibleState.Expanded);
+            let item = new vscode.TreeItem("includes", vscode.TreeItemCollapsibleState.Expanded);
+            item.tooltip = `User defined include ${element.includes}`,
+            item.iconPath = new vscode.ThemeIcon('file-code');
             item.contextValue = element.kind;
             return item;
         } else if (element.kind === 'define') {
             let item = new vscode.TreeItem(element.label, vscode.TreeItemCollapsibleState.None);
+            item.description = element.value;
+            item.tooltip = `User defined macro ${element.label} with value ${element.value}`,
             item.contextValue = element.kind;
             return item;
         } else if (element.kind === 'include') {
             let item = new vscode.TreeItem(element.include, vscode.TreeItemCollapsibleState.None);
+            item.contextValue = element.kind;
+            return item;
+        } else if (element.kind === 'stage') {
+            let item = new vscode.TreeItem("stage", vscode.TreeItemCollapsibleState.None);
+            item.description = ShaderStage[element.stage];
             item.contextValue = element.kind;
             return item;
         } else {
@@ -99,7 +133,7 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
     public getChildren(element?: ShaderVariantNode): ShaderVariantNode[] | Thenable<ShaderVariantNode[]> {
         if (element) {
             if (element.kind === 'variant') {
-                return [element.includes, element.defines];
+                return [element.stage, element.includes, element.defines];
             } else if (element.kind === 'file') {
                 return element.variants;
             } else if (element.kind === 'includeList') {
@@ -109,6 +143,8 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
             } else if (element.kind === 'include') {
                 return [];
             } else if (element.kind === 'define') {
+                return [];
+            } else if (element.kind === 'stage') {
                 return [];
             } else {
                 return undefined!; // unreachable
@@ -126,6 +162,10 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
             uri: uri,
             name: name,
             isActive: false,
+            stage: {
+                kind: 'stage',
+                stage: ShaderStage.auto
+            },
             defines: {
                 kind: 'defineList',
                 defines:[]

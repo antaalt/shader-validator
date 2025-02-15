@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { ShaderVariantNode, ShaderVariantTreeDataProvider } from './shaderVariant';
+import { ShaderStage, ShaderVariantNode, ShaderVariantTreeDataProvider } from './shaderVariant';
 
 export class Sidebar {
     private provider : ShaderVariantTreeDataProvider;
@@ -54,6 +54,7 @@ export class Sidebar {
             }
         }));
         context.subscriptions.push(vscode.commands.registerCommand("shader-validator.editMenu", async (node: ShaderVariantNode) => {
+            
             if (node.kind === 'variant') {
                 let name = await vscode.window.showInputBox({
                     title: "Entry point selection",
@@ -96,6 +97,34 @@ export class Sidebar {
                 });
                 if (include) {
                     node.include = include;
+                    this.provider.refresh();
+                }
+            } else if (node.kind === 'stage') {
+
+                let stage = await vscode.window.showQuickPick(
+                    [
+                        ShaderStage[ShaderStage.auto],
+                        ShaderStage[ShaderStage.vertex],
+                        ShaderStage[ShaderStage.fragment],
+                        ShaderStage[ShaderStage.compute],
+                        ShaderStage[ShaderStage.tesselationControl],
+                        ShaderStage[ShaderStage.tesselationEvaluation],
+                        ShaderStage[ShaderStage.mesh],
+                        ShaderStage[ShaderStage.task],
+                        ShaderStage[ShaderStage.geometry],
+                        ShaderStage[ShaderStage.rayGeneration],
+                        ShaderStage[ShaderStage.closestHit],
+                        ShaderStage[ShaderStage.anyHit],
+                        ShaderStage[ShaderStage.callable],
+                        ShaderStage[ShaderStage.miss],
+                        ShaderStage[ShaderStage.intersect],
+                    ],
+                    {
+                        title: "Shader stage"
+                    }
+                );
+                if (stage) {
+                    node.stage = ShaderStage[stage as keyof typeof ShaderStage];
                     this.provider.refresh();
                 }
             }
