@@ -26,25 +26,31 @@ export class Sidebar {
         
         context.subscriptions.push(vscode.window.registerTreeDataProvider('shader-validator-entry-points', this.provider));
     }
-    // TODO: should we instead plug on workspace symbols ?
-    // What about updates ?
+    // TODO: should mix workspace request & document to have every files avilable in workspace & keep them in memory.
     async provideDocumentSymbol(document: vscode.TextDocument, token: vscode.CancellationToken, next: ProvideDocumentSymbolsSignature) : Promise<vscode.SymbolInformation[] | vscode.DocumentSymbol[] | null | undefined> {
-        return this.provider.documentSymbolProvider(document, token, next);
+        let symbols = await this.provider.documentSymbolProvider(document, token, next);
+        // Await & trigger decorations update once we have symbols.
+        this.updateDecorations();
+        return symbols;
+    }
+    async didOpenDocument(document: vscode.TextDocument, next: (data: vscode.TextDocument) => Promise<void>) : Promise<void> {
+        this.provider.addFile(document.uri);
+        next(document);
     }
     async didCloseDocument(document: vscode.TextDocument, next: (data: vscode.TextDocument) => Promise<void>) : Promise<void> {
-        this.provider.delete(document.uri);
+        this.provider.deleteFile(document.uri);
+        next(document);
     }
 
     private updateDecorations() {
         if (this.activeEditor) {
-            
-            // TODO: read current active entry points instead.
-            //let entryPoints = this.provider.getEntryPoint(this.activeEditor.document.uri);
-
-            const decoration0 = { range: new vscode.Range(new vscode.Position(5, 0), new vscode.Position(5, 0)), hoverMessage: 'Icon decoration' };
-            const decoration1 = { range: new vscode.Range(new vscode.Position(10, 2), new vscode.Position(10, 10)), hoverMessage: 'Small decoration' };
-            const decoration2 = { range: new vscode.Range(new vscode.Position(12, 0), new vscode.Position(12, 5)), hoverMessage: 'Large decoration' };
-            this.activeEditor.setDecorations(this.decorator, [decoration0, decoration1, decoration2]);
+            let decorations : vscode.DecorationOptions[]= [];
+            this.provider.visitEntryPoints(this.activeEditor.document.uri, (message: string, range: vscode.Range, active: boolean) => {
+                if (active) {
+                    decorations.push({ range, hoverMessage: message });
+                }
+            });
+            this.activeEditor.setDecorations(this.decorator, decorations);
         }
     }
     private setupGutter(context: vscode.ExtensionContext) {

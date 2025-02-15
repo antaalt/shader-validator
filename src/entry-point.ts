@@ -4,8 +4,10 @@ import { ProvideDocumentSymbolsSignature } from 'vscode-languageclient';
 class EntryPointNode extends vscode.TreeItem {
     children: EntryPointNode[] | undefined;
   
-    constructor(uri: vscode.Uri, range: vscode.Range, entryPoint? : string) {
-        let isEntryPoint = entryPoint ? true : false;
+    constructor(uri: vscode.Uri, range?: vscode.Range, entryPoint? : string) {
+        const isEntryPointString = entryPoint ? true : false;
+        const isEntryPointRange = range ? true : false;
+        const isEntryPoint = isEntryPointRange && isEntryPointString;
         super(
             entryPoint || uri.fsPath,
             isEntryPoint ? vscode.TreeItemCollapsibleState.None : vscode.TreeItemCollapsibleState.Expanded
@@ -29,11 +31,16 @@ class EntryPointNode extends vscode.TreeItem {
     isEntryPoint() : boolean {
         return this.collapsibleState === vscode.TreeItemCollapsibleState.None;
     }
-    addEntryPoint(entryPoint: string, range: vscode.Range) {
+    add(entryPoint: string, range: vscode.Range) {
         this.children?.push(new EntryPointNode(this.resourceUri!, range, entryPoint));
     }
-    clearEntryPoints() {
+    clear() {
         this.children = [];
+    }
+    visit(callback: (entryPoint: string, range: vscode.Range, active: boolean) => void) {
+        const range = (this.command?.arguments!)[1] as vscode.TextDocumentShowOptions;
+        const active = this.checkboxState === vscode.TreeItemCheckboxState.Checked;
+        callback(this.label as string, range.selection!, active);
     }
 }
 export class EntryPointTreeDataProvider implements vscode.TreeDataProvider<EntryPointNode> {
@@ -44,14 +51,9 @@ export class EntryPointTreeDataProvider implements vscode.TreeDataProvider<Entry
     // Array or map ?
     private entryPoints : Map<vscode.Uri, EntryPointNode> = new Map;
 
-    
-    constructor() {
-    }
-
     public refresh() {
         this.onDidChangeTreeDataEmitter.fire();
     }
-
 
     public getTreeItem(element: EntryPointNode): vscode.TreeItem {
         return element;
@@ -69,19 +71,29 @@ export class EntryPointTreeDataProvider implements vscode.TreeDataProvider<Entry
         //console.info(`Adding possible entry point for file ${uri}: ${entryPoint}`);
         let file = this.entryPoints.get(uri);
         if (file) {
-            file.addEntryPoint(entryPoint, range);
+            file.add(entryPoint, range);
         } else {
             let node = new EntryPointNode(uri, range);
-            node.addEntryPoint(entryPoint, range);
+            node.add(entryPoint, range);
             this.entryPoints.set(uri, node);
         }
     }
 
-    public clearEntryPoints(uri: vscode.Uri): void {
-        this.entryPoints.get(uri)?.clearEntryPoints();
+    public clearEntryPoint(uri: vscode.Uri): void {
+        this.entryPoints.get(uri)?.clear();
     }
-    public delete(uri: vscode.Uri): void {
+    public addFile(uri: vscode.Uri): void {
+        this.entryPoints.set(uri, new EntryPointNode(uri));
+        this.refresh();
+    }
+    public deleteFile(uri: vscode.Uri): void {
         this.entryPoints.delete(uri);
+        this.refresh();
+    }
+    public visitEntryPoints(uri: vscode.Uri, callback: (e:string, r: vscode.Range, active: boolean) => void) {
+        this.entryPoints.get(uri)?.children?.map(entryPoint => {
+            entryPoint.visit(callback);
+        });
     }
     async documentSymbolProvider(document: vscode.TextDocument, token: vscode.CancellationToken, next: ProvideDocumentSymbolsSignature) : Promise<vscode.SymbolInformation[] | vscode.DocumentSymbol[] | null | undefined> {
         let asyncResult = next(document, token);
@@ -91,7 +103,7 @@ export class EntryPointTreeDataProvider implements vscode.TreeDataProvider<Entry
                 // /!\ Type casting need to match server data sent. /!\ 
                 let resultArray = result as vscode.SymbolInformation[];
                 // Clear after async
-                this.clearEntryPoints(document.uri);
+                this.clearEntryPoint(document.uri);
                 for (let symbol of resultArray) {
                     // Should not be an intrinsic as its only local symbol here.
                     if (symbol.kind === vscode.SymbolKind.Function) {
