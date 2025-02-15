@@ -1,62 +1,62 @@
 import * as vscode from 'vscode';
 import { ProvideDocumentSymbolsSignature } from 'vscode-languageclient';
 
-export type EntryPointDefine = {
+export type ShaderVariantDefine = {
     kind: 'define',
     label: string,
     value: string,
 };
 
-export type EntryPointDefineList = {
+export type ShaderVariantDefineList = {
     kind: 'defineList',
-    defines: EntryPointDefine[],
+    defines: ShaderVariantDefine[],
 };
 
-export type EntryPointInclude = {
+export type ShaderVariantInclude = {
     kind: 'include',
     include: string,
 };
 
-export type EntryPointIncludeList = {
+export type ShaderVariantIncludeList = {
     kind: 'includeList',
-    includes: EntryPointInclude[],
+    includes: ShaderVariantInclude[],
 };
 
 // This should be shadervariant.
-export type EntryPoint = {
-    kind: 'entryPoint',
+export type ShaderVariant = {
+    kind: 'variant',
     uri: vscode.Uri,
     name: string,
     isActive: boolean,
-    // Per entry point data
-    defines: EntryPointDefineList,
-    includes: EntryPointIncludeList,
+    // Per variant data
+    defines: ShaderVariantDefineList,
+    includes: ShaderVariantIncludeList,
 };
 
-export type EntryPointFile = {
+export type ShaderVariantFile = {
     kind: 'file',
     uri: vscode.Uri,
-    entryPoints: EntryPoint[],
+    variants: ShaderVariant[],
 };
 
-export type EntryPointNode = EntryPoint | EntryPointFile | EntryPointDefineList | EntryPointIncludeList | EntryPointDefine | EntryPointInclude;
+export type ShaderVariantNode = ShaderVariant | ShaderVariantFile | ShaderVariantDefineList | ShaderVariantIncludeList | ShaderVariantDefine | ShaderVariantInclude;
 
-export class EntryPointTreeDataProvider implements vscode.TreeDataProvider<EntryPointNode> {
+export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<ShaderVariantNode> {
 
-    private onDidChangeTreeDataEmitter: vscode.EventEmitter<EntryPointNode | undefined | void> = new vscode.EventEmitter<EntryPointNode | undefined | void>();
-    readonly onDidChangeTreeData: vscode.Event<EntryPointNode | undefined | void> = this.onDidChangeTreeDataEmitter.event;
+    private onDidChangeTreeDataEmitter: vscode.EventEmitter<ShaderVariantNode | undefined | void> = new vscode.EventEmitter<ShaderVariantNode | undefined | void>();
+    readonly onDidChangeTreeData: vscode.Event<ShaderVariantNode | undefined | void> = this.onDidChangeTreeDataEmitter.event;
 
-    private files: Map<vscode.Uri, EntryPointFile> = new Map;
+    private files: Map<vscode.Uri, ShaderVariantFile> = new Map;
 
     public refresh() {
         this.onDidChangeTreeDataEmitter.fire();
     }
 
-    public getTreeItem(element: EntryPointNode): vscode.TreeItem {
-        if (element.kind === 'entryPoint') {
+    public getTreeItem(element: ShaderVariantNode): vscode.TreeItem {
+        if (element.kind === 'variant') {
             let item = new vscode.TreeItem(element.name, vscode.TreeItemCollapsibleState.Collapsed);
             item.command = {
-                title: "Go to entry point",
+                title: "Go to variant",
                 command: 'vscode.open',
                 arguments: [
                     element.uri,
@@ -96,12 +96,12 @@ export class EntryPointTreeDataProvider implements vscode.TreeDataProvider<Entry
         }
     }
 
-    public getChildren(element?: EntryPointNode): EntryPointNode[] | Thenable<EntryPointNode[]> {
+    public getChildren(element?: ShaderVariantNode): ShaderVariantNode[] | Thenable<ShaderVariantNode[]> {
         if (element) {
-            if (element.kind === 'entryPoint') {
+            if (element.kind === 'variant') {
                 return [element.includes, element.defines];
             } else if (element.kind === 'file') {
-                return element.entryPoints;
+                return element.variants;
             } else if (element.kind === 'includeList') {
                 return element.includes;
             } else if (element.kind === 'defineList') {
@@ -119,10 +119,10 @@ export class EntryPointTreeDataProvider implements vscode.TreeDataProvider<Entry
         }
     }
 
-    public addEntryPoint(uri: vscode.Uri, name: string): void {
+    public addShaderVariant(uri: vscode.Uri, name: string): void {
         let cachedFile = this.files.get(uri);
-        let newEntryPoint : EntryPoint = {
-            kind: 'entryPoint',
+        let newShaderVariant : ShaderVariant = {
+            kind: 'variant',
             uri: uri,
             name: name,
             isActive: false,
@@ -136,33 +136,33 @@ export class EntryPointTreeDataProvider implements vscode.TreeDataProvider<Entry
             }
         };
         if (cachedFile) {
-            cachedFile.entryPoints.push(newEntryPoint);
+            cachedFile.variants.push(newShaderVariant);
         } else {
-            let newFile : EntryPointFile = {
+            let newFile : ShaderVariantFile = {
                 kind: 'file',
                 uri: uri,
-                entryPoints: [newEntryPoint]
+                variants: [newShaderVariant]
             };
             this.files.set(uri, newFile);
         }
         this.refresh();
     }
-    public deleteEntryPoint(entryPoint: EntryPoint): void {
+    public deleteShaderVariant(entryPoint: ShaderVariant): void {
         let cachedFile = this.files.get(entryPoint.uri);
         if (cachedFile) {
-            let index = cachedFile.entryPoints.indexOf(entryPoint);
+            let index = cachedFile.variants.indexOf(entryPoint);
             if (index > -1) {
-                delete cachedFile.entryPoints[index];
+                delete cachedFile.variants[index];
             }
         }
         this.refresh();
     }
 
-    public clearEntryPoint(uri: vscode.Uri): void {
+    public clearShaderVariant(uri: vscode.Uri): void {
         let cachedFile = this.files.get(uri);
         if (cachedFile) {
             if (cachedFile.kind === "file") {
-                cachedFile.entryPoints = [];
+                cachedFile.variants = [];
                 this.refresh();
             } else {
                 // unreachable
@@ -172,10 +172,10 @@ export class EntryPointTreeDataProvider implements vscode.TreeDataProvider<Entry
         }
     }
     public addFile(uri: vscode.Uri): void {
-        let newFile : EntryPointFile = {
+        let newFile : ShaderVariantFile = {
             kind: 'file',
             uri: uri,
-            entryPoints: []
+            variants: []
         };
         this.files.set(uri, newFile);
         this.refresh();
@@ -184,11 +184,11 @@ export class EntryPointTreeDataProvider implements vscode.TreeDataProvider<Entry
         this.files.delete(uri);
         this.refresh();
     }
-    public visitEntryPoints(uri: vscode.Uri, callback: (e:string, active: boolean) => void) {
+    public visitShaderVariants(uri: vscode.Uri, callback: (e:string, active: boolean) => void) {
         let cachedFile = this.files.get(uri);
         if (cachedFile) {
             if (cachedFile.kind === 'file') {
-                for (let file of cachedFile.entryPoints) {
+                for (let file of cachedFile.variants) {
                     callback(file.name, file.isActive);
                 }
             }

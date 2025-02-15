@@ -12,11 +12,9 @@ import {
     LanguageClient,
     LanguageClientOptions,
     Middleware,
-    ProvideDocumentSymbolsSignature,
     ServerOptions,
     TransportKind
 } from 'vscode-languageclient/node';
-import { EntryPointTreeDataProvider } from "./entry-point";
 import { sidebar } from "./extension";
 
 export enum ServerPlatform {

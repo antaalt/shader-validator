@@ -281,19 +281,19 @@
         "icon": "$(list-tree)"
       },
       {
-        "command": "shader-validator.addEntryPoint",
+        "command": "shader-validator.addMenu",
         "title": "Add entry point",
         "category": "Shader validator",
         "icon": "$(add)"
       },
       {
-        "command": "shader-validator.editEntryPoint",
+        "command": "shader-validator.editMenu",
         "title": "Edit entry point",
         "category": "Shader validator",
         "icon": "$(edit)"
       },
       {
-        "command": "shader-validator.deleteEntryPoint",
+        "command": "shader-validator.deleteMenu",
         "title": "Delete entry point",
         "category": "Shader validator",
         "icon": "$(trash)"
@@ -302,26 +302,26 @@
     "menus": {
         "view/title": [
             {
-              "command": "shader-validator.editEntryPoint",
-              "when": "view == nodeDependencies",
+              "command": "shader-validator.editMenu",
+              "when": "view == shader-validator-variants",
               "group": "navigation"
             }
         ],
         "view/item/context": [
             {
-              "command": "shader-validator.addEntryPoint",
+              "command": "shader-validator.addMenu",
               "group": "inline@1",
-              "when": "view == shader-validator-entry-points && (viewItem == file || viewItem == includeList || viewItem == defineList)"
+              "when": "view == shader-validator-variants && (viewItem == file || viewItem == includeList || viewItem == defineList)"
             },
             {
-              "command": "shader-validator.editEntryPoint",
+              "command": "shader-validator.editMenu",
               "group": "inline@2",
-              "when": "view == shader-validator-entry-points && (viewItem == entryPoint || viewItem == include || viewItem == define)"
+              "when": "view == shader-validator-variants && (viewItem == variant || viewItem == include || viewItem == define)"
             },
             {
-              "command": "shader-validator.deleteEntryPoint",
+              "command": "shader-validator.deleteMenu",
               "group": "inline@3",
-              "when": "view == shader-validator-entry-points && (viewItem == entryPoint || viewItem == include || viewItem == define)"
+              "when": "view == shader-validator-variants && (viewItem == variant || viewItem == include || viewItem == define)"
             }
          ]
     },
@@ -337,11 +337,7 @@
     "views": {
       "shader-validator": [
         {
-          "id": "shader-validator-entry-points",
-          "name": "Entry points"
-        },
-        {
-          "id": "shader-validator-shader-variant",
+          "id": "shader-validator-variants",
           "name": "Shader variants"
         }
       ]
