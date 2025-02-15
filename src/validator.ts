@@ -112,10 +112,6 @@ function notifyConfigurationChange(context: vscode.ExtensionContext, client: Lan
 }
 function getMiddleware() : Middleware {
     return {
-        provideDocumentSymbols: (document: vscode.TextDocument, token: vscode.CancellationToken, next: ProvideDocumentSymbolsSignature) : vscode.ProviderResult<vscode.SymbolInformation[] | vscode.DocumentSymbol[]> => {
-            // For retrieving entry points.
-            return sidebar.provideDocumentSymbol(document, token, next);
-        },
         didClose: (data: vscode.TextDocument, next: (data:vscode.TextDocument) => Promise<void>) => {
             return sidebar.didCloseDocument(data, next);
         },

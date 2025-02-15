@@ -270,46 +270,68 @@
     "commands": [
       {
         "command": "shader-validator.validateFile",
-        "title": "Shader validator: Validate file"
+        "title": "Validate file",
+        "category": "Shader validator",
+        "icon": "$(check)"
       },
       {
         "command": "shader-validator.dumpAst",
-        "title": "Shader validator: Dump ast"
+        "title": "Dump ast for debug",
+        "category": "Shader validator",
+        "icon": "$(list-tree)"
       },
       {
-        "command": "shader-validator.setEntryPoint",
-        "title": "Shader validator: Set entry point"
+        "command": "shader-validator.addEntryPoint",
+        "title": "Add entry point",
+        "category": "Shader validator",
+        "icon": "$(add)"
       },
       {
-        "command": "shader-validator.refreshEntry",
-        "title": "Shader validator: Refresh",
-        "icon": {
-          "light": "res/icons/hlsl-icon.svg",
-          "dark": "res/icons/hlsl-icon.svg"
-        }
+        "command": "shader-validator.refreshEntryPoint",
+        "title": "Refresh entry point",
+        "category": "Shader validator",
+        "icon": "$(refresh)"
       },
       {
-        "command": "shader-validator.deleteEntry",
-        "title": "Shader validator: Delete",
-        "icon": {
-          "light": "res/icons/hlsl-icon.svg",
-          "dark": "res/icons/hlsl-icon.svg"
-        }
+        "command": "shader-validator.deleteEntryPoint",
+        "title": "Delete entry point",
+        "category": "Shader validator",
+        "icon": "$(remove)"
+      },
+      {
+        "command": "shader-validator.setCurrentEntryPoint",
+        "title": "Set current entry point",
+        "category": "Shader validator"
       }
     ],
     "menus": {
         "view/title": [
             {
-                "command": "shader-validator.refreshEntry",
-                "when": "view == nodeDependencies",
-                "group": "navigation"
+              "command": "shader-validator.refreshEntryPoint",
+              "when": "view == nodeDependencies",
+              "group": "navigation"
             }
         ],
         "view/item/context": [
             {
-                 "command": "shader-validator.deleteEntry",
-                 "when": "view == shader-validator && viewItem == dependency"
-             }
+              "command": "shader-validator.addEntryPoint",
+              "group": "inline@1",
+              "when": "view == shader-validator-entry-points && viewItem == file"
+            },
+            {
+              "command": "shader-validator.refreshEntryPoint",
+              "group": "inline@2",
+              "when": "view == shader-validator-entry-points && viewItem == entryPoint"
+            },
+            {
+              "command": "shader-validator.deleteEntryPoint",
+              "group": "inline@3",
+              "when": "view == shader-validator-entry-points && viewItem == entryPoint"
+            },
+            {
+              "command": "shader-validator.setCurrentEntryPoint",
+              "when": "view == shader-validator-entry-points && viewItem == entryPoint"
+            }
          ]
     },
     "viewsContainers": {
@@ -328,8 +350,9 @@
           "name": "Entry points"
         },
         {
-          "id": "shader-validator-view",
-          "name": "something else"
+          "id": "shader-validator-shader-variant",
+          "type":"webview",
+          "name": "Shader variants"
         }
       ]
     }

@@ -1,14 +1,18 @@
 import * as vscode from 'vscode';
-import { EntryPointTreeDataProvider } from './entry-point';
+import { EntryPointNode, EntryPointTreeDataProvider, EntryPointDataTreeDataProvider, ShaderVariantEditor } from './entry-point';
 import { ProvideDocumentSymbolsSignature } from 'vscode-languageclient';
 
 export class Sidebar {
     private provider : EntryPointTreeDataProvider;
+    //private editor: EntryPointDataTreeDataProvider;
+    private editor: ShaderVariantEditor;
     private decorator: vscode.TextEditorDecorationType;
     private activeEditor: vscode.TextEditor | undefined;
 
     constructor(context: vscode.ExtensionContext) {
         this.provider = new EntryPointTreeDataProvider;
+        //this.editor = new EntryPointDataTreeDataProvider;
+        this.editor = new ShaderVariantEditor;
         this.decorator = vscode.window.createTextEditorDecorationType({
             // Icon
             gutterIconPath: context.asAbsolutePath('./res/icons/hlsl-icon.svg'),
@@ -25,13 +29,32 @@ export class Sidebar {
         this.setupGutter(context);
         
         context.subscriptions.push(vscode.window.registerTreeDataProvider('shader-validator-entry-points', this.provider));
-    }
-    // TODO: should mix workspace request & document to have every files avilable in workspace & keep them in memory.
-    async provideDocumentSymbol(document: vscode.TextDocument, token: vscode.CancellationToken, next: ProvideDocumentSymbolsSignature) : Promise<vscode.SymbolInformation[] | vscode.DocumentSymbol[] | null | undefined> {
-        let symbols = await this.provider.documentSymbolProvider(document, token, next);
-        // Await & trigger decorations update once we have symbols.
-        this.updateDecorations();
-        return symbols;
+        //context.subscriptions.push(vscode.window.registerTreeDataProvider('shader-validator-shader-variant', this.editor));
+        context.subscriptions.push(vscode.window.registerWebviewViewProvider('shader-validator-shader-variant', this.editor));
+
+        context.subscriptions.push(vscode.commands.registerCommand("shader-validator.addEntryPoint", (node: EntryPointNode): void => {
+            if (node.kind === 'file') {
+                this.provider.addEntryPoint(node.uri, "main");
+                this.provider.refresh();
+            }
+        }));
+        context.subscriptions.push(vscode.commands.registerCommand("shader-validator.rereshEntryPoint", (node: EntryPointNode) => {
+            vscode.window.showInformationMessage("Refreshing entry point");
+        }));
+        context.subscriptions.push(vscode.commands.registerCommand("shader-validator.deleteEntryPoint", (node: EntryPointNode) => {
+            if (node.kind === 'entryPoint') {
+                this.provider.deleteEntryPoint(node);
+                this.provider.refresh();
+            }
+        }));
+        context.subscriptions.push(vscode.commands.registerCommand("shader-validator.setCurrentEntryPoint", (node: EntryPointNode) => {
+            if (node.kind === 'entryPoint') {
+                this.editor.setCurrentEntryPoint(node);
+                // TODO: execute goto entrypoint aswell
+            } else {
+                this.editor.setCurrentEntryPoint(null);
+            }
+        }));
     }
     async didOpenDocument(document: vscode.TextDocument, next: (data: vscode.TextDocument) => Promise<void>) : Promise<void> {
         this.provider.addFile(document.uri);

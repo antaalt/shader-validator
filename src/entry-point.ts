@@ -1,121 +1,193 @@
 import * as vscode from 'vscode';
 import { ProvideDocumentSymbolsSignature } from 'vscode-languageclient';
 
-class EntryPointNode extends vscode.TreeItem {
-    children: EntryPointNode[] | undefined;
-  
-    constructor(uri: vscode.Uri, range?: vscode.Range, entryPoint? : string) {
-        const isEntryPointString = entryPoint ? true : false;
-        const isEntryPointRange = range ? true : false;
-        const isEntryPoint = isEntryPointRange && isEntryPointString;
-        super(
-            entryPoint || uri.fsPath,
-            isEntryPoint ? vscode.TreeItemCollapsibleState.None : vscode.TreeItemCollapsibleState.Expanded
-        );
-        this.resourceUri = uri;
-		this.contextValue = isEntryPoint ? 'open-item' : undefined;
-        this.command = isEntryPoint ? {
-            title: "Go to entry point",
-            command: 'vscode.open',
-			arguments: [
-				uri,
-				<vscode.TextDocumentShowOptions>{
-					selection: range
-				}
-			]
-        } : undefined;
-        this.checkboxState = isEntryPoint ? vscode.TreeItemCheckboxState.Unchecked : undefined;
-        this.iconPath = isEntryPoint ? new vscode.ThemeIcon('code') : vscode.ThemeIcon.File;
-        this.children = [];
-    }
-    isEntryPoint() : boolean {
-        return this.collapsibleState === vscode.TreeItemCollapsibleState.None;
-    }
-    add(entryPoint: string, range: vscode.Range) {
-        this.children?.push(new EntryPointNode(this.resourceUri!, range, entryPoint));
-    }
-    clear() {
-        this.children = [];
-    }
-    visit(callback: (entryPoint: string, range: vscode.Range, active: boolean) => void) {
-        const range = (this.command?.arguments!)[1] as vscode.TextDocumentShowOptions;
-        const active = this.checkboxState === vscode.TreeItemCheckboxState.Checked;
-        callback(this.label as string, range.selection!, active);
-    }
-}
-export class EntryPointTreeDataProvider implements vscode.TreeDataProvider<EntryPointNode> {
+// This should be shadervariant.
+export type EntryPoint = {
+    kind: 'entryPoint',
+    uri: vscode.Uri,
+    name: string,
+    range: vscode.Range, // TODO: not required, find at runtime as it may change.
+    isActive: boolean,
+    // Per entry point data
+    defines: string[],
+    includes: string[],
+};
+
+export type EntryPointFile = {
+    kind: 'file',
+    uri: vscode.Uri,
+    entryPoints: EntryPoint[],
+};
+export type EntryPointNode = EntryPoint | EntryPointFile;
+
+export class EntryPointTreeDataProvider implements vscode.TreeDataProvider<EntryPoint | EntryPointFile> {
 
     private onDidChangeTreeDataEmitter: vscode.EventEmitter<EntryPointNode | undefined | void> = new vscode.EventEmitter<EntryPointNode | undefined | void>();
     readonly onDidChangeTreeData: vscode.Event<EntryPointNode | undefined | void> = this.onDidChangeTreeDataEmitter.event;
-    
-    // Array or map ?
-    private entryPoints : Map<vscode.Uri, EntryPointNode> = new Map;
+
+    private files: Map<vscode.Uri, EntryPointFile> = new Map;
 
     public refresh() {
         this.onDidChangeTreeDataEmitter.fire();
     }
 
     public getTreeItem(element: EntryPointNode): vscode.TreeItem {
-        return element;
+        if (element.kind === 'entryPoint') {
+            let item = new vscode.TreeItem(element.name, vscode.TreeItemCollapsibleState.None);
+            item.command = {
+                title: "Go to entry point",
+                command: 'shader-validator.setCurrentEntryPoint',
+                arguments: [element]
+            };
+            item.checkboxState = vscode.TreeItemCheckboxState.Unchecked;
+            item.iconPath = new vscode.ThemeIcon('code');
+            item.contextValue = "entryPoint";
+            return item;
+        } else if (element.kind === 'file') {
+            let item = new vscode.TreeItem(element.uri.fsPath, vscode.TreeItemCollapsibleState.Expanded);
+            item.iconPath = vscode.ThemeIcon.File;
+            item.contextValue = "file";
+            return item;
+        } else {
+            return undefined!; // unreachable
+        }
     }
 
     public getChildren(element?: EntryPointNode): EntryPointNode[] | Thenable<EntryPointNode[]> {
         if (element) {
-            return element.children || [];
+            if (element.kind === 'entryPoint') {
+                return [];
+            } else if (element.kind === 'file') {
+                return element.entryPoints;
+            } else {
+                return undefined!; // unreachable
+            }
         } else {
-            return Array.from(this.entryPoints.values());
+            // Convert to array
+            return Array.from(this.files.values());
         }
     }
 
-    public addEntryPoint(uri: vscode.Uri, range: vscode.Range, entryPoint: string): void {
-        //console.info(`Adding possible entry point for file ${uri}: ${entryPoint}`);
-        let file = this.entryPoints.get(uri);
-        if (file) {
-            file.add(entryPoint, range);
+    public addEntryPoint(uri: vscode.Uri, name: string): void {
+        let cachedFile = this.files.get(uri);
+        let newEntryPoint : EntryPoint = {
+            kind: 'entryPoint',
+            uri: uri,
+            name: name,
+            range: new vscode.Range(new vscode.Position(0, 0), new vscode.Position(0, 0)),
+            isActive: false,
+            defines: [],
+            includes: []
+        };
+        if (cachedFile) {
+            cachedFile.entryPoints.push(newEntryPoint);
         } else {
-            let node = new EntryPointNode(uri, range);
-            node.add(entryPoint, range);
-            this.entryPoints.set(uri, node);
+            let newFile : EntryPointFile = {
+                kind: 'file',
+                uri: uri,
+                entryPoints: [newEntryPoint]
+            };
+            this.files.set(uri, newFile);
         }
+        this.refresh();
+    }
+    public deleteEntryPoint(entryPoint: EntryPoint): void {
+        let cachedFile = this.files.get(entryPoint.uri);
+        if (cachedFile) {
+            let index = cachedFile.entryPoints.indexOf(entryPoint);
+            if (index > -1) {
+                delete cachedFile.entryPoints[index];
+            }
+        }
+        this.refresh();
     }
 
     public clearEntryPoint(uri: vscode.Uri): void {
-        this.entryPoints.get(uri)?.clear();
+        let cachedFile = this.files.get(uri);
+        if (cachedFile) {
+            if (cachedFile.kind === "file") {
+                cachedFile.entryPoints = [];
+                this.refresh();
+            } else {
+                // unreachable
+            }
+        } else {
+            console.warn("No cached file ", uri);
+        }
     }
     public addFile(uri: vscode.Uri): void {
-        this.entryPoints.set(uri, new EntryPointNode(uri));
+        let newFile : EntryPointFile = {
+            kind: 'file',
+            uri: uri,
+            entryPoints: []
+        };
+        this.files.set(uri, newFile);
         this.refresh();
     }
     public deleteFile(uri: vscode.Uri): void {
-        this.entryPoints.delete(uri);
+        this.files.delete(uri);
         this.refresh();
     }
     public visitEntryPoints(uri: vscode.Uri, callback: (e:string, r: vscode.Range, active: boolean) => void) {
-        this.entryPoints.get(uri)?.children?.map(entryPoint => {
-            entryPoint.visit(callback);
-        });
-    }
-    async documentSymbolProvider(document: vscode.TextDocument, token: vscode.CancellationToken, next: ProvideDocumentSymbolsSignature) : Promise<vscode.SymbolInformation[] | vscode.DocumentSymbol[] | null | undefined> {
-        let asyncResult = next(document, token);
-        if (asyncResult) {
-            let result = await asyncResult;
-            if (result) {
-                // /!\ Type casting need to match server data sent. /!\ 
-                let resultArray = result as vscode.SymbolInformation[];
-                // Clear after async
-                this.clearEntryPoint(document.uri);
-                for (let symbol of resultArray) {
-                    // Should not be an intrinsic as its only local symbol here.
-                    if (symbol.kind === vscode.SymbolKind.Function) {
-                        // Found a possible entry point.
-                        this.addEntryPoint(document.uri, symbol.location.range, symbol.name + "(...)");
-                    }
+        let cachedFile = this.files.get(uri);
+        if (cachedFile) {
+            if (cachedFile.kind === 'file') {
+                for (let file of cachedFile.entryPoints) {
+                    callback(file.name, file.range, file.isActive);
                 }
-                this.refresh();
-                return result;
             }
-            return result;
         }
-        return asyncResult;
     }
 }
+
+export class EntryPointDataTreeDataProvider implements vscode.TreeDataProvider<EntryPoint> {
+    private onDidChangeTreeDataEmitter: vscode.EventEmitter<EntryPoint | undefined | void> = new vscode.EventEmitter<EntryPoint | undefined | void>();
+    readonly onDidChangeTreeData: vscode.Event<EntryPoint | undefined | void> = this.onDidChangeTreeDataEmitter.event;
+
+    private currentEntryPoint: EntryPoint | null = null;
+    
+    refresh() {
+        this.onDidChangeTreeDataEmitter.fire();
+    }
+
+    getTreeItem(element: EntryPoint): vscode.TreeItem | Thenable<vscode.TreeItem> {
+        return {
+            label: "variant",
+        };
+    }
+    getChildren(element?: EntryPoint | undefined): vscode.ProviderResult<EntryPoint[]> {
+        if (element) {
+            // We need a define child, an include child with + button & command.
+            return []; // No child here. Single element.
+        } else if (this.currentEntryPoint) {
+            return [this.currentEntryPoint];
+        } else {
+            return [];
+        }
+    }
+
+    setCurrentEntryPoint(entryPoint: EntryPoint | null) {
+        console.log("New entry point: ", entryPoint);
+        this.currentEntryPoint = entryPoint;
+        this.refresh();
+    }
+
+}
+
+export class ShaderVariantEditor implements vscode.WebviewViewProvider {
+    
+    private currentEntryPoint: EntryPoint | null = null;
+
+    resolveWebviewView(webviewView: vscode.WebviewView, context: vscode.WebviewViewResolveContext, token: vscode.CancellationToken): Thenable<void> | void {
+        webviewView.webview.options = {
+            enableScripts: true,
+        };
+        webviewView.webview.html = "<!doctype><html><p></p><input type=\"text\"/></html>";
+    }
+    setCurrentEntryPoint(entryPoint: EntryPoint | null) {
+        console.log("New entry point: ", entryPoint);
+        this.currentEntryPoint = entryPoint;
+    }
+
+}
+

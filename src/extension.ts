@@ -52,10 +52,11 @@ export async function activate(context: vscode.ExtensionContext)
     context.subscriptions.push(vscode.Disposable.from(client));
 
     // Subscribe commands
-    context.subscriptions.push(vscode.commands.registerCommand("shader-validator.validateFile", (data: string = 'current') => {
+    context.subscriptions.push(vscode.commands.registerCommand("shader-validator.validateFile", (uri: vscode.Uri) => {
+        //client.sendRequest()
         vscode.window.showInformationMessage("Cannot validate file manually for now");
     }));
-    context.subscriptions.push(vscode.commands.registerCommand("shader-validator.dumpAst", (data: string = 'current') => {
+    context.subscriptions.push(vscode.commands.registerCommand("shader-validator.dumpAst", () => {
         let activeTextEditor = vscode.window.activeTextEditor;
         if (activeTextEditor !== null) {
             console.log(activeTextEditor);
@@ -70,9 +71,6 @@ export async function activate(context: vscode.ExtensionContext)
         } else {
             client.outputChannel.appendLine("No active file for dumping ast");
         }
-    }));
-    context.subscriptions.push(vscode.commands.registerCommand("shader-validator.setEntryPoint", (data: string = 'current') => {
-        vscode.window.showInformationMessage("Yooo");
     }));
 }
 
