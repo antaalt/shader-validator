@@ -287,27 +287,22 @@
         "icon": "$(add)"
       },
       {
-        "command": "shader-validator.refreshEntryPoint",
-        "title": "Refresh entry point",
+        "command": "shader-validator.editEntryPoint",
+        "title": "Edit entry point",
         "category": "Shader validator",
-        "icon": "$(refresh)"
+        "icon": "$(edit)"
       },
       {
         "command": "shader-validator.deleteEntryPoint",
         "title": "Delete entry point",
         "category": "Shader validator",
-        "icon": "$(remove)"
-      },
-      {
-        "command": "shader-validator.setCurrentEntryPoint",
-        "title": "Set current entry point",
-        "category": "Shader validator"
+        "icon": "$(trash)"
       }
     ],
     "menus": {
         "view/title": [
             {
-              "command": "shader-validator.refreshEntryPoint",
+              "command": "shader-validator.editEntryPoint",
               "when": "view == nodeDependencies",
               "group": "navigation"
             }
@@ -316,21 +311,17 @@
             {
               "command": "shader-validator.addEntryPoint",
               "group": "inline@1",
-              "when": "view == shader-validator-entry-points && viewItem == file"
+              "when": "view == shader-validator-entry-points && (viewItem == file || viewItem == includeList || viewItem == defineList)"
             },
             {
-              "command": "shader-validator.refreshEntryPoint",
+              "command": "shader-validator.editEntryPoint",
               "group": "inline@2",
-              "when": "view == shader-validator-entry-points && viewItem == entryPoint"
+              "when": "view == shader-validator-entry-points && (viewItem == entryPoint || viewItem == include || viewItem == define)"
             },
             {
               "command": "shader-validator.deleteEntryPoint",
               "group": "inline@3",
-              "when": "view == shader-validator-entry-points && viewItem == entryPoint"
-            },
-            {
-              "command": "shader-validator.setCurrentEntryPoint",
-              "when": "view == shader-validator-entry-points && viewItem == entryPoint"
+              "when": "view == shader-validator-entry-points && (viewItem == entryPoint || viewItem == include || viewItem == define)"
             }
          ]
     },
@@ -351,7 +342,6 @@
         },
         {
           "id": "shader-validator-shader-variant",
-          "type":"webview",
           "name": "Shader variants"
         }
       ]

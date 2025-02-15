@@ -1,18 +1,13 @@
 import * as vscode from 'vscode';
-import { EntryPointNode, EntryPointTreeDataProvider, EntryPointDataTreeDataProvider, ShaderVariantEditor } from './entry-point';
-import { ProvideDocumentSymbolsSignature } from 'vscode-languageclient';
+import { EntryPointNode, EntryPointTreeDataProvider } from './entry-point';
 
 export class Sidebar {
     private provider : EntryPointTreeDataProvider;
-    //private editor: EntryPointDataTreeDataProvider;
-    private editor: ShaderVariantEditor;
     private decorator: vscode.TextEditorDecorationType;
     private activeEditor: vscode.TextEditor | undefined;
 
     constructor(context: vscode.ExtensionContext) {
         this.provider = new EntryPointTreeDataProvider;
-        //this.editor = new EntryPointDataTreeDataProvider;
-        this.editor = new ShaderVariantEditor;
         this.decorator = vscode.window.createTextEditorDecorationType({
             // Icon
             gutterIconPath: context.asAbsolutePath('./res/icons/hlsl-icon.svg'),
@@ -29,12 +24,23 @@ export class Sidebar {
         this.setupGutter(context);
         
         context.subscriptions.push(vscode.window.registerTreeDataProvider('shader-validator-entry-points', this.provider));
-        //context.subscriptions.push(vscode.window.registerTreeDataProvider('shader-validator-shader-variant', this.editor));
-        context.subscriptions.push(vscode.window.registerWebviewViewProvider('shader-validator-shader-variant', this.editor));
 
         context.subscriptions.push(vscode.commands.registerCommand("shader-validator.addEntryPoint", (node: EntryPointNode): void => {
             if (node.kind === 'file') {
                 this.provider.addEntryPoint(node.uri, "main");
+                this.provider.refresh();
+            } else if (node.kind === 'defineList') {
+                node.defines.push({
+                    kind: "define",
+                    label: "MY_MACRO",
+                    value: "0",
+                });
+                this.provider.refresh();
+            } else if (node.kind === 'includeList') {
+                node.includes.push({
+                    kind: "include",
+                    include: "C:/",
+                });
                 this.provider.refresh();
             }
         }));
@@ -45,14 +51,30 @@ export class Sidebar {
             if (node.kind === 'entryPoint') {
                 this.provider.deleteEntryPoint(node);
                 this.provider.refresh();
+            } else if (node.kind === 'define') {
+                //node.defines.indexOf(node);
+                //this.provider.refresh();
             }
         }));
-        context.subscriptions.push(vscode.commands.registerCommand("shader-validator.setCurrentEntryPoint", (node: EntryPointNode) => {
+        context.subscriptions.push(vscode.commands.registerCommand("shader-validator.editEntryPoint", async (node: EntryPointNode) => {
             if (node.kind === 'entryPoint') {
-                this.editor.setCurrentEntryPoint(node);
-                // TODO: execute goto entrypoint aswell
-            } else {
-                this.editor.setCurrentEntryPoint(null);
+                let name = await vscode.window.showInputBox({});
+                if (name) {
+                    node.name = name;
+                    this.provider.refresh();
+                }
+            } else if (node.kind === 'define') {
+                let label = await vscode.window.showInputBox({});
+                if (label) {
+                    node.label = label;
+                    this.provider.refresh();
+                }
+            } else if (node.kind === 'include') {
+                let include = await vscode.window.showInputBox({});
+                if (include) {
+                    node.include = include;
+                    this.provider.refresh();
+                }
             }
         }));
     }
@@ -68,9 +90,10 @@ export class Sidebar {
     private updateDecorations() {
         if (this.activeEditor) {
             let decorations : vscode.DecorationOptions[]= [];
-            this.provider.visitEntryPoints(this.activeEditor.document.uri, (message: string, range: vscode.Range, active: boolean) => {
+            this.provider.visitEntryPoints(this.activeEditor.document.uri, (message: string, active: boolean) => {
                 if (active) {
-                    decorations.push({ range, hoverMessage: message });
+                    // TODO: get range
+                    decorations.push({ range: new vscode.Range(new vscode.Position(0, 0), new vscode.Position(0, 0)), hoverMessage: message });
                 }
             });
             this.activeEditor.setDecorations(this.decorator, decorations);
