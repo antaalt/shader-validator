@@ -28,8 +28,6 @@ export class Sidebar {
         this.workspaceState = context.workspaceState;
         this.activeEditor = vscode.window.activeTextEditor;
         this.setupGutter(context);
-        
-        context.subscriptions.push(vscode.window.registerTreeDataProvider('shader-validator-variants', this.provider));
 
         context.subscriptions.push(vscode.commands.registerCommand("shader-validator.addMenu", (node: ShaderVariantNode): void => {
             this.provider.add(node);

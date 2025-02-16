@@ -72,17 +72,48 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
 
     // using vscode.Uri as key does not match well with Memento state storage...
     private files: Map<string, ShaderVariantFile>;
+    private tree: vscode.TreeView<ShaderVariantNode>;
 
     constructor(variants: ShaderVariantFile[]) {
         this.files = new Map(variants.map(e => [e.uri.path, e]));
+        this.tree = vscode.window.createTreeView<ShaderVariantNode>("shader-validator-variants", {
+            treeDataProvider: this
+            // TODO: drag and drop for better ux.
+            //dragAndDropController:
+        });
+        this.tree.onDidChangeCheckboxState((e: vscode.TreeCheckboxChangeEvent<ShaderVariantNode>) => {
+            console.log("Changed", e);
+            for (let item of e.items) {
+                if (item[0].kind === 'variant') {
+                    if (item[1] === vscode.TreeItemCheckboxState.Checked) {
+                        item[0].isActive = true; // checked
+                    } else {
+                        item[0].isActive = false; // unchecked
+                    }
+                }
+            }
+        });
     }
 
     public getFiles() {
         return Array.from(this.files.values());
     }
 
+    public getActiveShaderVariants() {
+        let activeShaderVariants : ShaderVariant[] = [];
+        for (let [uri, file] of this.files) {
+            for (let variant of file.variants) {
+                if (variant.isActive) {
+                    activeShaderVariants.push(variant);
+                }
+            }
+        }
+        return activeShaderVariants;
+    }
+
     public refresh() {
         this.onDidChangeTreeDataEmitter.fire();
+        // TODO: update gutter here
     }
 
     public getTreeItem(element: ShaderVariantNode): vscode.TreeItem {
@@ -100,8 +131,7 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
             };
             item.description = `[${element.defines.defines.map(d => d.label).join(",")}]`;
             item.tooltip = `Shader variant ${element.name}`;
-            item.checkboxState = vscode.TreeItemCheckboxState.Unchecked;
-            item.iconPath = new vscode.ThemeIcon('code');
+            item.checkboxState = element.isActive ? vscode.TreeItemCheckboxState.Checked : vscode.TreeItemCheckboxState.Unchecked;
             item.contextValue = element.kind;
             return item;
         } else if (element.kind === 'file') {
@@ -121,7 +151,7 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
             let item = new vscode.TreeItem("includes", vscode.TreeItemCollapsibleState.Expanded);
             item.description = `${element.includes.length}`;
             item.tooltip = `User defined include ${element.includes}`,
-            item.iconPath = new vscode.ThemeIcon('file-code');
+            item.iconPath = new vscode.ThemeIcon('files');
             item.contextValue = element.kind;
             return item;
         } else if (element.kind === 'define') {
@@ -137,6 +167,7 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
         } else if (element.kind === 'stage') {
             let item = new vscode.TreeItem("stage", vscode.TreeItemCollapsibleState.None);
             item.description = ShaderStage[element.stage];
+            item.iconPath = new vscode.ThemeIcon('code');
             item.contextValue = element.kind;
             return item;
         } else {
@@ -308,7 +339,7 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
             if (cachedFile) {
                 let index = cachedFile.variants.indexOf(node);
                 if (index > -1) {
-                    delete cachedFile.variants[index];
+                    cachedFile.variants.splice(index, 1);
                     this.refresh();
                 }
             }
@@ -319,7 +350,7 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
                 for (let variant of file.variants) {
                     let index = variant.defines.defines.indexOf(node);
                     if (index > -1) {
-                        delete variant.defines.defines[index];
+                        variant.defines.defines.splice(index, 1);
                         this.refresh();
                         found = true;
                         break;
@@ -336,7 +367,7 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
                 for (let variant of file.variants) {
                     let index = variant.includes.includes.indexOf(node);
                     if (index > -1) {
-                        delete variant.includes.includes[index];
+                        variant.includes.includes.splice(index, 1);
                         this.refresh();
                         found = true;
                         break;
