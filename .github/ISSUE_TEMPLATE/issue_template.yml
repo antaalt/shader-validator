@@ -1,0 +1,18 @@
+name: "Ask a question, report a bug, request a feature, etc."
+description: "Ask any question, discuss best practices, report a bug, request a feature."
+body:
+  - type: markdown
+    attributes:
+      value: |
+        If your issue is related to the features of the extension (goto, diagnostics, enhancement), please post your issue to the [language server repository](https://github.com/antaalt/shader-sense/issues) instead. 
+
+        This repository is for the extension only and is mostly UI related issues.
+
+        If you are not sure, feel free to post here, issue might be transfered.
+  - type: textarea
+    id: issue
+    attributes:
+      label: "Issue:"
+      placeholder: "Type your issue here..."
+    validations:
+      required: true
