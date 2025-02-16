@@ -70,7 +70,16 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
     private onDidChangeTreeDataEmitter: vscode.EventEmitter<ShaderVariantNode | undefined | void> = new vscode.EventEmitter<ShaderVariantNode | undefined | void>();
     readonly onDidChangeTreeData: vscode.Event<ShaderVariantNode | undefined | void> = this.onDidChangeTreeDataEmitter.event;
 
-    private files: Map<vscode.Uri, ShaderVariantFile> = new Map;
+    // using vscode.Uri as key does not match well with Memento state storage...
+    private files: Map<string, ShaderVariantFile>;
+
+    constructor(variants: ShaderVariantFile[]) {
+        this.files = new Map(variants.map(e => [e.uri.path, e]));
+    }
+
+    public getFiles() {
+        return Array.from(this.files.values());
+    }
 
     public refresh() {
         this.onDidChangeTreeDataEmitter.fire();
@@ -161,19 +170,27 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
         }
     }
 
-    // TODO: instead of addFile, should have all workspace file in tree ?
-    public addFile(uri: vscode.Uri): void {
-        let newFile : ShaderVariantFile = {
-            kind: 'file',
-            uri: uri,
-            variants: []
-        };
-        this.files.set(uri, newFile);
-        this.refresh();
+    public open(uri: vscode.Uri): void {
+        let file = this.files.get(uri.path);
+        if (!file) {
+            let newFile : ShaderVariantFile = {
+                kind: 'file',
+                uri: uri,
+                variants: []
+            };
+            this.files.set(uri.path, newFile);
+            this.refresh();
+        }
     }
-    public deleteFile(uri: vscode.Uri): void {
-        this.files.delete(uri);
-        this.refresh();
+    public close(uri: vscode.Uri): void {
+        let file = this.files.get(uri.path);
+        if (file) {
+            // We keep it if some variants where defied.
+            if (file.variants.length === 0) {
+                this.files.delete(uri.path);
+                this.refresh();
+            }
+        }
     }
     public add(node: ShaderVariantNode) {
         if (node.kind === 'file') {
@@ -287,7 +304,7 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
     }
     public delete(node: ShaderVariantNode) {
         if (node.kind === 'variant') {
-            let cachedFile = this.files.get(node.uri);
+            let cachedFile = this.files.get(node.uri.path);
             if (cachedFile) {
                 let index = cachedFile.variants.indexOf(node);
                 if (index > -1) {
@@ -332,7 +349,7 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
         }
     }
     public visitShaderVariants(uri: vscode.Uri, callback: (variant: ShaderVariant) => void) {
-        let cachedFile = this.files.get(uri);
+        let cachedFile = this.files.get(uri.path);
         if (cachedFile) {
             if (cachedFile.kind === 'file') {
                 for (let variant of cachedFile.variants) {

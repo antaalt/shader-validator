@@ -108,17 +108,6 @@ function notifyConfigurationChange(context: vscode.ExtensionContext, client: Lan
         })
     );
 }
-function getMiddleware() : Middleware {
-    return {
-        didClose: (data: vscode.TextDocument, next: (data:vscode.TextDocument) => Promise<void>) => {
-            return sidebar.didCloseDocument(data, next);
-        },
-        didOpen: (data: vscode.TextDocument, next: (data:vscode.TextDocument) => Promise<void>) => {
-            return sidebar.didOpenDocument(data, next);
-        }
-    };
-}
-
 
 export async function createLanguageClient(context: vscode.ExtensionContext): Promise<LanguageClient | null> {
     // Create validator
@@ -153,8 +142,7 @@ async function createLanguageClientStandard(context: vscode.ExtensionContext, pl
             { scheme: 'file', language: 'hlsl' },
             { scheme: 'file', language: 'glsl' },
             { scheme: 'file', language: 'wgsl' },
-        ],
-        middleware: getMiddleware()
+        ]
     };
 
     let client = new LanguageClient(
@@ -245,8 +233,7 @@ async function createLanguageClientWASI(context: vscode.ExtensionContext) : Prom
         ],
         outputChannel: channel,
         uriConverters: createUriConverters(),
-		traceOutputChannel: channel,
-        middleware: getMiddleware()
+		traceOutputChannel: channel
     };
 
 

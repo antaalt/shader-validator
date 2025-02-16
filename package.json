@@ -282,19 +282,19 @@
       },
       {
         "command": "shader-validator.addMenu",
-        "title": "Add entry point",
+        "title": "Add",
         "category": "Shader validator",
         "icon": "$(add)"
       },
       {
         "command": "shader-validator.editMenu",
-        "title": "Edit entry point",
+        "title": "Edit",
         "category": "Shader validator",
         "icon": "$(edit)"
       },
       {
         "command": "shader-validator.deleteMenu",
-        "title": "Delete entry point",
+        "title": "Delete",
         "category": "Shader validator",
         "icon": "$(trash)"
       }

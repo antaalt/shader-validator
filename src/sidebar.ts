@@ -1,13 +1,17 @@
 import * as vscode from 'vscode';
-import { ShaderStage, ShaderVariant, ShaderVariantNode, ShaderVariantTreeDataProvider } from './shaderVariant';
+import { ShaderStage, ShaderVariant, ShaderVariantFile, ShaderVariantNode, ShaderVariantTreeDataProvider } from './shaderVariant';
+
+const shaderVariantTreeKey : string = 'shader-validator.shader-variant-tree-key';
 
 export class Sidebar {
     private provider : ShaderVariantTreeDataProvider;
     private decorator: vscode.TextEditorDecorationType;
     private activeEditor: vscode.TextEditor | undefined;
-
+    private workspaceState: vscode.Memento;
+    
     constructor(context: vscode.ExtensionContext) {
-        this.provider = new ShaderVariantTreeDataProvider;
+        let variants : ShaderVariantFile[] = context.workspaceState.get<ShaderVariantFile[]>(shaderVariantTreeKey, []);
+        this.provider = new ShaderVariantTreeDataProvider(variants);
         this.decorator = vscode.window.createTextEditorDecorationType({
             // Icon
             gutterIconPath: context.asAbsolutePath('./res/icons/hlsl-icon.svg'),
@@ -20,6 +24,8 @@ export class Sidebar {
             borderWidth: '1px',
             borderStyle: 'solid',
         });
+        
+        this.workspaceState = context.workspaceState;
         this.activeEditor = vscode.window.activeTextEditor;
         this.setupGutter(context);
         
@@ -27,21 +33,29 @@ export class Sidebar {
 
         context.subscriptions.push(vscode.commands.registerCommand("shader-validator.addMenu", (node: ShaderVariantNode): void => {
             this.provider.add(node);
+            this.workspaceState.update(shaderVariantTreeKey, this.provider.getFiles());
         }));
         context.subscriptions.push(vscode.commands.registerCommand("shader-validator.deleteMenu", (node: ShaderVariantNode) => {
             this.provider.delete(node);
+            this.workspaceState.update(shaderVariantTreeKey, this.provider.getFiles());
         }));
         context.subscriptions.push(vscode.commands.registerCommand("shader-validator.editMenu", async (node: ShaderVariantNode) => {
-            this.provider.edit(node);
+            await this.provider.edit(node);
+            this.workspaceState.update(shaderVariantTreeKey, this.provider.getFiles());
         }));
-    }
-    async didOpenDocument(document: vscode.TextDocument, next: (data: vscode.TextDocument) => Promise<void>) : Promise<void> {
-        this.provider.addFile(document.uri);
-        next(document);
-    }
-    async didCloseDocument(document: vscode.TextDocument, next: (data: vscode.TextDocument) => Promise<void>) : Promise<void> {
-        this.provider.deleteFile(document.uri);
-        next(document);
+        // Open already opened document
+        for (let editor of vscode.window.visibleTextEditors) {
+            if (this.activeEditor && editor.document === this.activeEditor.document) {
+                console.log("Opening ", editor.document.uri, " with ", this.provider);
+                this.provider.open(editor.document.uri);
+            }
+        }
+        context.subscriptions.push(vscode.workspace.onDidOpenTextDocument((document: vscode.TextDocument) => {
+            this.provider.open(document.uri);
+        }));
+        context.subscriptions.push(vscode.workspace.onDidCloseTextDocument((document: vscode.TextDocument) => {
+            this.provider.close(document.uri);
+        }));
     }
 
     private updateDecorations() {
