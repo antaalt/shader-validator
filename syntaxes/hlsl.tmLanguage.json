@@ -88,65 +88,30 @@
         "functions": {
             "patterns": [
                 {
-                    "comment": "macro function definition",
-                    "name": "meta.function.definition.hlsl",
-                    "begin": "\\b([A-Z_][A-Z0-9_]*)(?=[\\s]*\\()", 
-                    "beginCaptures": {
-                        "1": {
-                            "name": "constant.character.preprocessor.hlsl"
-                        },
-                        "2": {
-                            "name": "punctuation.brackets.round.hlsl"
-                        }
-                    },
-                    "end": "\\)",
-                    "endCaptures": {
-                        "0": {
-                            "name": "punctuation.brackets.round.hlsl"
-                        }
-                    },
-                    "patterns": [
-                        {
-                            "include": "#line_comments"
-                        },
-                        {
-                            "include": "#block_comments"
-                        },
-                        {
-                            "include": "#keywords"
-                        },
-                        {
-                            "include": "#attributes"
-                        },
-                        {
-                            "include": "#function_calls"
-                        },
-                        {
-                            "include": "#constants"
-                        },
-                        {
-                            "include": "#types"
-                        },
-                        {
-                            "include": "#variables"
-                        },
-                        {
-                            "include": "#punctuation"
-                        }
-                    ]
-                },
-                {
                     "comment": "function definition",
                     "name": "meta.function.definition.hlsl",
-                    "begin": "\\b([a-zA-Z_][a-zA-Z0-9_]*)\\s+([a-zA-Z_][a-zA-Z0-9_]*)(?=[\\s]*\\()", 
+                    "begin": "\\b(\\w+)(\\s*\\<\\s*(\\w+)\\s*\\>\\s*)?\\s+(\\w+)(?=[\\s]*\\()", 
                     "beginCaptures": {
                         "1": {
-                            "name": "storage.type.hlsl"
+                            "name": "entity.name.type.hlsl",
+                            "patterns": [
+                                {
+                                    "include": "#types"
+                                }
+                            ]
                         },
-                        "2": {
-                            "name": "entity.name.function.hlsl"
+                        "3": {
+                            "name": "entity.name.type.hlsl",
+                            "patterns": [
+                                {
+                                    "include": "#types"
+                                }
+                            ]
                         },
                         "4": {
+                            "name": "entity.name.function.hlsl"
+                        },
+                        "6": {
                             "name": "punctuation.brackets.round.hlsl"
                         }
                     },
@@ -196,12 +161,20 @@
                 {
                     "comment": "function/method calls",
                     "name": "meta.function.call.hlsl",
-                    "begin": "((?!(float|half|double|uint|int|bool|dword)([1-4][1-4]?)?)[a-zA-Z_][a-zA-Z0-9_]*)(?=[\\s]*\\()",
+                    "begin": "([a-zA-Z_][a-zA-Z0-9_]*)(\\s*\\<\\s*(\\w+)\\s*\\>)?(?=[\\s]*\\()",
                     "beginCaptures": {
                         "1": {
                             "name": "entity.name.function.hlsl"
                         },
-                        "2": {
+                        "3": {
+                            "name": "entity.name.function.hlsl",
+                            "patterns": [
+                                {
+                                    "include": "#types"
+                                }
+                            ]
+                        },
+                        "4": {
                             "name": "punctuation.brackets.round.hlsl"
                         }
                     },
@@ -439,8 +412,8 @@
                 },
                 {
                     "comment": "variable declaration",
-                    "name": "keyword.declaration.variable.hlsl",
-                    "match": "\\b(([\\w]+)\\s+)*([\\w]+)(\\<([\\w]+)\\>)?\\s+([\\w]+)\\b",
+                    "name": "meta.variable.declaration.hlsl",
+                    "match": "\\b(([\\w]+)\\s+)*([\\w]+)(\\s*\\<\\s*([\\w]+)\\s*\\>\\s*)?\\s+([\\w]+)\\b",
                     "captures": {
                         "1": {
                             "name": "keyword.declaration.qualifier.hlsl",
@@ -459,7 +432,12 @@
                             ]
                         },
                         "5": {
-                            "name": "entity.name.type.hlsl"
+                            "name": "entity.name.type.hlsl",
+                            "patterns": [
+                                {
+                                    "include": "#types"
+                                }
+                            ]
                         },
                         "6": {
                             "name": "variable.other.hlsl"
@@ -546,7 +524,7 @@
                 {
                     "comment": "type keyword",
                     "name": "keyword.declaration.type.hlsl",
-                    "match": "\\b(type|typename|template|namespace)\\b"
+                    "match": "\\b(typename|template|namespace)\\b"
                 },
                 {
                     "comment": "logical operators",
@@ -606,13 +584,72 @@
                 {
                     "comment": "preprocessor",
                     "name": "keyword.preprocessor.hlsl",
-                    "match": "^\\s*#\\s*(define|elif|else|endif|ifdef|ifndef|if|undef|include|line|error|warning|pragma|INF)\\s+([A-Za-z0-9_]+)?",
+                    "match": "^\\s*#\\s*(if|elif|else|endif|ifdef|ifndef|undef|include|line|error|warning|pragma|INF)\\s+([\\w\\(\\)]+)?",
+                    "captures": {
+                        "1": {
+                            "name": "keyword.preprocessor.hlsl"
+                        },
+                        "2": {
+                            "name": "variable.other.hlsl",
+                            "patterns": [
+                                {
+                                    "comment": "defined macro",
+                                    "match": "(defined)\\(\\w+\\)",
+                                    "captures": {
+                                        "1": {
+                                            "name": "constant.character.preprocessor.hlsl"
+                                        }
+                                    }
+                                },
+                                {
+                                    "include": "#constants"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "comment": "define preprocessor",
+                    "name": "keyword.preprocessor.hlsl",
+                    "match": "^\\s*#\\s*(define)\\s+([A-Za-z0-9_]+)?\\s+(.*)?",
                     "captures": {
                         "1": {
                             "name": "keyword.preprocessor.hlsl"
                         },
                         "2": {
                             "name": "constant.character.preprocessor.hlsl"
+                        },
+                        "3": {
+                            "name": "variable.other.hlsl",
+                            "patterns": [
+                                {
+                                    "include": "#line_comments"
+                                },
+                                {
+                                    "include": "#block_comments"
+                                },
+                                {
+                                    "include": "#keywords"
+                                },
+                                {
+                                    "include": "#attributes"
+                                },
+                                {
+                                    "include": "#function_calls"
+                                },
+                                {
+                                    "include": "#constants"
+                                },
+                                {
+                                    "include": "#types"
+                                },
+                                {
+                                    "include": "#variables"
+                                },
+                                {
+                                    "include": "#punctuation"
+                                }
+                            ]
                         }
                     }
                 }
