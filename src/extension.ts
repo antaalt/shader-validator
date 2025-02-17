@@ -5,6 +5,7 @@ import * as vscode from 'vscode';
 import { createLanguageClient, getServerPlatform, ServerPlatform } from './validator';
 import { dumpAstRequest } from './request';
 import { Sidebar } from './sidebar';
+import { DidChangeTextDocumentNotification } from 'vscode-languageclient';
 
 export let sidebar: Sidebar;
 
@@ -39,15 +40,16 @@ export async function activate(context: vscode.ExtensionContext)
         }
     }
 
-    // Create sidebar
-    sidebar = new Sidebar(context);
-
     // Create language client
     const client = await createLanguageClient(context);
     if (client === null) {
         vscode.window.showErrorMessage("Failed to launch shader-validator language server.");
         return;
     }
+
+    // Create sidebar
+    sidebar = new Sidebar(context, client);
+
     // Subscribe for dispose
     context.subscriptions.push(vscode.Disposable.from(client));
 
@@ -58,10 +60,9 @@ export async function activate(context: vscode.ExtensionContext)
     }));
     context.subscriptions.push(vscode.commands.registerCommand("shader-validator.dumpAst", () => {
         let activeTextEditor = vscode.window.activeTextEditor;
-        if (activeTextEditor !== null) {
-            console.log(activeTextEditor);
+        if (activeTextEditor) {            
             client.sendRequest(dumpAstRequest, {
-                uri: activeTextEditor?.document.uri.toString() // TODO: need to pass correctly formatted path.
+                uri: client.code2ProtocolConverter.asUri(activeTextEditor.document.uri)
             }).then((value: string | null) => {
                 console.log(value);
                 client.outputChannel.appendLine(value || "No AST to dump");

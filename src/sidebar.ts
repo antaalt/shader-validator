@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { ShaderStage, ShaderVariant, ShaderVariantFile, ShaderVariantNode, ShaderVariantTreeDataProvider } from './shaderVariant';
+import { LanguageClient } from 'vscode-languageclient/node';
 
 const shaderVariantTreeKey : string = 'shader-validator.shader-variant-tree-key';
 
@@ -8,10 +9,12 @@ export class Sidebar {
     private decorator: vscode.TextEditorDecorationType;
     private activeEditor: vscode.TextEditor | undefined;
     private workspaceState: vscode.Memento;
+    private client: LanguageClient;
     
-    constructor(context: vscode.ExtensionContext) {
+    constructor(context: vscode.ExtensionContext, client: LanguageClient) {
         let variants : ShaderVariantFile[] = context.workspaceState.get<ShaderVariantFile[]>(shaderVariantTreeKey, []);
-        this.provider = new ShaderVariantTreeDataProvider(variants);
+        this.client = client;
+        this.provider = new ShaderVariantTreeDataProvider(variants, client);
         this.decorator = vscode.window.createTextEditorDecorationType({
             // Icon
             gutterIconPath: context.asAbsolutePath('./res/icons/hlsl-icon.svg'),
@@ -44,7 +47,6 @@ export class Sidebar {
         // Open already opened document
         for (let editor of vscode.window.visibleTextEditors) {
             if (this.activeEditor && editor.document === this.activeEditor.document) {
-                console.log("Opening ", editor.document.uri, " with ", this.provider);
                 this.provider.open(editor.document.uri);
             }
         }

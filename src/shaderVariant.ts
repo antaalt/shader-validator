@@ -1,5 +1,22 @@
 import * as vscode from 'vscode';
-import { ProvideDocumentSymbolsSignature } from 'vscode-languageclient';
+import { LanguageClient, ProtocolNotificationType, TextDocumentIdentifier, TextDocumentItem, TextDocumentRegistrationOptions } from 'vscode-languageclient/node';
+
+interface ShaderVariantSerialized {
+    entryPoint: string,
+    stage: string | null,
+    defines: Object,
+    includes: string[],
+}
+
+// Request to change shader variant
+export interface DidChangeShaderVariantParams {
+    textDocument: TextDocumentIdentifier
+    shaderVariants: ShaderVariantSerialized[]
+}
+export interface DidChangeShaderVariantRegistrationOptions extends TextDocumentRegistrationOptions {}
+
+export const didChangeShaderVariant = new ProtocolNotificationType<DidChangeShaderVariantParams, DidChangeShaderVariantRegistrationOptions>('textDocument/didChangeShaderVariant');
+
 
 export type ShaderVariantDefine = {
     kind: 'define',
@@ -73,16 +90,22 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
     // using vscode.Uri as key does not match well with Memento state storage...
     private files: Map<string, ShaderVariantFile>;
     private tree: vscode.TreeView<ShaderVariantNode>;
+    private client: LanguageClient;
 
-    constructor(variants: ShaderVariantFile[]) {
-        this.files = new Map(variants.map(e => [e.uri.path, e]));
+    constructor(variants: ShaderVariantFile[], client: LanguageClient) {
+        this.files = new Map(variants.map((e : ShaderVariantFile) => {
+            // Seems that serialisation is breaking something, so this is required for uri to behave correctly.
+            // TODO: seems serialization is still clunky with uri...
+            e.uri = vscode.Uri.from(e.uri);
+            return [e.uri.path, e];
+        }));
+        this.client = client;
         this.tree = vscode.window.createTreeView<ShaderVariantNode>("shader-validator-variants", {
             treeDataProvider: this
             // TODO: drag and drop for better ux.
             //dragAndDropController:
         });
         this.tree.onDidChangeCheckboxState((e: vscode.TreeCheckboxChangeEvent<ShaderVariantNode>) => {
-            console.log("Changed", e);
             for (let item of e.items) {
                 if (item[0].kind === 'variant') {
                     if (item[1] === vscode.TreeItemCheckboxState.Checked) {
@@ -93,6 +116,7 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
                 }
             }
         });
+        this.updateDependencies();
     }
 
     public getFiles() {
@@ -113,7 +137,31 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
 
     public refresh() {
         this.onDidChangeTreeDataEmitter.fire();
-        // TODO: update gutter here
+        this.updateDependencies();
+    }
+    private updateDependencies() {
+        // TODO: update gutter here by requesting server entry point.
+
+        // Here we update all files, should be done with more control.
+        function cameltoPascalCase(s: string) : string {
+            return String(s[0]).toUpperCase() + String(s).slice(1);
+        }
+        for (let [path, file] of this.files) {
+            let params : DidChangeShaderVariantParams = {
+                textDocument: {
+                    uri: this.client.code2ProtocolConverter.asUri(file.uri),
+                },
+                shaderVariants: file.variants.map((e: ShaderVariant) => {
+                    return {
+                        entryPoint: e.name,
+                        stage: (e.stage.stage === ShaderStage.auto) ? null : cameltoPascalCase(ShaderStage[e.stage.stage]),
+                        defines: Object.fromEntries(e.defines.defines.map(e => [e.label, e.value])),
+                        includes: e.includes.includes.map(e => e.include)
+                    };
+                })
+            };
+            this.client.sendNotification(didChangeShaderVariant, params);
+        }
     }
 
     public getTreeItem(element: ShaderVariantNode): vscode.TreeItem {
