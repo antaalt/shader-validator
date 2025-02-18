@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { LanguageClient, ProtocolNotificationType, TextDocumentIdentifier, TextDocumentItem, TextDocumentRegistrationOptions } from 'vscode-languageclient/node';
+import { CancellationToken, LanguageClient, ProtocolNotificationType, ProtocolRequestType, TextDocumentIdentifier, TextDocumentItem, TextDocumentRegistrationOptions } from 'vscode-languageclient/node';
 
 interface ShaderVariantSerialized {
     entryPoint: string,
@@ -8,14 +8,39 @@ interface ShaderVariantSerialized {
     includes: string[],
 }
 
-// Request to change shader variant
-export interface DidChangeShaderVariantParams {
+function shaderVariantToSerialized(e: ShaderVariant) : ShaderVariantSerialized {
+    function cameltoPascalCase(s: string) : string {
+        return String(s[0]).toUpperCase() + String(s).slice(1);
+    }
+    return {
+        entryPoint: e.name,
+        stage: (e.stage.stage === ShaderStage.auto) ? null : cameltoPascalCase(ShaderStage[e.stage.stage]),
+        defines: Object.fromEntries(e.defines.defines.map(e => [e.label, e.value])),
+        includes: e.includes.includes.map(e => e.include)
+    };
+}
+function getActiveFileVariant(file: ShaderVariantFile) : ShaderVariant | null {
+    return file.variants.find((e: ShaderVariant) => {
+        return e.isActive;
+    }) || null;
+}
+// Notification from client to change shader variant
+interface DidChangeShaderVariantParams {
     textDocument: TextDocumentIdentifier
     shaderVariant: ShaderVariantSerialized | null
 }
-export interface DidChangeShaderVariantRegistrationOptions extends TextDocumentRegistrationOptions {}
+interface DidChangeShaderVariantRegistrationOptions extends TextDocumentRegistrationOptions {}
 
-export const didChangeShaderVariant = new ProtocolNotificationType<DidChangeShaderVariantParams, DidChangeShaderVariantRegistrationOptions>('textDocument/didChangeShaderVariant');
+const didChangeShaderVariantNotification = new ProtocolNotificationType<DidChangeShaderVariantParams, DidChangeShaderVariantRegistrationOptions>('textDocument/didChangeShaderVariant');
+
+// Request from server to send file active variant.
+interface ShaderVariantParams extends TextDocumentIdentifier {}
+interface ShaderVariantRegistrationOptions extends TextDocumentRegistrationOptions {}
+
+interface ShaderVariantResponse {
+    shaderVariant: ShaderVariantSerialized | null,
+}
+const shaderVariantRequest = new ProtocolRequestType<ShaderVariantParams, ShaderVariantResponse, never, void, ShaderVariantRegistrationOptions>('textDocument/shaderVariant');
 
 
 export type ShaderVariantDefine = {
@@ -99,6 +124,18 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
             return [e.uri.path, e];
         }));
         this.client = client;
+        this.client.onRequest(shaderVariantRequest, (params: ShaderVariantParams, _: CancellationToken) : ShaderVariantResponse => {
+            let file = this.files.get(params.uri);
+            if (file) {
+                let fileActiveVariant = getActiveFileVariant(file);
+                return {
+                    shaderVariant: fileActiveVariant ? shaderVariantToSerialized(fileActiveVariant) : null,
+                };
+            }
+            return {
+                shaderVariant: null,
+            };
+        });
         this.tree = vscode.window.createTreeView<ShaderVariantNode>("shader-validator-variants", {
             treeDataProvider: this
             // TODO: drag and drop for better ux.
@@ -201,7 +238,6 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
 
     public refresh(node: ShaderVariantNode, file: ShaderVariantFile | null) {
         this.onDidChangeTreeDataEmitter.fire(node);
-        console.log("Refreshing node ", node, file);
         if (file) {
             this.updateDependency(file);
         } else {
@@ -220,31 +256,14 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
         this.updateDependencies();
     }
     private updateDependency(file: ShaderVariantFile) {
-        function cameltoPascalCase(s: string) : string {
-            return String(s[0]).toUpperCase() + String(s).slice(1);
-        }
-        function shaderVariantToSerialized(e: ShaderVariant | null) {
-            if (e) {
-                return {
-                    entryPoint: e.name,
-                    stage: (e.stage.stage === ShaderStage.auto) ? null : cameltoPascalCase(ShaderStage[e.stage.stage]),
-                    defines: Object.fromEntries(e.defines.defines.map(e => [e.label, e.value])),
-                    includes: e.includes.includes.map(e => e.include)
-                };
-            } else {
-                return null;
-            }
-        }
-        let fileActiveVariant = file.variants.find((e: ShaderVariant) => {
-            return e.isActive;
-        }) || null;
+        let fileActiveVariant = getActiveFileVariant(file);
         let params : DidChangeShaderVariantParams = {
             textDocument: {
                 uri: this.client.code2ProtocolConverter.asUri(file.uri),
             },
-            shaderVariant: shaderVariantToSerialized(fileActiveVariant),
+            shaderVariant: fileActiveVariant ? shaderVariantToSerialized(fileActiveVariant) : null,
         };
-        this.client.sendNotification(didChangeShaderVariant, params);
+        this.client.sendNotification(didChangeShaderVariantNotification, params);
         if (fileActiveVariant) {
             // TODO: update gutter here by requesting server entry point.
         }
@@ -333,6 +352,7 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
             } else if (element.kind === 'stage') {
                 return [];
             } else {
+                console.error("Reached unreachable", element);
                 return undefined!; // unreachable
             }
         } else {
