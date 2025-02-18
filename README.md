@@ -1,6 +1,7 @@
 # Shader validator
 
-[![gitHub issues](https://img.shields.io/github/issues/antaalt/shader-validator.svg)](https://github.com/antaalt/shader-validator/issues)
+[![extension issues](https://img.shields.io/github/issues/antaalt/shader-validator.svg?label=extension%20issues)](https://github.com/antaalt/shader-validator/issues)
+[![server issues](https://img.shields.io/github/issues/antaalt/shader-sense.svg?label=server%20issues)](https://github.com/antaalt/shader-sense/issues)
 [![vsmarketplace](https://img.shields.io/visual-studio-marketplace/v/antaalt.shader-validator?color=blue&label=vscode%20marketplace)](https://marketplace.visualstudio.com/items?itemName=antaalt.shader-validator)
 [![openVSX registry](https://img.shields.io/open-vsx/v/antaalt/shader-validator?color=purple)](https://open-vsx.org/extension/antaalt/shader-validator)
 
