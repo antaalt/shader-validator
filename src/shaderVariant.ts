@@ -11,7 +11,7 @@ interface ShaderVariantSerialized {
 // Request to change shader variant
 export interface DidChangeShaderVariantParams {
     textDocument: TextDocumentIdentifier
-    shaderVariants: ShaderVariantSerialized[]
+    shaderVariant: ShaderVariantSerialized | null
 }
 export interface DidChangeShaderVariantRegistrationOptions extends TextDocumentRegistrationOptions {}
 
@@ -95,7 +95,6 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
     constructor(variants: ShaderVariantFile[], client: LanguageClient) {
         this.files = new Map(variants.map((e : ShaderVariantFile) => {
             // Seems that serialisation is breaking something, so this is required for uri to behave correctly.
-            // TODO: seems serialization is still clunky with uri...
             e.uri = vscode.Uri.from(e.uri);
             return [e.uri.path, e];
         }));
@@ -106,12 +105,36 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
             //dragAndDropController:
         });
         this.tree.onDidChangeCheckboxState((e: vscode.TreeCheckboxChangeEvent<ShaderVariantNode>) => {
-            for (let item of e.items) {
-                if (item[0].kind === 'variant') {
-                    if (item[1] === vscode.TreeItemCheckboxState.Checked) {
-                        item[0].isActive = true; // checked
+            for (let [variant, checkboxState] of e.items) {
+                if (variant.kind === 'variant') {
+                    if (checkboxState === vscode.TreeItemCheckboxState.Checked) {
+                        // Need to unset other possibles active ones to keep only one entry point active per file.
+                        let file = this.files.get(variant.uri.path);
+                        if (file) {
+                            let needRefresh = false;
+                            for (let otherVariant of file.variants) {
+                                if (otherVariant.isActive) {
+                                    needRefresh = true;
+                                    otherVariant.isActive = false;
+                                }
+                            }
+                            variant.isActive = true; // checked
+                            if (needRefresh) {
+                                // Refresh file & all its childs
+                                this.refresh(file, file);
+                            } else {
+                                this.refresh(variant, file);
+                            }
+                        } else {
+                            console.warn("Failed to find file ", variant.uri);
+                            variant.isActive = true; // checked
+                        }
                     } else {
-                        item[0].isActive = false; // unchecked
+                        variant.isActive = false; // unchecked
+                        let file = this.files.get(variant.uri.path);
+                        if (file) {
+                            this.refresh(file, file);
+                        }
                     }
                 }
             }
@@ -123,44 +146,112 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
         return Array.from(this.files.values());
     }
 
-    public getActiveShaderVariants() {
-        let activeShaderVariants : ShaderVariant[] = [];
-        for (let [uri, file] of this.files) {
-            for (let variant of file.variants) {
-                if (variant.isActive) {
-                    activeShaderVariants.push(variant);
+    private getFileAndParentNode(node: ShaderVariantNode) : [ShaderVariantFile, ShaderVariantNode | null] | null {
+        if (node.kind === 'variant') {
+            let file = this.files.get(node.uri.path);
+            if (file) {
+                return [file, null]; // No parent
+            }
+        } else if (node.kind === 'define') {
+            for (let [_, file] of this.files) {
+                for (let variant of file.variants) {
+                    let index = variant.defines.defines.indexOf(node);
+                    if (index > -1) {
+                        return [file, variant.defines];
+                    }
+                }
+            }
+        } else if (node.kind === 'defineList') {
+            for (let [_, file] of this.files) {
+                for (let variant of file.variants) {
+                    if (variant.defines === node) {
+                        return [file, variant];
+                    }
+                }
+            }
+        } else if (node.kind === 'stage') {
+            for (let [_, file] of this.files) {
+                for (let variant of file.variants) {
+                    if (variant.stage === node) {
+                        return [file, variant];
+                    }
+                }
+            }
+        } else if (node.kind === 'include') {
+            for (let [_, file] of this.files) {
+                for (let variant of file.variants) {
+                    let index = variant.includes.includes.indexOf(node);
+                    if (index > -1) {
+                        return [file, variant.includes];
+                    }
+                }
+            }
+        } else if (node.kind === 'includeList') {
+            for (let [_, file] of this.files) {
+                for (let variant of file.variants) {
+                    if (variant.includes === node) {
+                        return [file, variant];
+                    }
                 }
             }
         }
-        return activeShaderVariants;
+        console.warn("Failed to find file for node ", node);
+        return null;
     }
 
-    public refresh() {
+    public refresh(node: ShaderVariantNode, file: ShaderVariantFile | null) {
+        this.onDidChangeTreeDataEmitter.fire(node);
+        console.log("Refreshing node ", node, file);
+        if (file) {
+            this.updateDependency(file);
+        } else {
+            let result = this.getFileAndParentNode(node);
+            if (result) {
+                let [file, parent] = result;
+                this.updateDependency(file);
+            } else {
+                // Something failed here...
+                this.updateDependencies();
+            }
+        }
+    }
+    public refreshAll() {
         this.onDidChangeTreeDataEmitter.fire();
         this.updateDependencies();
     }
-    private updateDependencies() {
-        // TODO: update gutter here by requesting server entry point.
-
-        // Here we update all files, should be done with more control.
+    private updateDependency(file: ShaderVariantFile) {
         function cameltoPascalCase(s: string) : string {
             return String(s[0]).toUpperCase() + String(s).slice(1);
         }
+        function shaderVariantToSerialized(e: ShaderVariant | null) {
+            if (e) {
+                return {
+                    entryPoint: e.name,
+                    stage: (e.stage.stage === ShaderStage.auto) ? null : cameltoPascalCase(ShaderStage[e.stage.stage]),
+                    defines: Object.fromEntries(e.defines.defines.map(e => [e.label, e.value])),
+                    includes: e.includes.includes.map(e => e.include)
+                };
+            } else {
+                return null;
+            }
+        }
+        let fileActiveVariant = file.variants.find((e: ShaderVariant) => {
+            return e.isActive;
+        }) || null;
+        let params : DidChangeShaderVariantParams = {
+            textDocument: {
+                uri: this.client.code2ProtocolConverter.asUri(file.uri),
+            },
+            shaderVariant: shaderVariantToSerialized(fileActiveVariant),
+        };
+        this.client.sendNotification(didChangeShaderVariant, params);
+        if (fileActiveVariant) {
+            // TODO: update gutter here by requesting server entry point.
+        }
+    }
+    private updateDependencies() {
         for (let [path, file] of this.files) {
-            let params : DidChangeShaderVariantParams = {
-                textDocument: {
-                    uri: this.client.code2ProtocolConverter.asUri(file.uri),
-                },
-                shaderVariants: file.variants.map((e: ShaderVariant) => {
-                    return {
-                        entryPoint: e.name,
-                        stage: (e.stage.stage === ShaderStage.auto) ? null : cameltoPascalCase(ShaderStage[e.stage.stage]),
-                        defines: Object.fromEntries(e.defines.defines.map(e => [e.label, e.value])),
-                        includes: e.includes.includes.map(e => e.include)
-                    };
-                })
-            };
-            this.client.sendNotification(didChangeShaderVariant, params);
+            this.updateDependency(file);
         }
     }
 
@@ -185,6 +276,7 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
         } else if (element.kind === 'file') {
             let item = new vscode.TreeItem(vscode.workspace.asRelativePath(element.uri.path), vscode.TreeItemCollapsibleState.Expanded);
             item.description = `${element.variants.length}`;
+            item.resourceUri = element.uri;
             item.tooltip = `File ${element.uri.fsPath}`;
             item.iconPath = vscode.ThemeIcon.File;
             item.contextValue = element.kind;
@@ -250,6 +342,9 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
     }
 
     public open(uri: vscode.Uri): void {
+        if (uri.scheme !== 'file') {
+            return;
+        }
         let file = this.files.get(uri.path);
         if (!file) {
             let newFile : ShaderVariantFile = {
@@ -258,7 +353,7 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
                 variants: []
             };
             this.files.set(uri.path, newFile);
-            this.refresh();
+            this.refreshAll();
         }
     }
     public close(uri: vscode.Uri): void {
@@ -267,7 +362,7 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
             // We keep it if some variants where defied.
             if (file.variants.length === 0) {
                 this.files.delete(uri.path);
-                this.refresh();
+                this.refreshAll();
             }
         }
     }
@@ -291,20 +386,20 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
                     includes:[]
                 }
             });
-            this.refresh();
+            this.refresh(node, node);
         } else if (node.kind === 'defineList') {
             node.defines.push({
                 kind: "define",
                 label: "MY_MACRO",
                 value: "0",
             });
-            this.refresh();
+            this.refresh(node, null);
         } else if (node.kind === 'includeList') {
             node.includes.push({
                 kind: "include",
                 include: "C:/",
             });
-            this.refresh();
+            this.refresh(node, null);
         }
     }
     public async edit(node: ShaderVariantNode) {
@@ -317,7 +412,7 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
             });
             if (name) {
                 node.name = name;
-                this.refresh();
+                this.refresh(node, null);
             }
         } else if (node.kind === 'define') {
             let label = await vscode.window.showInputBox({
@@ -339,7 +434,7 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
                 node.value = value;
             }
             if (value || label) {
-                this.refresh();
+                this.refresh(node, null);
             }
         } else if (node.kind === 'include') {
             let include = await vscode.window.showInputBox({
@@ -350,7 +445,7 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
             });
             if (include) {
                 node.include = include;
-                this.refresh();
+                this.refresh(node, null);
             }
         } else if (node.kind === 'stage') {
             let stage = await vscode.window.showQuickPick(
@@ -377,7 +472,7 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
             );
             if (stage) {
                 node.stage = ShaderStage[stage as keyof typeof ShaderStage];
-                this.refresh();
+                this.refresh(node, null);
             }
         }
     }
@@ -388,18 +483,19 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
                 let index = cachedFile.variants.indexOf(node);
                 if (index > -1) {
                     cachedFile.variants.splice(index, 1);
-                    this.refresh();
+                    this.refresh(cachedFile, cachedFile);
                 }
             }
         } else if (node.kind === 'define') {
             // Dirty remove, might be costly when lot of elements...
-            for (let [uri, file] of this.files) {
+            for (let [_, file] of this.files) {
                 let found = false;
                 for (let variant of file.variants) {
                     let index = variant.defines.defines.indexOf(node);
                     if (index > -1) {
                         variant.defines.defines.splice(index, 1);
-                        this.refresh();
+                        // Refresh variant for description
+                        this.refresh(variant, file);
                         found = true;
                         break;
                     }
@@ -416,7 +512,7 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
                     let index = variant.includes.includes.indexOf(node);
                     if (index > -1) {
                         variant.includes.includes.splice(index, 1);
-                        this.refresh();
+                        this.refresh(variant.includes, file);
                         found = true;
                         break;
                     }
