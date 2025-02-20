@@ -1,9 +1,7 @@
 import {
-    MessageDirection, 
     ProtocolRequestType,
     TextDocumentIdentifier, 
     TextDocumentRegistrationOptions,
-    SignatureHelpRequest
 } from "vscode-languageclient";
 
 // Request to dump ast to log.

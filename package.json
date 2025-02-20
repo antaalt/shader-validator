@@ -36,16 +36,6 @@
   "main": "./dist/node/extension",
   "browser": "./dist/web/extension",
   "contributes": {
-    "commands": [
-      {
-        "command": "shader-validator.validateFile",
-        "title": "Shader validator: Validate file"
-      },
-      {
-        "command": "shader-validator.dumpAst",
-        "title": "Shader validator: Dump ast"
-      }
-    ],
     "languages": [
       {
         "id": "hlsl",
@@ -281,7 +271,82 @@
           }
         }
       }
-    ]
+    ],
+    "commands": [
+      {
+        "command": "shader-validator.validateFile",
+        "title": "Validate file",
+        "category": "Shader validator",
+        "icon": "$(check)"
+      },
+      {
+        "command": "shader-validator.dumpAst",
+        "title": "Dump ast for debug",
+        "category": "Shader validator",
+        "icon": "$(list-tree)"
+      },
+      {
+        "command": "shader-validator.addMenu",
+        "title": "Add",
+        "category": "Shader validator",
+        "icon": "$(add)"
+      },
+      {
+        "command": "shader-validator.editMenu",
+        "title": "Edit",
+        "category": "Shader validator",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "shader-validator.deleteMenu",
+        "title": "Delete",
+        "category": "Shader validator",
+        "icon": "$(trash)"
+      }
+    ],
+    "menus": {
+        "view/title": [
+            {
+              "command": "shader-validator.editMenu",
+              "when": "view == shader-validator-variants",
+              "group": "navigation"
+            }
+        ],
+        "view/item/context": [
+            {
+              "command": "shader-validator.addMenu",
+              "group": "inline@1",
+              "when": "view == shader-validator-variants && (viewItem == file || viewItem == includeList || viewItem == defineList)"
+            },
+            {
+              "command": "shader-validator.editMenu",
+              "group": "inline@2",
+              "when": "view == shader-validator-variants && (viewItem == variant || viewItem == include || viewItem == define || viewItem == stage)"
+            },
+            {
+              "command": "shader-validator.deleteMenu",
+              "group": "inline@3",
+              "when": "view == shader-validator-variants && (viewItem == variant || viewItem == include || viewItem == define)"
+            }
+         ]
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "shader-validator",
+          "title": "Shader validator",
+          "icon": "res/icons/hlsl-icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "shader-validator": [
+        {
+          "id": "shader-validator-variants",
+          "name": "Shader variants"
+        }
+      ]
+    }
   },
   "scripts": {
     "vscode:prepublish": "webpack --mode production",

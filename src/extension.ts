@@ -4,6 +4,10 @@ import * as vscode from 'vscode';
 
 import { createLanguageClient, getServerPlatform, ServerPlatform } from './validator';
 import { dumpAstRequest } from './request';
+import { Sidebar } from './sidebar';
+import { DidChangeTextDocumentNotification } from 'vscode-languageclient';
+
+export let sidebar: Sidebar;
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
@@ -35,25 +39,30 @@ export async function activate(context: vscode.ExtensionContext)
             return; // Extension failed to launch.
         }
     }
+
     // Create language client
     const client = await createLanguageClient(context);
     if (client === null) {
         vscode.window.showErrorMessage("Failed to launch shader-validator language server.");
         return;
     }
+
+    // Create sidebar
+    sidebar = new Sidebar(context, client);
+
     // Subscribe for dispose
     context.subscriptions.push(vscode.Disposable.from(client));
 
     // Subscribe commands
-    context.subscriptions.push(vscode.commands.registerCommand("shader-validator.validateFile", (data: string = 'current') => {
+    context.subscriptions.push(vscode.commands.registerCommand("shader-validator.validateFile", (uri: vscode.Uri) => {
+        //client.sendRequest()
         vscode.window.showInformationMessage("Cannot validate file manually for now");
     }));
-    context.subscriptions.push(vscode.commands.registerCommand("shader-validator.dumpAst", (data: string = 'current') => {
+    context.subscriptions.push(vscode.commands.registerCommand("shader-validator.dumpAst", () => {
         let activeTextEditor = vscode.window.activeTextEditor;
-        if (activeTextEditor !== null) {
-            console.log(activeTextEditor);
+        if (activeTextEditor) {            
             client.sendRequest(dumpAstRequest, {
-                uri: activeTextEditor?.document.uri.toString() // TODO: need to pass correctly formatted path.
+                uri: client.code2ProtocolConverter.asUri(activeTextEditor.document.uri)
             }).then((value: string | null) => {
                 console.log(value);
                 client.outputChannel.appendLine(value || "No AST to dump");

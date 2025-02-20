@@ -11,10 +11,11 @@ import {
     DidChangeConfigurationNotification,
     LanguageClient,
     LanguageClientOptions,
+    Middleware,
     ServerOptions,
     TransportKind
 } from 'vscode-languageclient/node';
-import assert from "assert";
+import { sidebar } from "./extension";
 
 export enum ServerPlatform {
     windows,
@@ -95,12 +96,7 @@ export function getServerPlatform() : ServerPlatform {
     }
 }
 
-async function requestConfiguration(context: vscode.ExtensionContext, client: LanguageClient) {
-    // Send empty configuration to notify of change in config. 
-    // Server should then request a configuration to client that vscode should understand and answer.
-    await client.sendNotification(DidChangeConfigurationNotification.type, {
-        settings: "", // Required as server expect some empty params
-    });
+function notifyConfigurationChange(context: vscode.ExtensionContext, client: LanguageClient) {
     context.subscriptions.push(
         vscode.workspace.onDidChangeConfiguration(async (event : vscode.ConfigurationChangeEvent) => {
             if (event.affectsConfiguration("shader-validator"))
@@ -161,7 +157,7 @@ async function createLanguageClientStandard(context: vscode.ExtensionContext, pl
     await client.start();
 
     // Ensure configuration is sent
-    await requestConfiguration(context, client);
+    notifyConfigurationChange(context, client);
 
     return client;
 }
@@ -237,7 +233,7 @@ async function createLanguageClientWASI(context: vscode.ExtensionContext) : Prom
         ],
         outputChannel: channel,
         uriConverters: createUriConverters(),
-		traceOutputChannel: channel,
+		traceOutputChannel: channel
     };
 
 
@@ -255,9 +251,7 @@ async function createLanguageClientWASI(context: vscode.ExtensionContext) : Prom
 	} catch (error) {
 		client.error(`Start failed`, error, 'force');
 	}
-
-    // Ensure configuration is sent
-    await requestConfiguration(context, client);
+    notifyConfigurationChange(context, client);
 
     return client;
 }
