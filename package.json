@@ -310,8 +310,8 @@
     "menus": {
         "view/title": [
             {
-              "command": "shader-validator.editMenu",
-              "when": "view == shader-validator-variants",
+              "command": "shader-validator.addMenu",
+              "when": "view == shader-validator-variants && editorIsOpen",
               "group": "navigation"
             }
         ],
@@ -329,7 +329,7 @@
             {
               "command": "shader-validator.deleteMenu",
               "group": "inline@3",
-              "when": "view == shader-validator-variants && (viewItem == variant || viewItem == include || viewItem == define)"
+              "when": "view == shader-validator-variants && (viewItem == variant || viewItem == include || viewItem == define || viewItem == file)"
             }
          ]
     },
@@ -349,7 +349,24 @@
           "name": "Shader variants"
         }
       ]
-    }
+    },
+    "viewsWelcome": [
+      {
+        "view": "shader-validator-variants",
+        "contents": "In order to setup a shader variant, you can add a currently opened shader file & configure it from here.\n[Add Current File](command:shader-validator.addMenu)\nShader variant allow you to define a context and an entry point for shader for a better validation & symbol providing experience.",
+        "when": "workbenchState != empty && editorIsOpen"
+      },
+      {
+        "view": "shader-validator-variants",
+        "contents": "Open a file to be able to add it as a shader variant.",
+        "when": "workbenchState != empty && !editorIsOpen"
+      },
+      {
+        "view": "shader-validator-variants",
+        "contents": "Open a file to be able to add it as a shader variant.",
+        "when": "workbenchState == empty"
+      }
+    ]
   },
   "scripts": {
     "vscode:prepublish": "webpack --mode production",

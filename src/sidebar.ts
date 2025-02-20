@@ -33,7 +33,15 @@ export class Sidebar {
         this.setupGutter(context);
 
         context.subscriptions.push(vscode.commands.registerCommand("shader-validator.addMenu", (node: ShaderVariantNode): void => {
-            this.provider.add(node);
+            // undefined means called from title.
+            if (!node) {
+                let supportedLangId = ["hlsl", "glsl", "wgsl"];
+                if (this.activeEditor && supportedLangId.includes(this.activeEditor.document.languageId)) {
+                    this.provider.open(this.activeEditor.document.uri);
+                }
+            } else {
+                this.provider.add(node);
+            }
             this.workspaceState.update(shaderVariantTreeKey, this.provider.getFiles());
         }));
         context.subscriptions.push(vscode.commands.registerCommand("shader-validator.deleteMenu", (node: ShaderVariantNode) => {
@@ -43,18 +51,6 @@ export class Sidebar {
         context.subscriptions.push(vscode.commands.registerCommand("shader-validator.editMenu", async (node: ShaderVariantNode) => {
             await this.provider.edit(node);
             this.workspaceState.update(shaderVariantTreeKey, this.provider.getFiles());
-        }));
-        // Open already opened document
-        for (let editor of vscode.window.visibleTextEditors) {
-            if (this.activeEditor && editor.document === this.activeEditor.document) {
-                this.provider.open(editor.document.uri);
-            }
-        }
-        context.subscriptions.push(vscode.workspace.onDidOpenTextDocument((document: vscode.TextDocument) => {
-            this.provider.open(document.uri);
-        }));
-        context.subscriptions.push(vscode.workspace.onDidCloseTextDocument((document: vscode.TextDocument) => {
-            this.provider.close(document.uri);
         }));
     }
 

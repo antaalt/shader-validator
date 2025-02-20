@@ -497,7 +497,10 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
         }
     }
     public delete(node: ShaderVariantNode) {
-        if (node.kind === 'variant') {
+        if (node.kind === 'file') {
+            this.files.delete(node.uri.path);
+            this.refreshAll();
+        } else if (node.kind === 'variant') {
             let cachedFile = this.files.get(node.uri.path);
             if (cachedFile) {
                 let index = cachedFile.variants.indexOf(node);
