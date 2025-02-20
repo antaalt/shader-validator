@@ -289,19 +289,22 @@
         "command": "shader-validator.addMenu",
         "title": "Add",
         "category": "Shader validator",
-        "icon": "$(add)"
+        "icon": "$(add)",
+        "enablement": "view == shader-validator-variants"
       },
       {
         "command": "shader-validator.editMenu",
         "title": "Edit",
         "category": "Shader validator",
-        "icon": "$(edit)"
+        "icon": "$(edit)",
+        "enablement": "view == shader-validator-variants"
       },
       {
         "command": "shader-validator.deleteMenu",
         "title": "Delete",
         "category": "Shader validator",
-        "icon": "$(trash)"
+        "icon": "$(trash)",
+        "enablement": "view == shader-validator-variants"
       }
     ],
     "menus": {
