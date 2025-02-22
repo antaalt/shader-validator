@@ -15,6 +15,9 @@
             "include": "#qualifiers"
         },
         {
+            "include": "#preprocessor"
+        },
+        {
             "include": "#keywords"
         },
         {
@@ -30,10 +33,10 @@
             "include": "#constants"
         },
         {
-            "include": "#types"
+            "include": "#variables"
         },
         {
-            "include": "#variables"
+            "include": "#types"
         },
         {
             "include": "#punctuation"
@@ -123,6 +126,9 @@
                     },
                     "patterns": [
                         {
+                            "include": "#preprocessor"
+                        },
+                        {
                             "include": "#line_comments"
                         },
                         {
@@ -190,6 +196,9 @@
                         }
                     },
                     "patterns": [
+                        {
+                            "include": "#preprocessor"
+                        },
                         {
                             "include": "#line_comments"
                         },
@@ -418,9 +427,9 @@
                 {
                     "comment": "variable declaration",
                     "name": "meta.variable.declaration.hlsl",
-                    "match": "\\b(([\\w]+)\\s+)*([\\w]+)(\\s*\\<\\s*([\\w]+)\\s*\\>\\s*)?\\s+([\\w]+)\\b",
+                    "match": "\\b((\\w+)\\s+)*(\\w+)(\\s*\\<\\s*((\\w+)[\\s\\,]?)+\\s*\\>)?\\s+(\\w+)\\b",
                     "captures": {
-                        "1": {
+                        "2": {
                             "name": "keyword.declaration.qualifier.hlsl",
                             "patterns": [
                                 {
@@ -514,6 +523,109 @@
                 }
             ]
         },
+        "preprocessor": {
+            "patterns": [
+                {
+                    "comment": "preprocessor",
+                    "name": "keyword.preprocessor.hlsl",
+                    "match": "^\\s*#\\s*(if|elif|else|endif|ifdef|ifndef|undef|include|line|error|warning|pragma|INF)\\s+([\\w\\(\\)]+)?",
+                    "captures": {
+                        "1": {
+                            "name": "keyword.preprocessor.hlsl"
+                        },
+                        "2": {
+                            "name": "variable.other.hlsl",
+                            "patterns": [
+                                {
+                                    "comment": "defined macro",
+                                    "match": "(defined)\\(\\w+\\)",
+                                    "captures": {
+                                        "1": {
+                                            "name": "constant.character.preprocessor.hlsl"
+                                        }
+                                    }
+                                },
+                                {
+                                    "include": "#line_comments"
+                                },
+                                {
+                                    "include": "#block_comments"
+                                },
+                                {
+                                    "include": "#keywords"
+                                },
+                                {
+                                    "include": "#attributes"
+                                },
+                                {
+                                    "include": "#function_calls"
+                                },
+                                {
+                                    "include": "#constants"
+                                },
+                                {
+                                    "include": "#types"
+                                },
+                                {
+                                    "include": "#variables"
+                                },
+                                {
+                                    "include": "#punctuation"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "comment": "define preprocessor",
+                    "name": "keyword.preprocessor.hlsl",
+                    "match": "^\\s*#\\s*(define)\\s+(\\w+)(\\s*\\(\\s*[\\w\\,\\s]+\\s*\\))?\\s+(.*)?",
+                    "captures": {
+                        "1": {
+                            "name": "keyword.preprocessor.hlsl"
+                        },
+                        "2": {
+                            "name": "constant.character.preprocessor.hlsl"
+                        },
+                        "3": {
+                            "name": "variable.other.hlsl"
+                        },
+                        "4": {
+                            "name": "variable.other.hlsl",
+                            "patterns": [
+                                {
+                                    "include": "#line_comments"
+                                },
+                                {
+                                    "include": "#block_comments"
+                                },
+                                {
+                                    "include": "#keywords"
+                                },
+                                {
+                                    "include": "#attributes"
+                                },
+                                {
+                                    "include": "#function_calls"
+                                },
+                                {
+                                    "include": "#constants"
+                                },
+                                {
+                                    "include": "#types"
+                                },
+                                {
+                                    "include": "#variables"
+                                },
+                                {
+                                    "include": "#punctuation"
+                                }
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
         "keywords": {
             "patterns": [
                 {
@@ -585,78 +697,6 @@
                     "comment": "type modifier for storage",
                     "name": "keyword.declaration.hlsl",
                     "match": "\\b(packoffset|register)\\b"
-                },
-                {
-                    "comment": "preprocessor",
-                    "name": "keyword.preprocessor.hlsl",
-                    "match": "^\\s*#\\s*(if|elif|else|endif|ifdef|ifndef|undef|include|line|error|warning|pragma|INF)\\s+([\\w\\(\\)]+)?",
-                    "captures": {
-                        "1": {
-                            "name": "keyword.preprocessor.hlsl"
-                        },
-                        "2": {
-                            "name": "variable.other.hlsl",
-                            "patterns": [
-                                {
-                                    "comment": "defined macro",
-                                    "match": "(defined)\\(\\w+\\)",
-                                    "captures": {
-                                        "1": {
-                                            "name": "constant.character.preprocessor.hlsl"
-                                        }
-                                    }
-                                },
-                                {
-                                    "include": "#constants"
-                                }
-                            ]
-                        }
-                    }
-                },
-                {
-                    "comment": "define preprocessor",
-                    "name": "keyword.preprocessor.hlsl",
-                    "match": "^\\s*#\\s*(define)\\s+([A-Za-z0-9_]+)?\\s+(.*)?",
-                    "captures": {
-                        "1": {
-                            "name": "keyword.preprocessor.hlsl"
-                        },
-                        "2": {
-                            "name": "constant.character.preprocessor.hlsl"
-                        },
-                        "3": {
-                            "name": "variable.other.hlsl",
-                            "patterns": [
-                                {
-                                    "include": "#line_comments"
-                                },
-                                {
-                                    "include": "#block_comments"
-                                },
-                                {
-                                    "include": "#keywords"
-                                },
-                                {
-                                    "include": "#attributes"
-                                },
-                                {
-                                    "include": "#function_calls"
-                                },
-                                {
-                                    "include": "#constants"
-                                },
-                                {
-                                    "include": "#types"
-                                },
-                                {
-                                    "include": "#variables"
-                                },
-                                {
-                                    "include": "#punctuation"
-                                }
-                            ]
-                        }
-                    }
                 }
             ]
         }
