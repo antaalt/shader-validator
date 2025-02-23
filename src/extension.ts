@@ -4,10 +4,9 @@ import * as vscode from 'vscode';
 
 import { createLanguageClient, getServerPlatform, ServerPlatform } from './validator';
 import { dumpAstRequest } from './request';
-import { Sidebar } from './sidebar';
-import { DidChangeTextDocumentNotification } from 'vscode-languageclient';
+import { ShaderVariantTreeDataProvider } from './shaderVariant';
 
-export let sidebar: Sidebar;
+export let sidebar: ShaderVariantTreeDataProvider;
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
@@ -48,7 +47,7 @@ export async function activate(context: vscode.ExtensionContext)
     }
 
     // Create sidebar
-    sidebar = new Sidebar(context, client);
+    sidebar = new ShaderVariantTreeDataProvider(context, client);
 
     // Subscribe for dispose
     context.subscriptions.push(vscode.Disposable.from(client));
@@ -64,7 +63,7 @@ export async function activate(context: vscode.ExtensionContext)
             client.sendRequest(dumpAstRequest, {
                 uri: client.code2ProtocolConverter.asUri(activeTextEditor.document.uri)
             }).then((value: string | null) => {
-                console.log(value);
+                console.info(value);
                 client.outputChannel.appendLine(value || "No AST to dump");
             }, (reason: any) => {
                 client.outputChannel.appendLine("Failed to get ast: " + reason);

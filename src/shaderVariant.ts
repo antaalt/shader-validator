@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { CancellationToken, LanguageClient, ProtocolNotificationType, ProtocolRequestType, TextDocumentIdentifier, TextDocumentItem, TextDocumentRegistrationOptions } from 'vscode-languageclient/node';
+import { CancellationToken, DocumentSymbol, DocumentSymbolRequest, LanguageClient, ProtocolNotificationType, ProtocolRequestType, Range, SymbolInformation, SymbolKind, TextDocumentIdentifier, TextDocumentItem, TextDocumentRegistrationOptions } from 'vscode-languageclient/node';
 
 interface ShaderVariantSerialized {
     entryPoint: string,
@@ -89,14 +89,14 @@ export type ShaderVariantStage = {
 
 // This should be shadervariant.
 export type ShaderVariant = {
-    kind: 'variant',
-    uri: vscode.Uri,
-    name: string,
-    isActive: boolean,
+    kind: 'variant';
+    uri: vscode.Uri;
+    name: string;
+    isActive: boolean;
     // Per variant data
-    stage: ShaderVariantStage,
-    defines: ShaderVariantDefineList,
-    includes: ShaderVariantIncludeList,
+    stage: ShaderVariantStage;
+    defines: ShaderVariantDefineList;
+    includes: ShaderVariantIncludeList;
 };
 
 export type ShaderVariantFile = {
@@ -105,7 +105,14 @@ export type ShaderVariantFile = {
     variants: ShaderVariant[],
 };
 
+export type PossibleEntryPoint = {
+    entryPoint: string,
+    range: vscode.Range,
+};
+
 export type ShaderVariantNode = ShaderVariant | ShaderVariantFile | ShaderVariantDefineList | ShaderVariantIncludeList | ShaderVariantDefine | ShaderVariantInclude | ShaderVariantStage;
+
+const shaderVariantTreeKey : string = 'shader-validator.shader-variant-tree-key';
 
 export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<ShaderVariantNode> {
 
@@ -116,26 +123,32 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
     private files: Map<string, ShaderVariantFile>;
     private tree: vscode.TreeView<ShaderVariantNode>;
     private client: LanguageClient;
+    private decorator: vscode.TextEditorDecorationType;
+    private workspaceState: vscode.Memento;
+    private entryPointCache: Map<string, PossibleEntryPoint[]>;
 
-    constructor(variants: ShaderVariantFile[], client: LanguageClient) {
+    private load() {
+        let variants : ShaderVariantFile[] = this.workspaceState.get<ShaderVariantFile[]>(shaderVariantTreeKey, []);
         this.files = new Map(variants.map((e : ShaderVariantFile) => {
-            // Seems that serialisation is breaking something, so this is required for uri to behave correctly.
+            // Seems that serialisation is breaking something, so this is required for uri & range to behave correctly.
             e.uri = vscode.Uri.from(e.uri);
+            for (let variant of e.variants) {
+                variant.uri = vscode.Uri.from(variant.uri);
+            }
             return [e.uri.path, e];
         }));
+    }
+    private save() {
+        let array = Array.from(this.files.values());
+        this.workspaceState.update(shaderVariantTreeKey, array);
+    }
+
+    constructor(context: vscode.ExtensionContext, client: LanguageClient) {
+        this.workspaceState = context.workspaceState;
+        this.files = new Map;
+        this.load();
+        this.entryPointCache = new Map;
         this.client = client;
-        this.client.onRequest(shaderVariantRequest, (params: ShaderVariantParams, _: CancellationToken) : ShaderVariantResponse => {
-            let file = this.files.get(params.uri);
-            if (file) {
-                let fileActiveVariant = getActiveFileVariant(file);
-                return {
-                    shaderVariant: fileActiveVariant ? shaderVariantToSerialized(fileActiveVariant) : null,
-                };
-            }
-            return {
-                shaderVariant: null,
-            };
-        });
         this.tree = vscode.window.createTreeView<ShaderVariantNode>("shader-validator-variants", {
             treeDataProvider: this
             // TODO: drag and drop for better ux.
@@ -176,11 +189,53 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
                 }
             }
         });
+        this.decorator = vscode.window.createTextEditorDecorationType({
+            // Icon
+            gutterIconPath: context.asAbsolutePath('./res/icons/hlsl-icon.svg'),
+            gutterIconSize: "contain",
+            // Minimap
+            overviewRulerColor: "rgb(0, 174, 255)",  
+            overviewRulerLane: vscode.OverviewRulerLane.Full,  
+            rangeBehavior: vscode.DecorationRangeBehavior.OpenOpen,
+            // Border
+            borderWidth: '1px',
+            borderStyle: 'solid',
+        });
+        context.subscriptions.push(vscode.commands.registerCommand("shader-validator.addMenu", (node: ShaderVariantNode): void => {
+            // undefined means called from title.
+            if (!node) {
+                let supportedLangId = ["hlsl", "glsl", "wgsl"];
+                if (vscode.window.activeTextEditor && supportedLangId.includes(vscode.window.activeTextEditor.document.languageId)) {
+                    this.open(vscode.window.activeTextEditor.document.uri);
+                }
+            } else {
+                this.add(node);
+            }
+            this.save();
+        }));
+        context.subscriptions.push(vscode.commands.registerCommand("shader-validator.deleteMenu", (node: ShaderVariantNode) => {
+            this.delete(node);
+            this.save();
+        }));
+        context.subscriptions.push(vscode.commands.registerCommand("shader-validator.editMenu", async (node: ShaderVariantNode) => {
+            await this.edit(node);
+            this.save();
+        }));
+        // Prepare entry point symbol cache
+        for (let editor of vscode.window.visibleTextEditors) {
+            if (editor.document.uri.scheme === 'file') {
+                this.entryPointCache.set(editor.document.uri.path, []);
+            }
+        }
+        context.subscriptions.push(vscode.workspace.onDidOpenTextDocument(document => {
+            if (document.uri.scheme === 'file') {
+                this.entryPointCache.set(document.uri.path, []);
+            }
+        }));
+        context.subscriptions.push(vscode.workspace.onDidCloseTextDocument(document => {
+            this.entryPointCache.delete(document.uri.path);
+        }));
         this.updateDependencies();
-    }
-
-    public getFiles() {
-        return Array.from(this.files.values());
     }
 
     private getFileAndParentNode(node: ShaderVariantNode) : [ShaderVariantFile, ShaderVariantNode | null] | null {
@@ -236,8 +291,8 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
         return null;
     }
 
-    public refresh(node: ShaderVariantNode, file: ShaderVariantFile | null) {
-        this.onDidChangeTreeDataEmitter.fire(node);
+    public refresh(node: ShaderVariantNode, file: ShaderVariantFile | null, updateFileNode?: boolean) {
+        this.onDidChangeTreeDataEmitter.fire();
         if (file) {
             this.updateDependency(file);
         } else {
@@ -264,12 +319,35 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
             shaderVariant: fileActiveVariant ? shaderVariantToSerialized(fileActiveVariant) : null,
         };
         this.client.sendNotification(didChangeShaderVariantNotification, params);
-        if (fileActiveVariant) {
-            // TODO: update gutter here by requesting server entry point.
+        // Symbols might have changed, so request them as we use this to compute symbols.
+        // TODO: this seems to be ignored by vscode....
+        //vscode.commands.executeCommand("vscode.executeDocumentSymbolProvider", file.uri);
+        this.client.sendRequest(DocumentSymbolRequest.type, {
+            textDocument: {
+                uri: this.client.code2ProtocolConverter.asUri(file.uri),
+            }
+        });
+    }
+    public onDocumentSymbols(uri: vscode.Uri, symbols: vscode.SymbolInformation[]) {
+        let entryPointCache = this.entryPointCache.get(uri.path);
+        console.log("bonjour", uri, this.entryPointCache);
+        if (entryPointCache) {
+            let possibleEntryPoints = symbols.filter(symbol => symbol.kind === vscode.SymbolKind.Function);
+            entryPointCache = [];
+            for (let symbol of possibleEntryPoints) {
+                entryPointCache.push({
+                    entryPoint: symbol.name, 
+                    range: new vscode.Range(
+                        new vscode.Position(symbol.location.range.start.line, symbol.location.range.start.character), 
+                        new vscode.Position(symbol.location.range.end.line, symbol.location.range.end.character)
+                    )
+                });
+            }
+            this.updateDecorations();
         }
     }
     private updateDependencies() {
-        for (let [path, file] of this.files) {
+        for (let [_, file] of this.files) {
             this.updateDependency(file);
         }
     }
@@ -404,7 +482,7 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
                 includes: {
                     kind: 'includeList',
                     includes:[]
-                }
+                },
             });
             this.refresh(node, node);
         } else if (node.kind === 'defineList') {
@@ -546,13 +624,41 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
             }
         }
     }
-    public visitShaderVariants(uri: vscode.Uri, callback: (variant: ShaderVariant) => void) {
-        let cachedFile = this.files.get(uri.path);
-        if (cachedFile) {
-            if (cachedFile.kind === 'file') {
-                for (let variant of cachedFile.variants) {
-                    callback(variant);
+    private updateDecoration(editor: vscode.TextEditor) {
+        let file = this.files.get(editor.document.uri.path);
+        let entryPoints = this.entryPointCache.get(editor.document.uri.path);
+
+        if (file && entryPoints) {
+            let variant = getActiveFileVariant(file);
+            if (variant) {
+                let found = false;
+                for (let entryPoint of entryPoints) {
+                    if (entryPoint.entryPoint === variant.name) {
+                        let decorations : vscode.DecorationOptions[]= [];
+                        decorations.push({ range: entryPoint.range, hoverMessage: variant.name });
+                        editor.setDecorations(this.decorator, decorations);
+                        found = true;
+                        break;
+                    }
                 }
+                if (!found) {
+                    console.info("Entry point not found in ", entryPoints);
+                    editor.setDecorations(this.decorator, []);
+                }
+            } else {
+                console.info("No active variant ", entryPoints);
+                editor.setDecorations(this.decorator, []);
+            }
+        } else {
+            console.info("No file or entry point ", file, entryPoints);
+            editor.setDecorations(this.decorator, []);
+        }
+    }
+    private updateDecorations(uri?: vscode.Uri) {
+        console.info("Updating editors: ", vscode.window.visibleTextEditors);
+        for (let editor of vscode.window.visibleTextEditors) {
+            if (editor.document.uri.scheme === 'file') {
+                this.updateDecoration(editor);
             }
         }
     }

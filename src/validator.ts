@@ -12,6 +12,7 @@ import {
     LanguageClient,
     LanguageClientOptions,
     Middleware,
+    ProvideDocumentSymbolsSignature,
     ServerOptions,
     TransportKind
 } from 'vscode-languageclient/node';
@@ -109,6 +110,20 @@ function notifyConfigurationChange(context: vscode.ExtensionContext, client: Lan
     );
 }
 
+function getMiddleware() : Middleware {
+    return {
+        async provideDocumentSymbols(document: vscode.TextDocument, token: vscode.CancellationToken, next: ProvideDocumentSymbolsSignature) {
+            const result = await next(document, token);
+            if (result) {
+                // /!\ Type casting need to match server data sent. /!\ 
+                let resultArray = result as vscode.SymbolInformation[];
+                sidebar.onDocumentSymbols(document.uri, resultArray);
+            }
+            return result;
+        },
+    };
+}
+
 export async function createLanguageClient(context: vscode.ExtensionContext): Promise<LanguageClient | null> {
     // Create validator
     // Web does not support child process, use wasi instead.
@@ -142,7 +157,8 @@ async function createLanguageClientStandard(context: vscode.ExtensionContext, pl
             { scheme: 'file', language: 'hlsl' },
             { scheme: 'file', language: 'glsl' },
             { scheme: 'file', language: 'wgsl' },
-        ]
+        ],
+        middleware: getMiddleware(),
     };
 
     let client = new LanguageClient(
@@ -233,7 +249,8 @@ async function createLanguageClientWASI(context: vscode.ExtensionContext) : Prom
         ],
         outputChannel: channel,
         uriConverters: createUriConverters(),
-		traceOutputChannel: channel
+		traceOutputChannel: channel,
+        middleware: getMiddleware(),
     };
 
 
