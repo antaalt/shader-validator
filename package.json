@@ -326,9 +326,21 @@
         "category": "Shader validator",
         "icon": "$(trash)",
         "enablement": "view == shader-validator-variants"
+      },
+      {
+        "command": "shader-validator.gotoShaderEntryPoint",
+        "title": "Go to shader entry point",
+        "category": "Shader validator",
+        "icon": "$(arrow-right)"
       }
     ],
     "menus": {
+        "commandPalette": [
+            {
+                "command": "shader-validator.gotoShaderEntryPoint",
+                "when": "false"
+            }
+        ],
         "view/title": [
             {
               "command": "shader-validator.addCurrentFile",
