@@ -105,7 +105,7 @@ export type ShaderVariantFile = {
     variants: ShaderVariant[],
 };
 
-export type PossibleEntryPoint = {
+export type ShaderFunctionList = {
     entryPoint: string,
     range: vscode.Range,
 };
@@ -125,7 +125,7 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
     private client: LanguageClient;
     private decorator: vscode.TextEditorDecorationType;
     private workspaceState: vscode.Memento;
-    private entryPointCache: Map<string, PossibleEntryPoint[]>;
+    private shaderFunctionCache: Map<string, ShaderFunctionList[]>;
 
     private load() {
         let variants : ShaderVariantFile[] = this.workspaceState.get<ShaderVariantFile[]>(shaderVariantTreeKey, []);
@@ -147,7 +147,7 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
         this.workspaceState = context.workspaceState;
         this.files = new Map;
         this.load();
-        this.entryPointCache = new Map;
+        this.shaderFunctionCache = new Map;
         this.client = client;
         this.tree = vscode.window.createTreeView<ShaderVariantNode>("shader-validator-variants", {
             treeDataProvider: this
@@ -188,6 +188,7 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
                     }
                 }
             }
+            this.updateDecorations();
         });
         this.decorator = vscode.window.createTextEditorDecorationType({
             // Icon
@@ -224,16 +225,16 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
         // Prepare entry point symbol cache
         for (let editor of vscode.window.visibleTextEditors) {
             if (editor.document.uri.scheme === 'file') {
-                this.entryPointCache.set(editor.document.uri.path, []);
+                this.shaderFunctionCache.set(editor.document.uri.path, []);
             }
         }
         context.subscriptions.push(vscode.workspace.onDidOpenTextDocument(document => {
             if (document.uri.scheme === 'file') {
-                this.entryPointCache.set(document.uri.path, []);
+                this.shaderFunctionCache.set(document.uri.path, []);
             }
         }));
         context.subscriptions.push(vscode.workspace.onDidCloseTextDocument(document => {
-            this.entryPointCache.delete(document.uri.path);
+            this.shaderFunctionCache.delete(document.uri.path);
         }));
         this.updateDependencies();
     }
@@ -319,23 +320,25 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
             shaderVariant: fileActiveVariant ? shaderVariantToSerialized(fileActiveVariant) : null,
         };
         this.client.sendNotification(didChangeShaderVariantNotification, params);
+
         // Symbols might have changed, so request them as we use this to compute symbols.
-        // TODO: this seems to be ignored by vscode....
+        // TODO: update vscode symbols for gutter to show.
+        // This one seems to get symbol from cache without requesting the server...
         //vscode.commands.executeCommand("vscode.executeDocumentSymbolProvider", file.uri);
-        this.client.sendRequest(DocumentSymbolRequest.type, {
-            textDocument: {
-                uri: this.client.code2ProtocolConverter.asUri(file.uri),
-            }
-        });
+        // This one works, but result is not intercepted by vscode & updated...
+        //this.client.sendRequest(DocumentSymbolRequest.type, {
+        //    textDocument: {
+        //        uri: this.client.code2ProtocolConverter.asUri(file.uri),
+        //    }
+        //});
     }
     public onDocumentSymbols(uri: vscode.Uri, symbols: vscode.SymbolInformation[]) {
-        let entryPointCache = this.entryPointCache.get(uri.path);
-        console.log("bonjour", uri, this.entryPointCache);
-        if (entryPointCache) {
-            let possibleEntryPoints = symbols.filter(symbol => symbol.kind === vscode.SymbolKind.Function);
-            entryPointCache = [];
-            for (let symbol of possibleEntryPoints) {
-                entryPointCache.push({
+        let shaderFunctionCache = this.shaderFunctionCache.get(uri.path);
+        if (shaderFunctionCache) {
+            let shaderFunctionList = symbols.filter(symbol => symbol.kind === vscode.SymbolKind.Function);
+            shaderFunctionCache = [];
+            for (let symbol of shaderFunctionList) {
+                shaderFunctionCache.push({
                     entryPoint: symbol.name, 
                     range: new vscode.Range(
                         new vscode.Position(symbol.location.range.start.line, symbol.location.range.start.character), 
@@ -343,6 +346,7 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
                     )
                 });
             }
+            this.shaderFunctionCache.set(uri.path, shaderFunctionCache);
             this.updateDecorations();
         }
     }
@@ -626,7 +630,7 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
     }
     private updateDecoration(editor: vscode.TextEditor) {
         let file = this.files.get(editor.document.uri.path);
-        let entryPoints = this.entryPointCache.get(editor.document.uri.path);
+        let entryPoints = this.shaderFunctionCache.get(editor.document.uri.path);
 
         if (file && entryPoints) {
             let variant = getActiveFileVariant(file);
@@ -655,7 +659,6 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
         }
     }
     private updateDecorations(uri?: vscode.Uri) {
-        console.info("Updating editors: ", vscode.window.visibleTextEditors);
         for (let editor of vscode.window.visibleTextEditors) {
             if (editor.document.uri.scheme === 'file') {
                 this.updateDecoration(editor);
