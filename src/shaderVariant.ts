@@ -202,16 +202,17 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
             borderWidth: '1px',
             borderStyle: 'solid',
         });
-        context.subscriptions.push(vscode.commands.registerCommand("shader-validator.addMenu", (node: ShaderVariantNode): void => {
+        context.subscriptions.push(vscode.commands.registerCommand("shader-validator.addCurrentFile", (node: any): void => {
             // undefined means called from title.
-            if (!node) {
-                let supportedLangId = ["hlsl", "glsl", "wgsl"];
-                if (vscode.window.activeTextEditor && supportedLangId.includes(vscode.window.activeTextEditor.document.languageId)) {
-                    this.open(vscode.window.activeTextEditor.document.uri);
-                }
-            } else {
-                this.add(node);
+            console.log("adding", node);
+            let supportedLangId = ["hlsl", "glsl", "wgsl"];
+            if (vscode.window.activeTextEditor && supportedLangId.includes(vscode.window.activeTextEditor.document.languageId)) {
+                this.open(vscode.window.activeTextEditor.document.uri);
             }
+            this.save();
+        }));
+        context.subscriptions.push(vscode.commands.registerCommand("shader-validator.addMenu", (node: ShaderVariantNode): void => {
+            this.add(node);
             this.save();
         }));
         context.subscriptions.push(vscode.commands.registerCommand("shader-validator.deleteMenu", (node: ShaderVariantNode) => {

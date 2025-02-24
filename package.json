@@ -293,6 +293,20 @@
         "icon": "$(list-tree)"
       },
       {
+        "command": "shader-validator.addCurrentFile",
+        "title": "Add current file",
+        "category": "Shader validator",
+        "icon": "$(add)",
+        "enablement": "view == shader-validator-variants"
+      },
+      {
+        "command": "shader-validator.editMenu",
+        "title": "Edit",
+        "category": "Shader validator",
+        "icon": "$(edit)",
+        "enablement": "view == shader-validator-variants"
+      },
+      {
         "command": "shader-validator.addMenu",
         "title": "Add",
         "category": "Shader validator",
@@ -317,7 +331,7 @@
     "menus": {
         "view/title": [
             {
-              "command": "shader-validator.addMenu",
+              "command": "shader-validator.addCurrentFile",
               "when": "view == shader-validator-variants && editorIsOpen",
               "group": "navigation"
             }
