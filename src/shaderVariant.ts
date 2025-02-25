@@ -325,6 +325,32 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
         this.onDidChangeTreeDataEmitter.fire();
         this.updateDependencies();
     }
+    private requestDocumentSymbol(uri: vscode.Uri) {
+        // This one seems to get symbol from cache without requesting the server...
+        //vscode.commands.executeCommand("vscode.executeDocumentSymbolProvider", file.uri);
+        // This one works, but result is not intercepted by vscode & updated...
+        //this.client.sendRequest(DocumentSymbolRequest.type, {
+        //    textDocument: {
+        //        uri: this.client.code2ProtocolConverter.asUri(file.uri),
+        //    }
+        //});
+        // We have to rely on a dirty hack instead.
+        // Need to check this does not break anything
+        // Dirty hack to trigger document symbol update
+        for (let editor of vscode.window.visibleTextEditors) {
+            if (editor.document.uri.path === uri.path) {
+                editor.edit(editBuilder => {
+                    let line = editor.document.lineAt(0);
+                    const text = line.text;
+                    const c = line.range.end.character;
+                    // Remove last character of first line and add it back.
+                    editBuilder.delete(new vscode.Range(0, c-1, 0, c));
+                    editBuilder.insert(new vscode.Position(0, c), text[c-1]);
+                });
+                break;
+            }
+        }
+    }
     private updateDependency(file: ShaderVariantFile) {
         let fileActiveVariant = getActiveFileVariant(file);
         let params : DidChangeShaderVariantParams = {
@@ -336,15 +362,7 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
         this.client.sendNotification(didChangeShaderVariantNotification, params);
 
         // Symbols might have changed, so request them as we use this to compute symbols.
-        // TODO: update vscode symbols for gutter to show.
-        // This one seems to get symbol from cache without requesting the server...
-        //vscode.commands.executeCommand("vscode.executeDocumentSymbolProvider", file.uri);
-        // This one works, but result is not intercepted by vscode & updated...
-        //this.client.sendRequest(DocumentSymbolRequest.type, {
-        //    textDocument: {
-        //        uri: this.client.code2ProtocolConverter.asUri(file.uri),
-        //    }
-        //});
+        this.requestDocumentSymbol(file.uri);        
     }
     public onDocumentSymbols(uri: vscode.Uri, symbols: vscode.SymbolInformation[]) {
         this.shaderEntryPointList.set(uri.path, symbols.filter(symbol => symbol.kind === vscode.SymbolKind.Function).map(symbol => {
