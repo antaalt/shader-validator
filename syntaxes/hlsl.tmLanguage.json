@@ -3,6 +3,10 @@
     "scopeName": "source.hlsl",
     "fileTypes": [ "hlsl" ],
     "author": ["antaalt"],
+    "_resources":[
+        "https://code.visualstudio.com/api/language-extensions/semantic-highlight-guide",
+        "https://macromates.com/manual/en/language_grammars#naming-conventions"
+    ],
     "uuid": "75ae6133-98c4-45a5-ac1b-0c31e8af330c",
     "patterns": [
         {
@@ -531,7 +535,7 @@
                     "match": "^\\s*#\\s*(if|elif|else|endif|ifdef|ifndef|undef|include|line|error|warning|pragma|INF)\\s+([\\w\\(\\)]+)?",
                     "captures": {
                         "1": {
-                            "name": "keyword.preprocessor.hlsl"
+                            "name": "keyword.other.preprocessor.hlsl"
                         },
                         "2": {
                             "name": "variable.other.hlsl",
@@ -541,7 +545,7 @@
                                     "match": "(defined)\\(\\w+\\)",
                                     "captures": {
                                         "1": {
-                                            "name": "constant.character.preprocessor.hlsl"
+                                            "name": "entity.name.function"
                                         }
                                     }
                                 },
@@ -585,7 +589,7 @@
                             "name": "keyword.preprocessor.hlsl"
                         },
                         "2": {
-                            "name": "constant.character.preprocessor.hlsl"
+                            "name": "entity.name.function.preprocessor.hlsl"
                         },
                         "3": {
                             "name": "variable.other.hlsl"
