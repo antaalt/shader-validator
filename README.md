@@ -11,7 +11,7 @@ Currently, it support some features and languages:
 
 -   Syntax Highlighting: Provide improved syntax highlighting for code.
 -   Diagnostic: Provide errors & warning as user type code.
--   Symbol provider: provide goto, completion, hover & signature.
+-   Symbol provider: provide goto, completion, hover, signature...
     -   Local symbols: Provide all user created symbols (function, constant, types...).
     -   Intrinsics symbols: Provide all languages provided intrinsics symbols.
 -   Regions: Detect inactive regions in code due to preprocessor and grey them out.
@@ -69,6 +69,10 @@ Go to your declaration definition by clicking on it.
 Grey out inactive regions depending on currently declared preprocessor.
 
 ![diagnostic](res/doc/inactive-regions.png)
+
+### And much more
+
+This extension also support some features such as document symbols, workspace symbols...
 
 ## Extension Settings
 
