@@ -59,7 +59,7 @@ export async function activate(context: vscode.ExtensionContext)
     }));
     context.subscriptions.push(vscode.commands.registerCommand("shader-validator.dumpAst", () => {
         let activeTextEditor = vscode.window.activeTextEditor;
-        if (activeTextEditor) {            
+        if (activeTextEditor && activeTextEditor.document.uri.scheme === 'file') {            
             client.sendRequest(dumpAstRequest, {
                 uri: client.code2ProtocolConverter.asUri(activeTextEditor.document.uri)
             }).then((value: string | null) => {
