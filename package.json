@@ -148,11 +148,6 @@
             "additionalProperties": {
               "type": "string"
             }
-          },
-          "shader-validator.regions": {
-            "description": "Grey out inactive regions.",
-            "type": "boolean",
-            "default": false
           }
         }
       },

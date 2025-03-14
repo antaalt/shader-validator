@@ -82,8 +82,8 @@ This extension contributes the following settings:
 *   `shader-validator.symbols`: Enable/disable symbol inspection & providers.
 *   `shader-validator.severity`: Select minimal log severity for linting.
 *   `shader-validator.includes`: All custom includes for linting.
+*   `shader-validator.pathRemapping`: All virtual paths.
 *   `shader-validator.defines`: All custom macros and their values for linting.
-*   `shader-validator.regions`: Enable inactive regions parsing & filtering.
 
 ### HLSL specific settings: 
 
