@@ -70,6 +70,12 @@ Grey out inactive regions depending on currently declared preprocessor.
 
 ![diagnostic](res/doc/inactive-regions.png)
 
+### Variants
+
+Swap shader variant on the fly to change regions behaviour & macro definition.
+
+![shader-variant](res/doc/variants.png)
+
 ### And much more
 
 This extension also support some features such as document symbols, workspace symbols...
