@@ -293,6 +293,12 @@
         "icon": "$(list-tree)"
       },
       {
+        "command": "shader-validator.dumpDependency",
+        "title": "Dump dependency tree for debug",
+        "category": "Shader validator",
+        "icon": "$(list-tree)"
+      },
+      {
         "command": "shader-validator.addCurrentFile",
         "title": "Add current file",
         "category": "Shader validator",

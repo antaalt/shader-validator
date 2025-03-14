@@ -3,7 +3,7 @@
 import * as vscode from 'vscode';
 
 import { createLanguageClient, getServerPlatform, ServerPlatform } from './validator';
-import { dumpAstRequest } from './request';
+import { dumpAstRequest, dumpDependencyRequest } from './request';
 import { ShaderVariantTreeDataProvider } from './shaderVariant';
 
 export let sidebar: ShaderVariantTreeDataProvider;
@@ -70,6 +70,21 @@ export async function activate(context: vscode.ExtensionContext)
             });
         } else {
             client.outputChannel.appendLine("No active file for dumping ast");
+        }
+    }));
+    context.subscriptions.push(vscode.commands.registerCommand("shader-validator.dumpDependency", () => {
+        let activeTextEditor = vscode.window.activeTextEditor;
+        if (activeTextEditor && activeTextEditor.document.uri.scheme === 'file') {            
+            client.sendRequest(dumpDependencyRequest, {
+                uri: client.code2ProtocolConverter.asUri(activeTextEditor.document.uri)
+            }).then((value: string | null) => {
+                console.info(value);
+                client.outputChannel.appendLine(value || "No deps tree to dump");
+            }, (reason: any) => {
+                client.outputChannel.appendLine("Failed to get deps tree: " + reason);
+            });
+        } else {
+            client.outputChannel.appendLine("No active file for dumping deps tree");
         }
     }));
 }
