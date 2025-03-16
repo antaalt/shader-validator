@@ -500,13 +500,29 @@
                 {
                     "comment": "preprocessor",
                     "name": "keyword.preprocessor.glsl",
-                    "match": "^\\s*#\\s*(define|elif|else|endif|ifdef|ifndef|if|undef|include|line|error|warning|pragma|INF|version|extension)\\s+([A-Za-z0-9_]+)?",
+                    "match": "^\\s*#\\s*(define|elif|else|endif|ifdef|ifndef|if|undef|line|error|warning|pragma|INF|version|extension)\\s+([A-Za-z0-9_]+)?",
                     "captures": {
                         "1": {
                             "name": "keyword.preprocessor.glsl"
                         },
                         "2": {
                             "name": "constant.character.preprocessor.glsl"
+                        }
+                    }
+                },
+                {
+                    "comment": "system include constant",
+                    "name": "keyword.preprocessor.glsl",
+                    "match": "^\\s*#\\s*include\\s+([<\"].*[>\"])",
+                    "captures": {
+                        "1": {
+                            "name": "string.quoted.double.glsl",
+                            "patterns": [
+                                {
+                                    "name": "constant.character.escape.glsl",
+                                    "match": "\\\\."
+                                }
+                            ]
                         }
                     }
                 }
