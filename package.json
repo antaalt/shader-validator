@@ -115,6 +115,11 @@
             "type": "boolean",
             "default": true
           },
+          "shader-validator.symbolDiagnostics": {
+            "description": "Provide diagnostics when symbol provider has issues.",
+            "type": "boolean",
+            "default": false
+          },
           "shader-validator.severity": {
             "type": "string",
             "description": "Minimum linting severity. Set it lower to display some hints aswell. Might not be supported by all languages.",

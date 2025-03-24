@@ -18,7 +18,7 @@ Currently, it support some features and languages:
 
 |Language|Syntax Highlighting|Diagnostics |Local symbols|Intrinsics symbols|Regions|
 |--------|-------------------|------------|-------------|------------------|-------|
-|GLSL    |✅                 |✅(glslang)|✅           |✅               |❌     |
+|GLSL    |✅                 |✅(glslang)|✅           |✅               |✅     |
 |HLSL    |✅                 |✅(DXC)    |✅           |✅               |✅     |
 |WGSL    |✅                 |✅(Naga)   |❌           |❌               |❌     |
 
@@ -86,6 +86,7 @@ This extension contributes the following settings:
 
 *   `shader-validator.validate`: Enable/disable validation with common API.
 *   `shader-validator.symbols`: Enable/disable symbol inspection & providers.
+*   `shader-validator.symbolDiagnostics`: Enable/disable symbol provider debug diagnostics.
 *   `shader-validator.severity`: Select minimal log severity for linting.
 *   `shader-validator.includes`: All custom includes for linting.
 *   `shader-validator.pathRemapping`: All virtual paths.
