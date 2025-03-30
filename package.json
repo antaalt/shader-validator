@@ -341,36 +341,36 @@
       }
     ],
     "menus": {
-        "commandPalette": [
-            {
-                "command": "shader-validator.gotoShaderEntryPoint",
-                "when": "false"
-            }
-        ],
-        "view/title": [
-            {
-              "command": "shader-validator.addCurrentFile",
-              "when": "view == shader-validator-variants && editorIsOpen",
-              "group": "navigation"
-            }
-        ],
-        "view/item/context": [
-            {
-              "command": "shader-validator.addMenu",
-              "group": "inline@1",
-              "when": "view == shader-validator-variants && (viewItem == file || viewItem == includeList || viewItem == defineList)"
-            },
-            {
-              "command": "shader-validator.editMenu",
-              "group": "inline@2",
-              "when": "view == shader-validator-variants && (viewItem == variant || viewItem == include || viewItem == define || viewItem == stage)"
-            },
-            {
-              "command": "shader-validator.deleteMenu",
-              "group": "inline@3",
-              "when": "view == shader-validator-variants && (viewItem == variant || viewItem == include || viewItem == define || viewItem == file)"
-            }
-         ]
+      "commandPalette": [
+        {
+          "command": "shader-validator.gotoShaderEntryPoint",
+          "when": "false"
+        }
+      ],
+      "view/title": [
+        {
+          "command": "shader-validator.addCurrentFile",
+          "when": "view == shader-validator-variants && editorIsOpen",
+          "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "shader-validator.addMenu",
+          "group": "inline@1",
+          "when": "view == shader-validator-variants && (viewItem == file || viewItem == includeList || viewItem == defineList)"
+        },
+        {
+          "command": "shader-validator.editMenu",
+          "group": "inline@2",
+          "when": "view == shader-validator-variants && (viewItem == variant || viewItem == include || viewItem == define || viewItem == stage)"
+        },
+        {
+          "command": "shader-validator.deleteMenu",
+          "group": "inline@3",
+          "when": "view == shader-validator-variants && (viewItem == variant || viewItem == include || viewItem == define || viewItem == file)"
+        }
+      ]
     },
     "viewsContainers": {
       "activitybar": [
