@@ -64,9 +64,23 @@ Go to your declaration definition by clicking on it.
 
 ![diagnostic](res/doc/goto.png)
 
+### Inlay hints
+
+Add inlay hints to your function calls. 
+
+![inlay-hints](res/doc/inlay-hints.png)
+
+You can disable this in settings.json (default pressed is Ctrl+Alt)
+```json 
+"editor.inlayHints.enabled": "on"
+"editor.inlayHints.enabled": "onUnlessPressed"
+"editor.inlayHints.enabled": "off"
+"editor.inlayHints.enabled": "offUnlessPressed"
+```
+
 ### Regions
 
-Grey out inactive regions depending on currently declared preprocessor.
+Grey out inactive regions depending on currently declared preprocessor & filter symbols.
 
 ![diagnostic](res/doc/inactive-regions.png)
 
