@@ -49,7 +49,7 @@ jobs:
           repository: 'antaalt/shader-sense'
           tag: ${{ format('v{0}', fromJson(steps.get_package_json.outputs.packageJson).server_version) }}
           fileName: '*.zip'
-          token: '${{ secrets.GH_PAT }}'
+          #token: '${{ secrets.GH_PAT }}'
       - name: Create bin folder
         run: mkdir ./bin
       - name: Copy windows binaries to bin
