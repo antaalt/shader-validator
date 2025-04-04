@@ -8,9 +8,15 @@ import {
 } from './wasm-wasi-lsp'; // Should import from @vscode/wasm-wasi-lsp, but version not based on last released wasm-wasi version
 import { MountPointDescriptor, ProcessOptions, Wasm } from "@vscode/wasm-wasi/v1";
 import {
+    CloseAction,
+    CloseHandlerResult,
     DidChangeConfigurationNotification,
+    ErrorAction,
+    ErrorHandler,
+    ErrorHandlerResult,
     LanguageClient,
     LanguageClientOptions,
+    Message,
     Middleware,
     ProvideDocumentSymbolsSignature,
     ServerOptions,
@@ -124,6 +130,43 @@ function getMiddleware() : Middleware {
     };
 }
 
+class ShaderErrorHandler implements ErrorHandler {
+
+    private readonly restarts: number[];
+    private readonly maxRestartCount: number = 5;
+
+    constructor() {
+        this.restarts = [];
+    }
+
+    public error(_error: Error, _message: Message, count: number): ErrorHandlerResult {
+        if (count && count <= 3) {
+            vscode.window.showErrorMessage("Server encountered an error in transport. Trying to continue...");
+            return { action: ErrorAction.Continue };
+        }
+        vscode.window.showErrorMessage("Server encountered an error in transport. Shutting down.");
+        return { action: ErrorAction.Shutdown };
+    }
+
+    public closed(): CloseHandlerResult {
+        this.restarts.push(Date.now());
+        if (this.restarts.length <= this.maxRestartCount) {
+            vscode.window.showErrorMessage(`Server was unexpectedly closed ${this.restarts.length+1} times. Restarting...`);
+            return { action: CloseAction.Restart };
+        } else {
+            const diff = this.restarts[this.restarts.length - 1] - this.restarts[0];
+            if (diff <= 3 * 60 * 1000) {
+                // Log from error.
+                return { action: CloseAction.DoNotRestart, message: `The shader language server crashed ${this.maxRestartCount+1} times in the last 3 minutes. The server will not be restarted. Set shader-validator.trace.server to verbose for more information.` };
+            } else {
+                vscode.window.showErrorMessage(`Server was unexpectedly closed ${this.restarts.length+1} again. Restarting...`);
+                this.restarts.shift();
+                return { action: CloseAction.Restart };
+            }
+        }
+    }
+}
+
 export async function createLanguageClient(context: vscode.ExtensionContext): Promise<LanguageClient | null> {
     // Create validator
     // Web does not support child process, use wasi instead.
@@ -159,6 +202,7 @@ async function createLanguageClientStandard(context: vscode.ExtensionContext, pl
             { scheme: 'file', language: 'wgsl' },
         ],
         middleware: getMiddleware(),
+        errorHandler: new ShaderErrorHandler()
     };
 
     let client = new LanguageClient(
@@ -249,8 +293,9 @@ async function createLanguageClientWASI(context: vscode.ExtensionContext) : Prom
         ],
         outputChannel: channel,
         uriConverters: createUriConverters(),
-		traceOutputChannel: channel,
+        traceOutputChannel: channel,
         middleware: getMiddleware(),
+        errorHandler: new ShaderErrorHandler()
     };
 
 
@@ -264,10 +309,10 @@ async function createLanguageClientWASI(context: vscode.ExtensionContext) : Prom
     
     // Start the client. This will also launch the server
     try {
-		await client.start();
-	} catch (error) {
-		client.error(`Start failed`, error, 'force');
-	}
+        await client.start();
+    } catch (error) {
+        client.error(`Start failed`, error, 'force');
+    }
     notifyConfigurationChange(context, client);
 
     return client;
