@@ -5,6 +5,7 @@ import * as vscode from 'vscode';
 import { createLanguageClient, getServerPlatform, ServerPlatform } from './validator';
 import { dumpAstRequest, dumpDependencyRequest } from './request';
 import { ShaderVariantTreeDataProvider } from './shaderVariant';
+import { HLSLFormattingProvider } from './formatter';
 
 export let sidebar: ShaderVariantTreeDataProvider;
 
@@ -87,6 +88,9 @@ export async function activate(context: vscode.ExtensionContext)
             client.outputChannel.appendLine("No active file for dumping deps tree");
         }
     }));
+    const formattingProvider = new HLSLFormattingProvider();
+    context.subscriptions.push(vscode.languages.registerDocumentFormattingEditProvider(HLSLFormattingProvider.selector, formattingProvider));
+    context.subscriptions.push(vscode.languages.registerDocumentRangeFormattingEditProvider(HLSLFormattingProvider.selector, formattingProvider));
 }
 
 
