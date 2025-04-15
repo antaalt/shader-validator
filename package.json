@@ -229,7 +229,7 @@
               "Vulkan 1.1",
               "Vulkan 1.2",
               "Vulkan 1.3",
-              "OpenGL 4.5"
+              "OpenGL"
             ]
           },
           "shader-validator.glsl.spirvVersion": {
