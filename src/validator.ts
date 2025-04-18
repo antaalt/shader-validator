@@ -184,7 +184,11 @@ async function createLanguageClientStandard(context: vscode.ExtensionContext, pl
     const env = (trace === "verbose") ? {
         ...defaultEnv,
         "RUST_BACKTRACE": "1", // eslint-disable-line 
-        "RUST_LOG": "shader_language_server=trace", // eslint-disable-line @typescript-eslint/naming-convention
+        "RUST_LOG": "shader_language_server=trace,shader_sense=trace", // eslint-disable-line @typescript-eslint/naming-convention
+    } : (trace === "messages") ? {
+        ...defaultEnv,
+        "RUST_BACKTRACE": "1", // eslint-disable-line 
+        "RUST_LOG": "shader_language_server=info,shader_sense=info", // eslint-disable-line @typescript-eslint/naming-convention
     } : defaultEnv;
     const serverOptions: ServerOptions = {
         command: executable.fsPath, 
@@ -250,7 +254,11 @@ async function createLanguageClientWASI(context: vscode.ExtensionContext) : Prom
         const env = (trace === "verbose") ? {
             ...defaultEnv,
             "RUST_BACKTRACE": "1", // eslint-disable-line 
-            "RUST_LOG": "shader-language-server=trace", // eslint-disable-line @typescript-eslint/naming-convention
+            "RUST_LOG": "shader-language-server=trace,shader_sense=trace", // eslint-disable-line @typescript-eslint/naming-convention
+        } : (trace === "messages") ? {
+            ...defaultEnv,
+            "RUST_BACKTRACE": "1", // eslint-disable-line 
+            "RUST_LOG": "shader_language_server=info,shader_sense=info", // eslint-disable-line @typescript-eslint/naming-convention
         } : defaultEnv;
 
         const options : ProcessOptions = {
