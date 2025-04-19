@@ -421,6 +421,7 @@
     "@types/glob": "^8.0.0",
     "@types/mocha": "^10.0.1",
     "@types/node": "16.x",
+    "@types/tmp": "^0.2.6",
     "@types/vscode": "1.88.0",
     "@typescript-eslint/eslint-plugin": "^5.45.0",
     "@typescript-eslint/parser": "^5.45.0",
@@ -439,6 +440,7 @@
     "@vscode/wasm-wasi": "^1.0.1",
     "os-browserify": "^0.3.0",
     "path-browserify": "^1.0.1",
+    "tmp": "^0.2.3",
     "vscode-languageclient": "^10.0.0-next.3"
   }
 }
