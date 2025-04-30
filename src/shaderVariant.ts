@@ -348,18 +348,24 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
         // We have to rely on a dirty hack instead.
         // Need to check this does not break anything
         // Dirty hack to trigger document symbol update
-        for (let editor of vscode.window.visibleTextEditors) {
-            if (editor.document.uri.path === uri.path) {
-                editor.edit(editBuilder => {
-                    let line = editor.document.lineAt(0);
-                    const text = line.text;
-                    const c = line.range.end.character;
-                    // Remove last character of first line and add it back.
-                    editBuilder.delete(new vscode.Range(0, c-1, 0, c));
-                    editBuilder.insert(new vscode.Position(0, c), text[c-1]);
-                });
-                break;
-            }
+        let visibleEditor = vscode.window.visibleTextEditors.find(e => e.document.uri.path === uri.path);
+        if (visibleEditor) {
+            let editor = visibleEditor;
+            editor.edit(editBuilder => {
+                for (let iLine = 0; iLine < editor.document.lineCount; iLine++) {
+                    // Find first non-empty line to avoid crashing on empty line with negative position.
+                    let line = editor.document.lineAt(iLine);
+                    if (line.text.length > 0) {
+                        const text = line.text;
+                        const c = line.range.end.character;
+                        // Remove last character of first line and add it back.
+                        editBuilder.delete(new vscode.Range(iLine, c-1, iLine, c));
+                        editBuilder.insert(new vscode.Position(iLine, c), text[c-1]);
+                        break;
+                    }
+                }
+                // All empty lines means no symbols !
+            });
         }
     }
     private updateDependency(file: ShaderVariantFile) {
