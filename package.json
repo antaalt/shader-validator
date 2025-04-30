@@ -392,7 +392,7 @@
     "viewsWelcome": [
       {
         "view": "shader-validator-variants",
-        "contents": "In order to setup a shader variant, you can add a currently opened shader file & configure it from here.\n[Add Current File](command:shader-validator.addMenu)\nShader variant allow you to define a context and an entry point for shader for a better validation & symbol providing experience.",
+        "contents": "In order to setup a shader variant, you can add a currently opened shader file & configure it from here.\n[Add Current File](command:shader-validator.addCurrentFile)\nShader variant allow you to define a context and an entry point for shader for a better validation & symbol providing experience.",
         "when": "workbenchState != empty && editorIsOpen"
       },
       {
