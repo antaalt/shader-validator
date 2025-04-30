@@ -188,6 +188,7 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
                     }
                 }
             }
+            this.save();
             this.updateDecorations();
         });
         this.decorator = vscode.window.createTextEditorDecorationType({
