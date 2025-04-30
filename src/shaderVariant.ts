@@ -126,6 +126,7 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
     private decorator: vscode.TextEditorDecorationType;
     private workspaceState: vscode.Memento;
     private shaderEntryPointList: Map<string, ShaderEntryPoint[]>;
+    private asyncGoToShaderEntryPoint: Map<vscode.Uri, string>;
 
     private load() {
         let variants : ShaderVariantFile[] = this.workspaceState.get<ShaderVariantFile[]>(shaderVariantTreeKey, []);
@@ -154,6 +155,7 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
             // TODO: drag and drop for better ux.
             //dragAndDropController:
         });
+        this.asyncGoToShaderEntryPoint = new Map;
         this.tree.onDidChangeCheckboxState((e: vscode.TreeCheckboxChangeEvent<ShaderVariantNode>) => {
             for (let [variant, checkboxState] of e.items) {
                 if (variant.kind === 'variant') {
@@ -203,7 +205,7 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
             borderWidth: '1px',
             borderStyle: 'solid',
         });
-        context.subscriptions.push(vscode.commands.registerCommand("shader-validator.addCurrentFile", (node: any): void => {
+        context.subscriptions.push(vscode.commands.registerCommand("shader-validator.addCurrentFile", (): void => {
             let supportedLangId = ["hlsl", "glsl", "wgsl"];
             if (vscode.window.activeTextEditor && supportedLangId.includes(vscode.window.activeTextEditor.document.languageId)) {
                 this.open(vscode.window.activeTextEditor.document.uri);
@@ -223,19 +225,7 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
             this.save();
         }));
         context.subscriptions.push(vscode.commands.registerCommand("shader-validator.gotoShaderEntryPoint", (uri: vscode.Uri, entryPointName: string) => {
-            let shaderEntryPointList = this.shaderEntryPointList.get(uri.path);
-            let entryPoint = shaderEntryPointList?.find(e => e.entryPoint === entryPointName);
-            if (entryPoint) {
-                vscode.commands.executeCommand('vscode.open', uri, <vscode.TextDocumentShowOptions>{
-                    selection: entryPoint.range
-                });
-            } else {
-                vscode.window.showWarningMessage(`Failed to find entry point ${entryPointName} for file ${vscode.workspace.asRelativePath(uri)}`);
-                // Still go to the file.
-                vscode.commands.executeCommand('vscode.open', uri, <vscode.TextDocumentShowOptions>{
-                    selection: new vscode.Range(new vscode.Position(0, 0), new vscode.Position(0, 0))
-                });
-            }
+            this.goToShaderEntryPoint(uri, entryPointName, true);
         }));
         // Prepare entry point symbol cache
         for (let editor of vscode.window.visibleTextEditors) {
@@ -252,6 +242,26 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
             this.shaderEntryPointList.delete(document.uri.path);
         }));
         this.updateDependencies();
+    }
+
+    private goToShaderEntryPoint(uri: vscode.Uri, entryPointName: string, defer: boolean) {
+        let shaderEntryPointList = this.shaderEntryPointList.get(uri.path);
+        let entryPoint = shaderEntryPointList?.find(e => e.entryPoint === entryPointName);
+        if (entryPoint) {
+            vscode.commands.executeCommand('vscode.open', uri, <vscode.TextDocumentShowOptions>{
+                selection: entryPoint.range
+            });
+        } else {
+            let editor = vscode.window.visibleTextEditors.find(e => e.document.uri === uri);
+            if (editor || !defer) {
+                // Already opened, but no entry point found.
+                vscode.window.showWarningMessage(`Failed to find entry point ${entryPointName} for file ${vscode.workspace.asRelativePath(uri)}`);
+            } else {
+                // Store request & open the file. Resolve goto on document request
+                this.asyncGoToShaderEntryPoint.set(uri, entryPointName);
+                vscode.commands.executeCommand('vscode.open', uri, <vscode.TextDocumentShowOptions>{});
+            }
+        }
     }
 
     private getFileAndParentNode(node: ShaderVariantNode) : [ShaderVariantFile, ShaderVariantNode | null] | null {
@@ -375,6 +385,12 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
                 )
             };
         }));
+        // Solve async request for goto.
+        let entryPoint = this.asyncGoToShaderEntryPoint.get(uri);
+        if (entryPoint) {
+            this.asyncGoToShaderEntryPoint.delete(uri);
+            this.goToShaderEntryPoint(uri, entryPoint, false);
+        }
         this.updateDecorations();
     }
     private updateDependencies() {
@@ -411,13 +427,14 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
         } else if (element.kind === 'defineList') {
             let item = new vscode.TreeItem("defines", vscode.TreeItemCollapsibleState.Expanded);
             item.description = `${element.defines.length}`;
+            item.tooltip = `List of defines`,
             item.iconPath = new vscode.ThemeIcon('keyboard');
             item.contextValue = element.kind;
             return item;
         } else if (element.kind === 'includeList') {
             let item = new vscode.TreeItem("includes", vscode.TreeItemCollapsibleState.Expanded);
             item.description = `${element.includes.length}`;
-            item.tooltip = `User defined include ${element.includes}`,
+            item.tooltip = `List of includes`,
             item.iconPath = new vscode.ThemeIcon('files');
             item.contextValue = element.kind;
             return item;
@@ -429,11 +446,14 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
             return item;
         } else if (element.kind === 'include') {
             let item = new vscode.TreeItem(element.include, vscode.TreeItemCollapsibleState.None);
+            item.description = element.include;
+            item.tooltip = `User include path ${element.include}`,
             item.contextValue = element.kind;
             return item;
         } else if (element.kind === 'stage') {
             let item = new vscode.TreeItem("stage", vscode.TreeItemCollapsibleState.None);
             item.description = ShaderStage[element.stage];
+            item.tooltip = "The shader stage of this variant. If auto is selected, the server will try to guess the stage, or use generic one when supported by API.";
             item.iconPath = new vscode.ThemeIcon('code');
             item.contextValue = element.kind;
             return item;
