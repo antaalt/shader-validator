@@ -9,18 +9,21 @@ This is a vscode extension allowing syntax highlighting, linting & symbol provid
 
 Currently, it support some features and languages:
 
--   Syntax Highlighting: Provide improved syntax highlighting for code.
--   Diagnostic: Provide errors & warning as user type code.
--   Symbol provider: provide goto, completion, hover, signature...
-    -   Local symbols: Provide all user created symbols (function, constant, types...).
-    -   Intrinsics symbols: Provide all languages provided intrinsics symbols.
--   Regions: Detect inactive regions in code due to preprocessor and grey them out.
+-   **[Syntax Highlighting](#syntax-highlighting)**: Improved syntax highlighting for code.
+-   **[Diagnostic](#diagnostics)**: Highlight errors & warning as user type code.
+-   **[goto](#goto)**: Go to a symbol definition
+-   **[completion](#autocompletion)**: Suggest completion items
+-   **[hover](#hover)**: Add tooltip when hovering symbols
+-   **[signature](#signature)**: Help when selecting a signature
+-   **[inlay hints](#inlay-hints)**: Add hints to function calls
+-   **[Variant](#variants)**: Define multiple shader variant entry point & quickly switch between them. 
+-   **[Regions](#regions)**: Detect inactive regions in code due to preprocessor and grey them out.
 
-|Language|Syntax Highlighting|Diagnostics |Local symbols|Intrinsics symbols|Regions|
-|--------|-------------------|------------|-------------|------------------|-------|
-|GLSL    |✅                 |✅(glslang)|✅           |✅               |✅     |
-|HLSL    |✅                 |✅(DXC)    |✅           |✅               |✅     |
-|WGSL    |✅                 |✅(Naga)   |❌           |❌               |❌     |
+|Language|Syntax Highlighting|Diagnostics |User symbols |Built-in symbols|Regions|
+|--------|-------------------|------------|-------------|----------------|-------|
+|GLSL    |✅                 |✅(glslang)|✅           |✅             |✅     |
+|HLSL    |✅                 |✅(DXC)    |✅           |✅             |✅     |
+|WGSL    |✅                 |✅(Naga)   |❌           |❌             |❌     |
 
 ## Features
 
@@ -78,17 +81,21 @@ You can disable this in settings.json (default pressed is Ctrl+Alt)
 "editor.inlayHints.enabled": "offUnlessPressed"
 ```
 
+### Variants
+
+Swap shader variant on the fly to change entry point & macro definition. This allow you to define and easily change between the one you have set, affecting regions. For example when you have a lot of entry point in a single shader file, splitted using macros, or want to see the content from your dependencies with the context passed from you main entry point.
+
+You can then access these variants directly from the dedicated window and then access them by clicking on them.
+
+A neat feature for big shader codebase with lot of entry point everywhere !
+
+![shader-variant](res/doc/variants.png)
+
 ### Regions
 
 Grey out inactive regions depending on currently declared preprocessor & filter symbols.
 
 ![diagnostic](res/doc/inactive-regions.png)
-
-### Variants
-
-Swap shader variant on the fly to change regions behaviour & macro definition.
-
-![shader-variant](res/doc/variants.png)
 
 ### And much more
 
