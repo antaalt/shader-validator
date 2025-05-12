@@ -116,22 +116,6 @@ export function getServerPlatform() : ServerPlatform {
     }
 }
 
-function notifyConfigurationChange(context: vscode.ExtensionContext, client: LanguageClient) {
-    context.subscriptions.push(
-        vscode.workspace.onDidChangeConfiguration(async (event : vscode.ConfigurationChangeEvent) => {
-            if (event.affectsConfiguration("shader-validator")) {
-                if (event.affectsConfiguration("shader-validator.trace.server") || 
-                    event.affectsConfiguration("shader-validator.serverPath")) {
-                    //restartServer();
-                } 
-                await client.sendNotification(DidChangeConfigurationNotification.type, {
-                    settings: "",
-                });
-            }
-        })
-    );
-}
-
 function getMiddleware() : Middleware {
     return {
         async provideDocumentSymbols(document: vscode.TextDocument, token: vscode.CancellationToken, next: ProvideDocumentSymbolsSignature) {
@@ -194,6 +178,10 @@ export async function createLanguageClient(context: vscode.ExtensionContext): Pr
     }
 }
 async function createLanguageClientStandard(context: vscode.ExtensionContext, platform : ServerPlatform) : Promise<LanguageClient | null> {
+    const channelName = 'Shader language Server'; // For trace option, need same name
+    const channel = vscode.window.createOutputChannel(channelName);
+    context.subscriptions.push(channel);
+    
     const executable = getPlatformBinaryUri(context.extensionUri, platform);
     const cwd = getPlatformBinaryDirectoryPath(context.extensionUri, platform);
     console.info(`Executing server ${executable} with working directory ${cwd}`);
@@ -223,13 +211,14 @@ async function createLanguageClientStandard(context: vscode.ExtensionContext, pl
             { scheme: 'file', language: 'glsl' },
             { scheme: 'file', language: 'wgsl' },
         ],
+        outputChannel: channel,
         middleware: getMiddleware(),
         errorHandler: new ShaderErrorHandler()
     };
 
     let client = new LanguageClient(
         'shader-validator',
-        'Shader language server',
+        channelName,
         serverOptions,
         clientOptions,
         context.extensionMode === vscode.ExtensionMode.Development 
@@ -237,9 +226,6 @@ async function createLanguageClientStandard(context: vscode.ExtensionContext, pl
 
     // Start the client. This will also launch the server
     await client.start();
-
-    // Ensure configuration is sent
-    notifyConfigurationChange(context, client);
 
     return client;
 }
@@ -340,7 +326,6 @@ async function createLanguageClientWASI(context: vscode.ExtensionContext) : Prom
     } catch (error) {
         client.error(`Start failed`, error, 'force');
     }
-    notifyConfigurationChange(context, client);
 
     return client;
 }

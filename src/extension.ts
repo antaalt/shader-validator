@@ -5,6 +5,7 @@ import * as vscode from 'vscode';
 import { createLanguageClient, getServerPlatform, ServerPlatform } from './validator';
 import { dumpAstRequest, dumpDependencyRequest } from './request';
 import { ShaderVariantTreeDataProvider } from './shaderVariant';
+import { DidChangeConfigurationNotification, LanguageClient } from 'vscode-languageclient';
 
 export let sidebar: ShaderVariantTreeDataProvider;
 
@@ -40,11 +41,12 @@ export async function activate(context: vscode.ExtensionContext)
     }
 
     // Create language client
-    const client = await createLanguageClient(context);
-    if (client === null) {
+    const possiblyNullClient = await createLanguageClient(context);
+    if (possiblyNullClient === null) {
         vscode.window.showErrorMessage("Failed to launch shader-validator language server.");
         return;
     }
+    let client = possiblyNullClient;
 
     // Create sidebar
     sidebar = new ShaderVariantTreeDataProvider(context, client);
@@ -87,6 +89,24 @@ export async function activate(context: vscode.ExtensionContext)
             client.outputChannel.appendLine("No active file for dumping deps tree");
         }
     }));
+    context.subscriptions.push(
+        vscode.workspace.onDidChangeConfiguration(async (event : vscode.ConfigurationChangeEvent) => {
+            if (event.affectsConfiguration("shader-validator")) {
+                if (event.affectsConfiguration("shader-validator.trace.server") || 
+                    event.affectsConfiguration("shader-validator.serverPath")) {
+                    let newClient = await createLanguageClient(context);
+                    if (newClient !== null) {
+                        client.dispose();
+                        client = newClient;
+                    }
+                } else {
+                    await client.sendNotification(DidChangeConfigurationNotification.type, {
+                        settings: "",
+                    });
+                }
+            }
+        })
+    );
 }
 
 
