@@ -41,7 +41,7 @@ jobs:
         run: echo '${{ fromJson(steps.get_package_json.outputs.packageJson).server_version }}'
         env:
           PACKAGE_JSON: echo $PACKAGE_JSON
-      - name: Download windows shader language server.
+      - name: Download shader language servers.
         uses: robinraju/release-downloader@v1.11
         env:
           PACKAGE_JSON: echo $PACKAGE_JSON
@@ -49,21 +49,16 @@ jobs:
           repository: 'antaalt/shader-sense'
           tag: ${{ format('v{0}', fromJson(steps.get_package_json.outputs.packageJson).server_version) }}
           fileName: '*.zip'
-          #token: '${{ secrets.GH_PAT }}'
       - name: Create bin folder
         run: mkdir ./bin
       - name: Copy windows binaries to bin
-        run: mkdir ./bin/windows && unzip shader-language-server-windows.zip -d ./bin/windows && rm ./shader-language-server-windows.zip
+        run: mkdir ./bin/windows && unzip shader-language-server-x86_64-pc-windows-msvc.zip -d ./bin/windows && rm ./shader-language-server-x86_64-pc-windows-msvc.zip
       - name: Copy linux binaries to bin
-        run: mkdir ./bin/linux && unzip shader-language-server-linux.zip -d ./bin/linux && rm ./shader-language-server-linux.zip
-      - name: Copy macos binaries to bin
-        run: mkdir ./bin/macos && unzip shader-language-server-macos.zip -d ./bin/macos && rm ./shader-language-server-macos.zip
+        run: mkdir ./bin/linux && unzip shader-language-server-x86_64-unknown-linux-gnu.zip -d ./bin/linux && rm ./shader-language-server-x86_64-unknown-linux-gnu.zip
       - name: Copy wasi binaries to bin
-        run: mkdir ./bin/wasi && unzip shader-language-server-wasi.zip -d ./bin/wasi && rm ./shader-language-server-wasi.zip
+        run: mkdir ./bin/wasi && unzip shader-language-server-wasm32-wasip1-threads.zip -d ./bin/wasi && rm ./shader-language-server-wasm32-wasip1-threads.zip
       - name: Mark server as executable on Linux
         run: chmod +x ./bin/linux/shader-language-server
-      - name: Mark server as executable on MacOS
-        run: chmod +x ./bin/macos/shader-language-server
       - name: Get server version
         run: echo "SERVER_VERSION=$(./bin/linux/shader-language-server --version | sed 's/shader-language-server v//g')" >> $GITHUB_ENV
       # VScode need a framebuffer to run test. So create one.

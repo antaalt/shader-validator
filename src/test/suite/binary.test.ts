@@ -34,10 +34,4 @@ suite('Binary Test Suite', () => {
 		assert.ok(doesBinaryExist("linux/libdxcompiler.so"));
 		assert.ok(doesBinaryExist("linux/libdxil.so"));
 	});
-	test('Check macos binary', () => {
-		assert.ok(doesBinaryExist("macos/shader-language-server"));
-		// Dxc need these dll or it will crash.
-		assert.ok(doesBinaryExist("macos/libdxcompiler.so"));
-		assert.ok(doesBinaryExist("macos/libdxil.so"));
-	});
 });

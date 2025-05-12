@@ -27,7 +27,6 @@ import { sidebar } from "./extension";
 export enum ServerPlatform {
     windows,
     linux,
-    macOS,
     wasi,
 }
 
@@ -43,8 +42,6 @@ function getPlatformBinaryDirectoryPath(platform: ServerPlatform) : string {
             return "bin/windows/";
         case ServerPlatform.linux:
             return "bin/linux/";
-        case ServerPlatform.macOS:
-            return "bin/macos/";
         case ServerPlatform.wasi:
             return "bin/wasi/";
     }
@@ -54,8 +51,6 @@ function getPlatformBinaryName(platform: ServerPlatform) : string {
         case ServerPlatform.windows:
             return "shader-language-server.exe";
         case ServerPlatform.linux:
-            return "shader-language-server";
-        case ServerPlatform.macOS:
             return "shader-language-server";
         case ServerPlatform.wasi:
             return "shader-language-server.wasm";
@@ -89,16 +84,14 @@ export function getServerPlatform() : ServerPlatform {
     if (isRunningOnWeb()) {
         return ServerPlatform.wasi;
     } else {
+        // Dxc only built for linux x64 & windows x64. Fallback to WASI for every other situations.
         switch (process.platform) {
             case "win32":
-                return ServerPlatform.windows;
+                return (process.arch === 'x64') ? ServerPlatform.windows : ServerPlatform.wasi;
             case "linux":
-                return ServerPlatform.linux;
-            case "darwin":
-                return ServerPlatform.wasi; // For now, use WASI as I cannot test on MAC.
-                //return ServerPlatform.macOS;
+                return (process.arch === 'x64') ? ServerPlatform.linux : ServerPlatform.wasi;
             default:
-                return ServerPlatform.wasi; // Not supported. Fallback to WASI.
+                return ServerPlatform.wasi;
         }
     }
 }
