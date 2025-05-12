@@ -3,15 +3,17 @@ import * as assert from 'assert';
 // You can import and use all API from the 'vscode' module
 // as well as import your extension to test it
 import * as vscode from 'vscode';
-import * as path from 'path';
+import * as fs from 'fs';
 import * as cp from 'child_process';
 import { getRootFolder } from './utils';
-import { getPlatformBinaryPath, getServerPlatform } from '../../validator';
+import { getPlatformBinaryUri, getServerPlatform } from '../../validator';
 
 suite('Server version Test Suite', () => {
     test('Check server version', () => {
         let platform = getServerPlatform();
-        let server = cp.spawn(getRootFolder() + getPlatformBinaryPath(platform), [
+        let executableUri = getPlatformBinaryUri(vscode.Uri.parse(getRootFolder()), platform);
+        assert.ok(fs.existsSync(executableUri.fsPath), `Failed to find ${executableUri}`);
+        let server = cp.spawn(executableUri.fsPath, [
             "--version"
         ]);
         const version = vscode.extensions.getExtension('antaalt.shader-validator')!.packageJSON.server_version;

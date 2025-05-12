@@ -1,9 +1,10 @@
 import * as vscode from 'vscode';
+import * as path from 'path';
 
 export function getRootFolder() : string {
 	// Depending on platform, we have different cwd...
 	// https://github.com/microsoft/vscode-test/issues/17
-	return process.platform === 'win32' ? "../../" : "./";
+	return path.join(process.cwd(), process.platform === 'win32' ? "../../" : "./");
 }
 
 export async function activate(docUri: vscode.Uri, waitServer: boolean) : Promise<[vscode.TextDocument, vscode.TextEditor] | null> {

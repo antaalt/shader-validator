@@ -153,6 +153,11 @@
             "additionalProperties": {
               "type": "string"
             }
+          },
+          "shader-validator.serverPath": {
+            "description": "Use an external server instead of the bundled ones.",
+            "type": "string",
+            "default": ""
           }
         }
       },
