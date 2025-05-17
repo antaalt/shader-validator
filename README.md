@@ -112,6 +112,7 @@ This extension contributes the following settings:
 *   `shader-validator.includes`: All custom includes for linting.
 *   `shader-validator.pathRemapping`: All virtual paths.
 *   `shader-validator.defines`: All custom macros and their values for linting.
+*   `shader-validator.serverPath`: Use a custom server instead of the bundled one.
 
 ### HLSL specific settings: 
 
