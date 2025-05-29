@@ -43,7 +43,7 @@ export async function activate(context: vscode.ExtensionContext)
     // Create language client
     const possiblyNullClient = await createLanguageClient(context);
     if (possiblyNullClient === null) {
-        vscode.window.showErrorMessage("Failed to launch shader-validator language server.");
+        console.error("Failed to launch shader-validator language server.");
         return;
     }
     let client = possiblyNullClient;

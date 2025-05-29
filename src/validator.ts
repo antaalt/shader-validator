@@ -36,6 +36,21 @@ export function isRunningOnWeb() : boolean {
     // Web environment is detected with no fallback on child process which is not supported there.
     return typeof cp.spawn !== 'function' || typeof process === 'undefined';
 }
+function getServerVersion(serverPath: string) : string | null{
+    console.assert(!isRunningOnWeb());
+    if (fs.existsSync(serverPath)) {
+        const result = cp.execSync(serverPath + " --version");
+        const version = result.toString("utf8").trim();
+        return version;
+    } else {
+        return null;
+    }
+}
+function isValidVersion(serverVersion: string) {
+    const requestedServerVersion = vscode.extensions.getExtension('antaalt.shader-validator')!.packageJSON.server_version;
+    const versionExpected = "shader-language-server v" + requestedServerVersion;
+    return serverVersion === versionExpected;
+}
 function getUserServerPath() : string | null {
     if (isRunningOnWeb()) {
         return null;
@@ -43,24 +58,27 @@ function getUserServerPath() : string | null {
         // Check configuration.
         let serverPath = vscode.workspace.getConfiguration("shader-validator").get<string>("serverPath");
         if (serverPath && serverPath.length > 0) {
-            if (fs.existsSync(serverPath)) {
-                console.info(`User server path found: ${serverPath}`);
+            let serverVersion = getServerVersion(serverPath);
+            if (serverVersion) {
+                console.info(`shader-validator.serverPath found: ${serverPath}`);
                 return serverPath;
             } else {
-                vscode.window.showErrorMessage(`User server path is invalid: ${serverPath}`);
+                console.warn("shader-validator.serverPath not found.");
             }
         }
         // Check environment variables
         if (process.env.SHADER_LANGUAGE_SERVER_EXECUTABLE_PATH !== undefined) {
             let envPath = process.env.SHADER_LANGUAGE_SERVER_EXECUTABLE_PATH;
-            if (fs.existsSync(envPath)) {
+            let serverVersion = getServerVersion(envPath);
+            if (serverVersion) {
                 console.info(`SHADER_LANGUAGE_SERVER_EXECUTABLE_PATH found: ${envPath}`);
                 return envPath;
             } else {
-                vscode.window.showErrorMessage(`SHADER_LANGUAGE_SERVER_EXECUTABLE_PATH is invalid: ${serverPath}`);
+                console.warn("SHADER_LANGUAGE_SERVER_EXECUTABLE_PATH server path not found.");
             }
         }
         // Use bundled executables.
+        console.info("No server path user settings found. Using bundled executable.");
         return null;
     }
 }
@@ -183,6 +201,14 @@ async function createLanguageClientStandard(context: vscode.ExtensionContext, pl
     context.subscriptions.push(channel);
     
     const executable = getPlatformBinaryUri(context.extensionUri, platform);
+    const version = getServerVersion(executable.fsPath);
+    if (!version) {
+        vscode.window.showErrorMessage(`Server executable not found.`);
+        return null;
+    }
+    if (!isValidVersion(version)) {
+        vscode.window.showWarningMessage(`${version} is not compatible with this extension. Server may crash or behave weirdly.`);
+    }
     // Current working directory need to be set to executable for finding DLL.
     // But it would be better to have it pointing to workspace.
     const cwd = getPlatformBinaryDirectoryPath(context.extensionUri, platform);
@@ -231,7 +257,7 @@ async function createLanguageClientStandard(context: vscode.ExtensionContext, pl
 
     return client;
 }
-async function createLanguageClientWASI(context: vscode.ExtensionContext) : Promise<LanguageClient> {
+async function createLanguageClientWASI(context: vscode.ExtensionContext) : Promise<LanguageClient | null> {
     const channelName = 'Shader language Server WASI'; // For trace option, need same name
     const channel = vscode.window.createOutputChannel(channelName);
     context.subscriptions.push(channel);
@@ -239,15 +265,23 @@ async function createLanguageClientWASI(context: vscode.ExtensionContext) : Prom
     // Load the WASM API
     const wasm: Wasm = await Wasm.load();
 
+    // Load the WASM module. It is stored alongside the extension's JS code.
+    // So we can use VS Code's file system API to load it. Makes it
+    // independent of whether the code runs in the desktop or the web.
+    const executable = getPlatformBinaryUri(context.extensionUri, ServerPlatform.wasi);
+    const version = getServerVersion(executable.fsPath);
+    if (!version) {
+        vscode.window.showErrorMessage(`Server executable not found.`);
+        return null;
+    }
+    if (!isValidVersion(version)) {
+        vscode.window.showWarningMessage(`${version} is not compatible with extension. Server may crash or behave weirdly.`);
+    }
     const serverOptions: ServerOptions = async () => {
         // Create virtual file systems to access workspaces from wasi app
         const mountPoints: MountPointDescriptor[] = [
             { kind: 'workspaceFolder'}, // Workspaces
         ];
-        // Load the WASM module. It is stored alongside the extension's JS code.
-        // So we can use VS Code's file system API to load it. Makes it
-        // independent of whether the code runs in the desktop or the web.
-        const executable = getPlatformBinaryUri(context.extensionUri, ServerPlatform.wasi);
         console.info(`Executing wasi server ${executable}`);
         const bits = await vscode.workspace.fs.readFile(executable);
         const module = await WebAssembly.compile(bits);
