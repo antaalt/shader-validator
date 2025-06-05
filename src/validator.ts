@@ -207,7 +207,7 @@ async function createLanguageClientStandard(context: vscode.ExtensionContext, pl
         return null;
     }
     if (!isValidVersion(version)) {
-        vscode.window.showWarningMessage(`${version} is not compatible with this extension. Server may crash or behave weirdly.`);
+        vscode.window.showWarningMessage(`${version} is not compatible with this extension (Expecting shader-language-server v${vscode.extensions.getExtension('antaalt.shader-validator')!.packageJSON.server_version}). Server may crash or behave weirdly.`);
     }
     // Current working directory need to be set to executable for finding DLL.
     // But it would be better to have it pointing to workspace.
@@ -275,7 +275,7 @@ async function createLanguageClientWASI(context: vscode.ExtensionContext) : Prom
         return null;
     }
     if (!isValidVersion(version)) {
-        vscode.window.showWarningMessage(`${version} is not compatible with extension. Server may crash or behave weirdly.`);
+        vscode.window.showWarningMessage(`${version} is not compatible with extension (Expecting shader-language-server v${vscode.extensions.getExtension('antaalt.shader-validator')!.packageJSON.server_version}). Server may crash or behave weirdly.`);
     }
     const serverOptions: ServerOptions = async () => {
         // Create virtual file systems to access workspaces from wasi app
