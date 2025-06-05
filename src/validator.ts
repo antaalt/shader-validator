@@ -140,7 +140,7 @@ function getMiddleware() : Middleware {
             const result = await next(document, token);
             if (result) {
                 // /!\ Type casting need to match server data sent. /!\ 
-                let resultArray = result as vscode.SymbolInformation[];
+                let resultArray = result as vscode.DocumentSymbol[];
                 sidebar.onDocumentSymbols(document.uri, resultArray);
             }
             return result;

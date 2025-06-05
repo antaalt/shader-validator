@@ -381,14 +381,12 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
         // Symbols might have changed, so request them as we use this to compute symbols.
         this.requestDocumentSymbol(file.uri);        
     }
-    public onDocumentSymbols(uri: vscode.Uri, symbols: vscode.SymbolInformation[]) {
+    public onDocumentSymbols(uri: vscode.Uri, symbols: vscode.DocumentSymbol[]) {
+        // TODO:TREE: need to recurse child as well.
         this.shaderEntryPointList.set(uri.path, symbols.filter(symbol => symbol.kind === vscode.SymbolKind.Function).map(symbol => {
             return {
                 entryPoint: symbol.name, 
-                range: new vscode.Range(
-                    new vscode.Position(symbol.location.range.start.line, symbol.location.range.start.character), 
-                    new vscode.Position(symbol.location.range.end.line, symbol.location.range.end.character)
-                )
+                range: symbol.selectionRange
             };
         }));
         // Solve async request for goto.
