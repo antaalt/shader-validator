@@ -36,14 +36,18 @@ export function isRunningOnWeb() : boolean {
     // Web environment is detected with no fallback on child process which is not supported there.
     return typeof cp.spawn !== 'function' || typeof process === 'undefined';
 }
-function getServerVersion(serverPath: string) : string | null{
-    console.assert(!isRunningOnWeb());
-    if (fs.existsSync(serverPath)) {
-        const result = cp.execSync(serverPath + " --version");
-        const version = result.toString("utf8").trim();
-        return version;
+function getServerVersion(serverPath: string) : string | null {
+    if (isRunningOnWeb()) {
+        // Bundled version always used on the web as we cant access external folders.
+        return "shader-language-server v" + vscode.extensions.getExtension('antaalt.shader-validator')!.packageJSON.server_version;
     } else {
-        return null;
+        if (fs.existsSync(serverPath)) {
+            const result = cp.execSync(serverPath + " --version");
+            const version = result.toString("utf8").trim();
+            return version;
+        } else {
+            return null;
+        }
     }
 }
 function isValidVersion(serverVersion: string) {
