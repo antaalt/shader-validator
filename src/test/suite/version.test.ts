@@ -16,11 +16,11 @@ suite('Server version Test Suite', () => {
         let server = cp.spawn(executableUri.fsPath, [
             "--version"
         ]);
-        const version = vscode.extensions.getExtension('antaalt.shader-validator')!.packageJSON.server_version;
+        const version : string = vscode.extensions.getExtension('antaalt.shader-validator')!.packageJSON.server_version;
         const decoder = new TextDecoder('utf-8');
         server.stdout.on('data', (data) => {
             const text = decoder.decode(data);
-            assert.equal(text, "shader-language-server v" + version, `Incompatible version: ${version}`);
+            assert.equal(text.trim(), "shader-language-server v" + version.trim(), `Incompatible version: ${version}`);
         });
         server.stderr.on('data', (data) => {
             assert.fail(`stderr: ${data}`);
