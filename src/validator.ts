@@ -36,9 +36,10 @@ export function isRunningOnWeb() : boolean {
     // Web environment is detected with no fallback on child process which is not supported there.
     return typeof cp.spawn !== 'function' || typeof process === 'undefined';
 }
-function getServerVersion(serverPath: string) : string | null {
-    if (isRunningOnWeb()) {
+function getServerVersion(serverPath: string, platform: ServerPlatform) : string | null {
+    if (isRunningOnWeb() || platform === ServerPlatform.wasi) {
         // Bundled version always used on the web as we cant access external folders.
+        // For wasi, we need some runner to test version & we cant do this here. So ignore check.
         return "shader-language-server v" + vscode.extensions.getExtension('antaalt.shader-validator')!.packageJSON.server_version;
     } else {
         if (fs.existsSync(serverPath)) {
@@ -55,14 +56,14 @@ function isValidVersion(serverVersion: string) {
     const versionExpected = "shader-language-server v" + requestedServerVersion;
     return serverVersion === versionExpected;
 }
-function getUserServerPath() : string | null {
+function getUserServerPath(platform: ServerPlatform) : string | null {
     if (isRunningOnWeb()) {
         return null;
     } else {
         // Check configuration.
         let serverPath = vscode.workspace.getConfiguration("shader-validator").get<string>("serverPath");
         if (serverPath && serverPath.length > 0) {
-            let serverVersion = getServerVersion(serverPath);
+            let serverVersion = getServerVersion(serverPath, platform);
             if (serverVersion) {
                 console.info(`shader-validator.serverPath found: ${serverPath}`);
                 return serverPath;
@@ -73,7 +74,7 @@ function getUserServerPath() : string | null {
         // Check environment variables
         if (process.env.SHADER_LANGUAGE_SERVER_EXECUTABLE_PATH !== undefined) {
             let envPath = process.env.SHADER_LANGUAGE_SERVER_EXECUTABLE_PATH;
-            let serverVersion = getServerVersion(envPath);
+            let serverVersion = getServerVersion(envPath, platform);
             if (serverVersion) {
                 console.info(`SHADER_LANGUAGE_SERVER_EXECUTABLE_PATH found: ${envPath}`);
                 return envPath;
@@ -87,7 +88,7 @@ function getUserServerPath() : string | null {
     }
 }
 function getPlatformBinaryDirectoryPath(extensionUri: vscode.Uri, platform: ServerPlatform) : vscode.Uri {
-    let serverPath = getUserServerPath();
+    let serverPath = getUserServerPath(platform);
     if (serverPath) {
         return vscode.Uri.file(path.dirname(serverPath));
     } else {
@@ -103,7 +104,7 @@ function getPlatformBinaryDirectoryPath(extensionUri: vscode.Uri, platform: Serv
     }
 }
 function getPlatformBinaryName(platform: ServerPlatform) : string {
-    let serverPath = getUserServerPath();
+    let serverPath = getUserServerPath(platform);
     if (serverPath) {
         return path.basename(serverPath);
     } else {
@@ -205,7 +206,7 @@ async function createLanguageClientStandard(context: vscode.ExtensionContext, pl
     context.subscriptions.push(channel);
     
     const executable = getPlatformBinaryUri(context.extensionUri, platform);
-    const version = getServerVersion(executable.fsPath);
+    const version = getServerVersion(executable.fsPath, platform);
     if (!version) {
         vscode.window.showErrorMessage(`Server executable not found.`);
         return null;
@@ -273,9 +274,9 @@ async function createLanguageClientWASI(context: vscode.ExtensionContext) : Prom
     // So we can use VS Code's file system API to load it. Makes it
     // independent of whether the code runs in the desktop or the web.
     const executable = getPlatformBinaryUri(context.extensionUri, ServerPlatform.wasi);
-    const version = getServerVersion(executable.fsPath);
+    const version = getServerVersion(executable.fsPath, ServerPlatform.wasi);
     if (!version) {
-        vscode.window.showErrorMessage(`Server executable not found.`);
+        vscode.window.showErrorMessage(`WASI server not found.`);
         return null;
     }
     if (!isValidVersion(version)) {
