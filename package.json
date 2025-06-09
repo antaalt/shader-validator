@@ -325,13 +325,6 @@
         "enablement": "view == shader-validator-variants"
       },
       {
-        "command": "shader-validator.editMenu",
-        "title": "Edit",
-        "category": "Shader validator",
-        "icon": "$(edit)",
-        "enablement": "view == shader-validator-variants"
-      },
-      {
         "command": "shader-validator.deleteMenu",
         "title": "Delete",
         "category": "Shader validator",
@@ -390,7 +383,8 @@
       "shader-validator": [
         {
           "id": "shader-validator-variants",
-          "name": "Shader variants"
+          "name": "Shader variants",
+          "icon": "res/icons/hlsl-icon.svg"
         }
       ]
     },
