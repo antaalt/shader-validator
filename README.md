@@ -1,21 +1,24 @@
 # Shader validator
 
+[![Rust](https://img.shields.io/badge/Rust-%23000000.svg?e&logo=rust&logoColor=white)](https://www.rust-lang.org/)
 [![extension issues](https://img.shields.io/github/issues/antaalt/shader-validator.svg?label=extension%20issues)](https://github.com/antaalt/shader-validator/issues)
 [![server issues](https://img.shields.io/github/issues/antaalt/shader-sense.svg?label=server%20issues)](https://github.com/antaalt/shader-sense/issues)
 [![vsmarketplace](https://img.shields.io/visual-studio-marketplace/v/antaalt.shader-validator?color=blue&label=vscode%20marketplace)](https://marketplace.visualstudio.com/items?itemName=antaalt.shader-validator)
 [![openVSX registry](https://img.shields.io/open-vsx/v/antaalt/shader-validator?color=purple)](https://open-vsx.org/extension/antaalt/shader-validator)
 
-This is a vscode extension allowing syntax highlighting, linting & symbol providing for HLSL / GLSL / WGSL shaders. It is using [shader-language-server](https://github.com/antaalt/shader-sense/tree/main/shader-language-server) to lint shaders using common validator API & parse symbols for some code inspection.
+This is a vscode extension allowing syntax highlighting, linting & symbol providing for HLSL / GLSL / WGSL shaders. It is using [shader-language-server](https://github.com/antaalt/shader-sense/tree/main/shader-language-server), a shader language server written in Rust to lint shaders using common validator API & parse symbols for some code inspection.
+
+It is mostly intended to be used with big shader codebase used in production by providing interesting features such as region selection and a shader variant entry point selection for quickly switching between two entry point context with decent performances. This make it also quite reliable for small shader codebase.
 
 Currently, it support some features and languages:
 
 -   **[Syntax Highlighting](#syntax-highlighting)**: Improved syntax highlighting for code.
 -   **[Diagnostic](#diagnostics)**: Highlight errors & warning as user type code.
--   **[goto](#goto)**: Go to a symbol definition
--   **[completion](#autocompletion)**: Suggest completion items
--   **[hover](#hover)**: Add tooltip when hovering symbols
--   **[signature](#signature)**: Help when selecting a signature
--   **[inlay hints](#inlay-hints)**: Add hints to function calls
+-   **[Goto](#goto)**: Go to a symbol definition.
+-   **[Completion](#autocompletion)**: Suggest completion items.
+-   **[Hover](#hover)**: Add tooltip when hovering symbols.
+-   **[Signature](#signature)**: Provide signatures when completing a function.
+-   **[Inlay hints](#inlay-hints)**: Add hints to function calls.
 -   **[Variant](#variants)**: Define multiple shader variant entry point & quickly switch between them. 
 -   **[Regions](#regions)**: Detect inactive regions in code due to preprocessor and grey them out.
 
@@ -73,13 +76,13 @@ Add inlay hints to your function calls.
 
 ![inlay-hints](res/doc/inlay-hints.png)
 
-You can disable this in settings.json (default pressed is Ctrl+Alt)
-```json 
-"editor.inlayHints.enabled": "on"
-"editor.inlayHints.enabled": "onUnlessPressed"
-"editor.inlayHints.enabled": "off"
-"editor.inlayHints.enabled": "offUnlessPressed"
-```
+> You can disable this in settings.json (default pressed is Ctrl+Alt)
+> ```json 
+> "editor.inlayHints.enabled": "on"
+> "editor.inlayHints.enabled": "onUnlessPressed"
+> "editor.inlayHints.enabled": "off"
+> "editor.inlayHints.enabled": "offUnlessPressed"
+> ```
 
 ### Variants
 
@@ -128,9 +131,9 @@ This extension contributes the following settings:
 ## Platform support
 
 This extension is supported on every platform, but some limitations are to be expected on some:
--   Windows: full feature set.
--   Linux: full feature set.
--   Mac: Rely on WASI version of server, same as web, see web support for limitations.
+-   Windows x86_64: full feature set.
+-   Linux x86_64: full feature set.
+-   Mac & ARM Linux / Windows: Rely on WASI version of server, same as web, see web support for limitations.
 
 ## Web support
 
