@@ -47,6 +47,7 @@ export async function activate(context: vscode.ExtensionContext)
         return;
     }
     let client = possiblyNullClient;
+    let supportedLangId = ["hlsl", "glsl", "wgsl"];
 
     // Create sidebar
     sidebar = new ShaderVariantTreeDataProvider(context, client);
@@ -61,7 +62,7 @@ export async function activate(context: vscode.ExtensionContext)
     }));
     context.subscriptions.push(vscode.commands.registerCommand("shader-validator.dumpAst", () => {
         let activeTextEditor = vscode.window.activeTextEditor;
-        if (activeTextEditor && activeTextEditor.document.uri.scheme === 'file') {            
+        if (activeTextEditor && activeTextEditor.document.uri.scheme === 'file' && supportedLangId.includes(activeTextEditor.document.languageId)) {            
             client.sendRequest(dumpAstRequest, {
                 uri: client.code2ProtocolConverter.asUri(activeTextEditor.document.uri)
             }).then((value: string | null) => {
@@ -76,7 +77,7 @@ export async function activate(context: vscode.ExtensionContext)
     }));
     context.subscriptions.push(vscode.commands.registerCommand("shader-validator.dumpDependency", () => {
         let activeTextEditor = vscode.window.activeTextEditor;
-        if (activeTextEditor && activeTextEditor.document.uri.scheme === 'file') {            
+        if (activeTextEditor && activeTextEditor.document.uri.scheme === 'file' && supportedLangId.includes(activeTextEditor.document.languageId)) {            
             client.sendRequest(dumpDependencyRequest, {
                 uri: client.code2ProtocolConverter.asUri(activeTextEditor.document.uri)
             }).then((value: string | null) => {
