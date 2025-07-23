@@ -122,6 +122,7 @@ This extension contributes the following settings:
 *   `shader-validator.hlsl.shaderModel`: Specify the shader model to target for HLSL
 *   `shader-validator.hlsl.version`: Specify the HLSL version
 *   `shader-validator.hlsl.enable16bitTypes`: Enable 16 bit types support with HLSL
+*   `shader-validator.hlsl.spirv`: Enable SPIRV Vulkan syntax support for HLSL
 
 ### GLSL specific settings:
 

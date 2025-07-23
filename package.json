@@ -212,6 +212,11 @@
             "type": "boolean",
             "description": "Enable 16 bits types. Only supported with sm >= 6.2 & HLSL version >= 2018.",
             "default": false
+          },
+          "shader-validator.hlsl.spirv": {
+            "type": "boolean",
+            "description": "Allow spirv syntax in shader code.",
+            "default": false
           }
         }
       },
