@@ -704,7 +704,6 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
                 editor.setDecorations(this.decorator, []);
             }
         } else {
-            console.info("No file or entry point ", file, entryPoints);
             editor.setDecorations(this.decorator, []);
         }
     }
