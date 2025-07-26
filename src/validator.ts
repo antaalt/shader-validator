@@ -2,6 +2,7 @@ import * as vscode from "vscode";
 import * as cp from "child_process";
 import fs from 'fs';
 import path from 'path';
+import os from 'os';
 
 import {
     createStdioOptions,
@@ -12,6 +13,8 @@ import { MountPointDescriptor, ProcessOptions, Wasm } from "@vscode/wasm-wasi/v1
 import {
     CloseAction,
     CloseHandlerResult,
+    ConfigurationParams,
+    ConfigurationRequest,
     DidChangeConfigurationNotification,
     ErrorAction,
     ErrorHandler,
@@ -150,6 +153,41 @@ function getMiddleware() : Middleware {
             }
             return result;
         },
+        workspace: {
+            async configuration(params: ConfigurationParams, token: vscode.CancellationToken, next : ConfigurationRequest.HandlerSignature) {
+                // Here we resolve vscode variables ourselves as there is no API for this.
+                // see https://github.com/microsoft/vscode/issues/140056
+                // Only solve them for includes as we are dealing with path.
+                let result = await next(params, token);
+                console.debug("initial configuration", result);
+                let resultArray = result as any[];
+                let config = resultArray[0];
+                config["includes"] = config["includes"].map((include: string) => {
+                    return include.replace(/\$\{(.*?)\}/g, (_match: string, variable: string) : string => {
+                        // Solve these https://code.visualstudio.com/docs/reference/variables-reference
+                        if (variable.startsWith("env:")) {
+                            const substitution = process.env[variable.slice(4)];
+                            if (typeof substitution === "string") {
+                                return substitution;
+                            }
+                        }
+                        if (variable === "userHome") {
+                            return os.homedir();
+                        }
+                        if (variable === "workspaceFolder") {
+                            if (vscode.workspace.workspaceFolders) {
+                                // Pick first workspace and ignores others.
+                                return vscode.workspace.workspaceFolders[0].uri.fsPath;
+                            }
+                        }
+                        // All others variable are relative to currently opened file and will be a pain to implement so ignoring them for now.
+                        return "";
+                    });
+                });
+                console.debug("resolved configuration", config);
+                return [config];
+            }
+        }
     };
 }
 
