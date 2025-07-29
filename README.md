@@ -18,15 +18,16 @@ Currently, it support some features and languages:
 -   **[Completion](#autocompletion)**: Suggest completion items.
 -   **[Hover](#hover)**: Add tooltip when hovering symbols.
 -   **[Signature](#signature)**: Provide signatures when completing a function.
+-   **[Formatting](#formatting)**: Format shader code.
 -   **[Inlay hints](#inlay-hints)**: Add hints to function calls.
 -   **[Variant](#variants)**: Define multiple shader variant entry point & quickly switch between them. 
 -   **[Regions](#regions)**: Detect inactive regions in code due to preprocessor and grey them out.
 
-|Language|Syntax Highlighting|Diagnostics |User symbols |Built-in symbols|Regions|
-|--------|-------------------|------------|-------------|----------------|-------|
-|GLSL    |✅                 |✅(glslang)|✅           |✅             |✅     |
-|HLSL    |✅                 |✅(DXC)    |✅           |✅             |✅     |
-|WGSL    |✅                 |✅(Naga)   |❌           |❌             |❌     |
+|Language|Syntax Highlighting|Diagnostics |User symbols |Built-in symbols|Regions|Format|
+|--------|-------------------|------------|-------------|----------------|-------|------|
+|GLSL    |✅                 |✅(glslang)|✅           |✅             |✅     |✅   |
+|HLSL    |✅                 |✅(DXC)    |✅           |✅             |✅     |✅   |
+|WGSL    |✅                 |✅(Naga)   |❌           |❌             |❌     |❌   |
 
 ## Features
 
@@ -69,6 +70,10 @@ View informations relative to a symbol by hovering it.
 Go to your declaration definition by clicking on it.
 
 ![diagnostic](res/doc/goto.png)
+
+### Formatting
+
+Format your code using clang-format, configurable with .clang-format. clang-format need to be available in path.
 
 ### Inlay hints
 
