@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { CancellationToken, DocumentSymbol, DocumentSymbolRequest, LanguageClient, ProtocolNotificationType, ProtocolRequestType, Range, SymbolInformation, SymbolKind, TextDocumentIdentifier, TextDocumentItem, TextDocumentRegistrationOptions } from 'vscode-languageclient/node';
+import { resolveVSCodeVariables } from './validator';
 
 interface ShaderVariantSerialized {
     entryPoint: string,
@@ -16,7 +17,7 @@ function shaderVariantToSerialized(e: ShaderVariant) : ShaderVariantSerialized {
         entryPoint: e.name,
         stage: (e.stage.stage === ShaderStage.auto) ? null : cameltoPascalCase(ShaderStage[e.stage.stage]),
         defines: Object.fromEntries(e.defines.defines.map(e => [e.label, e.value])),
-        includes: e.includes.includes.map(e => e.include)
+        includes: e.includes.includes.map(e => resolveVSCodeVariables(e.include))
     };
 }
 function getActiveFileVariant(file: ShaderVariantFile) : ShaderVariant | null {
@@ -449,9 +450,10 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
             item.contextValue = element.kind;
             return item;
         } else if (element.kind === 'include') {
+            let resolvedIncludePath = resolveVSCodeVariables(element.include);
             let item = new vscode.TreeItem(element.include, vscode.TreeItemCollapsibleState.None);
-            item.description = element.include;
-            item.tooltip = `User include path ${element.include}`,
+            item.description = resolvedIncludePath;
+            item.tooltip = `User include path ${resolvedIncludePath}`,
             item.contextValue = element.kind;
             return item;
         } else if (element.kind === 'stage') {

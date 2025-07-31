@@ -141,6 +141,28 @@ export function getServerPlatform() : ServerPlatform {
         }
     }
 }
+export function resolveVSCodeVariables(content: string) : string {
+    return content.replace(/\$\{(.*?)\}/g, (_match: string, variable: string) : string => {
+        // Solve these https://code.visualstudio.com/docs/reference/variables-reference
+        if (variable.startsWith("env:")) {
+            const substitution = process.env[variable.slice(4)];
+            if (typeof substitution === "string") {
+                return substitution;
+            }
+        }
+        if (variable === "userHome") {
+            return os.homedir();
+        }
+        if (variable === "workspaceFolder") {
+            if (vscode.workspace.workspaceFolders) {
+                // Pick first workspace and ignores others.
+                return vscode.workspace.workspaceFolders[0].uri.fsPath;
+            }
+        }
+        // All others variable are relative to currently opened file and will be a pain to implement so ignoring them for now.
+        return "";
+    });
+}
 
 function getMiddleware() : Middleware {
     return {
@@ -163,26 +185,7 @@ function getMiddleware() : Middleware {
                 let resultArray = result as any[];
                 let config = resultArray[0];
                 config["includes"] = config["includes"].map((include: string) => {
-                    return include.replace(/\$\{(.*?)\}/g, (_match: string, variable: string) : string => {
-                        // Solve these https://code.visualstudio.com/docs/reference/variables-reference
-                        if (variable.startsWith("env:")) {
-                            const substitution = process.env[variable.slice(4)];
-                            if (typeof substitution === "string") {
-                                return substitution;
-                            }
-                        }
-                        if (variable === "userHome") {
-                            return os.homedir();
-                        }
-                        if (variable === "workspaceFolder") {
-                            if (vscode.workspace.workspaceFolders) {
-                                // Pick first workspace and ignores others.
-                                return vscode.workspace.workspaceFolders[0].uri.fsPath;
-                            }
-                        }
-                        // All others variable are relative to currently opened file and will be a pain to implement so ignoring them for now.
-                        return "";
-                    });
+                    return resolveVSCodeVariables(include);
                 });
                 console.debug("resolved configuration", config);
                 return [config];
