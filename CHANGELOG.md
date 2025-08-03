@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [unreleased]
 
+
+## [0.7.0] - 2025-08-03
+
 ### Added
 
 - Support for `${workspaceFolder}` `${env:XXX}` `${userHome}` in configuration aswell as in variants. This let user pass workspace relative path in configuration.
@@ -263,7 +266,8 @@ Initial release of this extension using [shader-language-server v0.0.1](https://
 
 
 <!-- Below are link for above changelog titles-->
-[unreleased]: https://github.com/antaalt/shader-validator/compare/v0.6.5...HEAD
+[unreleased]: https://github.com/antaalt/shader-validator/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/antaalt/shader-validator/compare/v0.6.5...v0.7.0
 [0.6.5]: https://github.com/antaalt/shader-validator/compare/v0.6.4...v0.6.5
 [0.6.4]: https://github.com/antaalt/shader-validator/compare/v0.6.3...v0.6.4
 [0.6.3]: https://github.com/antaalt/shader-validator/compare/v0.6.2...v0.6.3
