@@ -18,7 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Using [shader-language-server v0.8.0](https://github.com/antaalt/shader-sense/releases/tag/v0.8.0), which bring some interesting improvements such as structure completion, improvements on DXC validation aswell as various fixes & improvements. See more on release page.
+- Using [shader-language-server v0.8.1](https://github.com/antaalt/shader-sense/releases/tag/v0.8.1), which bring some interesting improvements such as structure completion, improvements on DXC validation aswell as various fixes & improvements. See more on release page.
 
 ## [0.6.5] - 2025-07-22
 
