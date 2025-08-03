@@ -145,6 +145,21 @@ This extension is supported on every platform, but some limitations are to be ex
 
 This extension run on the web on [vscode.dev](https://vscode.dev/). It is relying on the [WebAssembly Execution engine](https://marketplace.visualstudio.com/items?itemName=ms-vscode.wasm-wasi-core). Because of this restriction, we can't use dxc on the web as it does not compile to WASI and instead rely on glslang, which is more limited in linting (Only support some basic features of SM 6.0, while DXC support all newly added SM (current 6.8)).
 
+
+## Questions and answers
+
+### My shader entry point is hidden behind an inactive region and does not display symbols.
+
+You can use shader variant to declare the entry point and the necessary macro without having to pass through global defines which might impact global state. It will also speed up validation by setting a stage and entry point.
+
+### Validation is really slow on big HLSL files
+
+You can use shader variant and specify an entry point to speed up things. By default the extension is using the dxc lib profile which is quite a heavy process with big files with a lot of includes. By setting an entry point along a stage, it will speed up validation, but dxc might still have a hard time.
+
+### How to check the logs ?
+
+If you encounter an issue with the extension, you might want to check the log to see what is happening. You can simply go to the output tab of the terminal and use the scrolling menu to select Shader Language Server. Make sure you have set setting `shader-validator.trace.server` to verbose or messages at least.
+
 ## Credits
 
 This extension is based on a heavily modified version of PolyMeilex [vscode-wgsl](https://github.com/PolyMeilex/vscode-wgsl)
