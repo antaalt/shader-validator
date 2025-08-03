@@ -35,5 +35,5 @@ async function testDiagnostic(
   ) {
 	let data = await activate(docUri, waitServer)!;
     let diagnostics = vscode.languages.getDiagnostics(docUri);
-    assert.ok(diagnostics.length === 0, "Diagnostic is not empty: " +  diagnostics);
+    assert.ok(diagnostics.length === 0, "Diagnostic is not empty: " + JSON.stringify(diagnostics));
 }
