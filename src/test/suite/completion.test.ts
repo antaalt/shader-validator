@@ -22,7 +22,7 @@ suite('Completion Test Suite', () => {
 				{ label: 'res', kind: vscode.CompletionItemKind.Variable },
 			]
 		}, true);
-	}).timeout(5000);
+	}).timeout(10000); // First test to run that start the server. Increase timeout to be sure its not timed out.
 
 	test('Complete HLSL code', async () => {
 		const docUri = await vscode.workspace.findFiles("test.hlsl");
