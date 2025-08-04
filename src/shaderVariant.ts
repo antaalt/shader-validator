@@ -213,8 +213,8 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
             }
             this.save();
         }));
-        context.subscriptions.push(vscode.commands.registerCommand("shader-validator.addMenu", (node: ShaderVariantNode): void => {
-            this.add(node);
+        context.subscriptions.push(vscode.commands.registerCommand("shader-validator.addMenu", async (node: ShaderVariantNode) => {
+            await this.add(node);
             this.save();
         }));
         context.subscriptions.push(vscode.commands.registerCommand("shader-validator.deleteMenu", (node: ShaderVariantNode) => {
@@ -520,7 +520,7 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
             }
         }
     }
-    public add(node: ShaderVariantNode) {
+    public async add(node: ShaderVariantNode) {
         if (node.kind === 'file') {
             node.variants.push({
                 kind: 'variant',
@@ -542,16 +542,34 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
             });
             this.refresh(node, node);
         } else if (node.kind === 'defineList') {
+            let label = await vscode.window.showInputBox({
+                title: "Macro label",
+                value: "MY_MACRO",
+                prompt: "Select a label for you macro.",
+                placeHolder: "MY_MACRO"
+            });
+            let value = await vscode.window.showInputBox({
+                title: "Macro value",
+                value: "1",
+                prompt: "Select a value for you macro.",
+                placeHolder: "1"
+            });
             node.defines.push({
                 kind: "define",
-                label: "MY_MACRO",
-                value: "0",
+                label: label ? label : "MY_MACRO",
+                value: value ? value : "1",
             });
             this.refresh(node, null);
         } else if (node.kind === 'includeList') {
+            let include = await vscode.window.showInputBox({
+                title: "Include path",
+                value: "C:/Users/",
+                prompt: "Select a path for your include.",
+                placeHolder: "C:/Users/"
+            });
             node.includes.push({
                 kind: "include",
-                include: "C:/",
+                include: include ? include : "C:/",
             });
             this.refresh(node, null);
         }
