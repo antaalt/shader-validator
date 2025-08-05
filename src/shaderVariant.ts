@@ -1,33 +1,29 @@
 import * as vscode from 'vscode';
-import { CancellationToken, DocumentSymbol, DocumentSymbolRequest, LanguageClient, ProtocolNotificationType, ProtocolRequestType, Range, SymbolInformation, SymbolKind, TextDocumentIdentifier, TextDocumentItem, TextDocumentRegistrationOptions } from 'vscode-languageclient/node';
+import { CancellationToken, DocumentSymbol, DocumentSymbolRequest, DocumentUri, LanguageClient, ProtocolNotificationType, ProtocolRequestType, Range, SymbolInformation, SymbolKind, TextDocumentIdentifier, TextDocumentItem, TextDocumentRegistrationOptions } from 'vscode-languageclient/node';
 import { resolveVSCodeVariables } from './validator';
 
 interface ShaderVariantSerialized {
+    url: DocumentUri,
     entryPoint: string,
     stage: string | null,
     defines: Object,
     includes: string[],
 }
 
-function shaderVariantToSerialized(e: ShaderVariant) : ShaderVariantSerialized {
+function shaderVariantToSerialized(url: DocumentUri, e: ShaderVariant) : ShaderVariantSerialized {
     function cameltoPascalCase(s: string) : string {
         return String(s[0]).toUpperCase() + String(s).slice(1);
     }
     return {
+        url: url,
         entryPoint: e.name,
         stage: (e.stage.stage === ShaderStage.auto) ? null : cameltoPascalCase(ShaderStage[e.stage.stage]),
         defines: Object.fromEntries(e.defines.defines.map(e => [e.label, e.value])),
         includes: e.includes.includes.map(e => resolveVSCodeVariables(e.include))
     };
 }
-function getActiveFileVariant(file: ShaderVariantFile) : ShaderVariant | null {
-    return file.variants.find((e: ShaderVariant) => {
-        return e.isActive;
-    }) || null;
-}
 // Notification from client to change shader variant
 interface DidChangeShaderVariantParams {
-    textDocument: TextDocumentIdentifier
     shaderVariant: ShaderVariantSerialized | null
 }
 interface DidChangeShaderVariantRegistrationOptions extends TextDocumentRegistrationOptions {}
@@ -161,9 +157,8 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
             for (let [variant, checkboxState] of e.items) {
                 if (variant.kind === 'variant') {
                     if (checkboxState === vscode.TreeItemCheckboxState.Checked) {
-                        // Need to unset other possibles active ones to keep only one entry point active per file.
-                        let file = this.files.get(variant.uri.path);
-                        if (file) {
+                        // Need to unset other possibles active ones to keep only one entry point active.
+                        for (let [url, file] of this.files) {
                             let needRefresh = false;
                             for (let otherVariant of file.variants) {
                                 if (otherVariant.isActive) {
@@ -171,17 +166,14 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
                                     otherVariant.isActive = false;
                                 }
                             }
-                            variant.isActive = true; // checked
                             if (needRefresh) {
                                 // Refresh file & all its childs
                                 this.refresh(file, file);
                             } else {
                                 this.refresh(variant, file);
                             }
-                        } else {
-                            console.warn("Failed to find file ", variant.uri);
-                            variant.isActive = true; // checked
                         }
+                        variant.isActive = true; // checked
                     } else {
                         variant.isActive = false; // unchecked
                         let file = this.files.get(variant.uri.path);
@@ -191,6 +183,7 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
                     }
                 }
             }
+            this.notifyVariantChanged();
             this.save();
             this.updateDecorations();
         });
@@ -244,10 +237,27 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
         }));
         this.updateDependencies();
     }
+    private getActiveVariant() : ShaderVariant | null {
+        for (const file of this.files.values()) {
+            const activeVariant = file.variants.find((e: ShaderVariant) => e.isActive);
+            if (activeVariant) {
+                return activeVariant;
+            }
+        }
+        return null;
+    }
+    private hasActiveVariant(file: ShaderVariantFile) : ShaderVariant | null {
+        const activeVariant = file.variants.find((e: ShaderVariant) => e.isActive);
+        if (activeVariant) {
+            return activeVariant;
+        }
+        return null;
+    }
 
     private goToShaderEntryPoint(uri: vscode.Uri, entryPointName: string, defer: boolean) {
         let shaderEntryPointList = this.shaderEntryPointList.get(uri.path);
         let entryPoint = shaderEntryPointList?.find(e => e.entryPoint === entryPointName);
+        // TOOD: Could instead regex + check regions via vscode.
         if (entryPoint) {
             vscode.commands.executeCommand('vscode.open', uri, <vscode.TextDocumentShowOptions>{
                 selection: entryPoint.range
@@ -337,7 +347,18 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
         this.onDidChangeTreeDataEmitter.fire();
         this.updateDependencies();
     }
+    private notifyVariantChanged() {
+        // Notify server of change.
+        let fileActiveVariant = this.getActiveVariant();
+        this.client.sendNotification(didChangeShaderVariantNotification, {
+            shaderVariant: fileActiveVariant ? shaderVariantToSerialized(
+                this.client.code2ProtocolConverter.asUri(fileActiveVariant.uri), 
+                fileActiveVariant
+            ) : null,
+        });
+    }
     private requestDocumentSymbol(uri: vscode.Uri) {
+        // TODO: should request inlay hint aswell.
         // This one seems to get symbol from cache without requesting the server...
         //vscode.commands.executeCommand("vscode.executeDocumentSymbolProvider", file.uri);
         // This one works, but result is not intercepted by vscode & updated...
@@ -349,6 +370,8 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
         // We have to rely on a dirty hack instead.
         // Need to check this does not break anything
         // Dirty hack to trigger document symbol update
+        // Ideally, it should retrigger dependencies aswell.
+        // See https://github.com/microsoft/vscode/issues/108722 (Old one https://github.com/microsoft/vscode/issues/71454)
         let visibleEditor = vscode.window.visibleTextEditors.find(e => e.document.uri.path === uri.path);
         if (visibleEditor) {
             let editor = visibleEditor;
@@ -370,17 +393,11 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
         }
     }
     private updateDependency(file: ShaderVariantFile) {
-        let fileActiveVariant = getActiveFileVariant(file);
-        let params : DidChangeShaderVariantParams = {
-            textDocument: {
-                uri: this.client.code2ProtocolConverter.asUri(file.uri),
-            },
-            shaderVariant: fileActiveVariant ? shaderVariantToSerialized(fileActiveVariant) : null,
-        };
-        this.client.sendNotification(didChangeShaderVariantNotification, params);
-
+        if (this.hasActiveVariant(file))  {
+            this.notifyVariantChanged();
+        }
         // Symbols might have changed, so request them as we use this to compute symbols.
-        this.requestDocumentSymbol(file.uri);        
+        this.requestDocumentSymbol(file.uri);
     }
     public onDocumentSymbols(uri: vscode.Uri, symbols: vscode.DocumentSymbol[]) {
         // TODO:TREE: need to recurse child as well.
@@ -563,13 +580,13 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
         } else if (node.kind === 'includeList') {
             let include = await vscode.window.showInputBox({
                 title: "Include path",
-                value: "C:/Users/",
+                value: "${workspaceFolder}/",
                 prompt: "Select a path for your include.",
-                placeHolder: "C:/Users/"
+                placeHolder: "${workspaceFolder}/"
             });
             node.includes.push({
                 kind: "include",
-                include: include ? include : "C:/",
+                include: include ? include : "${workspaceFolder}/",
             });
             this.refresh(node, null);
         }
@@ -613,7 +630,7 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
                 title: "Include path",
                 value: node.include,
                 prompt: "Select a path for your include.",
-                placeHolder: "C:/Users/"
+                placeHolder: "${workspaceFolder}/"
             });
             if (include) {
                 node.include = include;
@@ -702,8 +719,8 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
         let file = this.files.get(editor.document.uri.path);
         let entryPoints = this.shaderEntryPointList.get(editor.document.uri.path);
 
+        let variant = this.getActiveVariant();
         if (file && entryPoints) {
-            let variant = getActiveFileVariant(file);
             if (variant) {
                 let found = false;
                 for (let entryPoint of entryPoints) {
