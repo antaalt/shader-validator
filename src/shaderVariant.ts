@@ -4,18 +4,20 @@ import { resolveVSCodeVariables } from './validator';
 
 interface ShaderVariantSerialized {
     url: DocumentUri,
+    language: string,
     entryPoint: string,
     stage: string | null,
     defines: Object,
     includes: string[],
 }
 
-function shaderVariantToSerialized(url: DocumentUri, e: ShaderVariant) : ShaderVariantSerialized {
+function shaderVariantToSerialized(url: DocumentUri, languageId: string, e: ShaderVariant) : ShaderVariantSerialized {
     function cameltoPascalCase(s: string) : string {
         return String(s[0]).toUpperCase() + String(s).slice(1);
     }
     return {
         url: url,
+        language: languageId,
         entryPoint: e.name,
         stage: (e.stage.stage === ShaderStage.auto) ? null : cameltoPascalCase(ShaderStage[e.stage.stage]),
         defines: Object.fromEntries(e.defines.defines.map(e => [e.label, e.value])),
@@ -348,14 +350,25 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
         this.updateDependencies();
     }
     private notifyVariantChanged() {
+        function capitalizeFirstLetter(str: string): string {
+            return str.charAt(0).toUpperCase() + str.slice(1);
+        }
         // Notify server of change.
         let fileActiveVariant = this.getActiveVariant();
-        this.client.sendNotification(didChangeShaderVariantNotification, {
-            shaderVariant: fileActiveVariant ? shaderVariantToSerialized(
-                this.client.code2ProtocolConverter.asUri(fileActiveVariant.uri), 
-                fileActiveVariant
-            ) : null,
-        });
+        if (fileActiveVariant) {
+            // Open document to get language ID.
+            // This does not open the document in the editor, only internally.
+            vscode.workspace.openTextDocument(fileActiveVariant.uri).then(doc => {
+                this.client.sendNotification(didChangeShaderVariantNotification, {
+                    shaderVariant: fileActiveVariant ? shaderVariantToSerialized(
+                        this.client.code2ProtocolConverter.asUri(fileActiveVariant.uri), 
+                        capitalizeFirstLetter(doc.languageId), // Server expect it with capitalized first letter.
+                        fileActiveVariant
+                    ) : null,
+                });
+            });
+        }
+        
     }
     private requestDocumentSymbol(uri: vscode.Uri) {
         // TODO: should request inlay hint aswell.
