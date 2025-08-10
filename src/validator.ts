@@ -241,6 +241,14 @@ export async function createLanguageClient(context: vscode.ExtensionContext): Pr
         return createLanguageClientStandard(context, platform);
     }
 }
+function getConfigurationAsString(): string {
+    let config = vscode.workspace.getConfiguration("shader-validator");
+    const configObject : { [key: string]: any } = {};
+    for (const [key, value] of Object.entries(config)) {
+        configObject[key] = value;
+    }
+    return JSON.stringify(configObject);
+}
 async function createLanguageClientStandard(context: vscode.ExtensionContext, platform : ServerPlatform) : Promise<LanguageClient | null> {
     const channelName = 'Shader language Server'; // For trace option, need same name
     const channel = vscode.window.createOutputChannel(channelName);
@@ -273,9 +281,13 @@ async function createLanguageClientStandard(context: vscode.ExtensionContext, pl
     const serverOptions: ServerOptions = {
         command: executable.fsPath, 
         transport: TransportKind.stdio,
+        args: [
+            "--config",
+            getConfigurationAsString()
+        ],
         options: {
             cwd: cwd.fsPath,
-            env: env
+            env: env,
         }
     };
     const clientOptions: LanguageClientOptions = {
@@ -351,6 +363,10 @@ async function createLanguageClientWASI(context: vscode.ExtensionContext) : Prom
         const options : ProcessOptions = {
             stdio: createStdioOptions(),
             env: env,
+            args: [
+                "--config",
+                getConfigurationAsString()
+            ],
             mountPoints: mountPoints,
             trace: true,
         };
