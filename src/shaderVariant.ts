@@ -237,6 +237,11 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
         context.subscriptions.push(vscode.workspace.onDidCloseTextDocument(document => {
             this.shaderEntryPointList.delete(document.uri.path);
         }));
+        for (let file of this.files) {
+            if (this.hasActiveVariant(file[1]))  {
+                this.notifyVariantChanged();
+            }
+        }
         this.updateDependencies();
     }
     private getActiveVariant() : ShaderVariant | null {
@@ -360,12 +365,17 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
             // This does not open the document in the editor, only internally.
             vscode.workspace.openTextDocument(fileActiveVariant.uri).then(doc => {
                 this.client.sendNotification(didChangeShaderVariantNotification, {
+                    // Need this check again here because its async
                     shaderVariant: fileActiveVariant ? shaderVariantToSerialized(
                         this.client.code2ProtocolConverter.asUri(fileActiveVariant.uri), 
                         capitalizeFirstLetter(doc.languageId), // Server expect it with capitalized first letter.
                         fileActiveVariant
                     ) : null,
                 });
+            });
+        } else {
+            this.client.sendNotification(didChangeShaderVariantNotification, {
+                shaderVariant: null,
             });
         }
         
@@ -406,9 +416,6 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
         }
     }
     private updateDependency(file: ShaderVariantFile) {
-        if (this.hasActiveVariant(file))  {
-            this.notifyVariantChanged();
-        }
         // Symbols might have changed, so request them as we use this to compute symbols.
         this.requestDocumentSymbol(file.uri);
     }
