@@ -237,11 +237,6 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
         context.subscriptions.push(vscode.workspace.onDidCloseTextDocument(document => {
             this.shaderEntryPointList.delete(document.uri.path);
         }));
-        for (let file of this.files) {
-            if (this.hasActiveVariant(file[1]))  {
-                this.notifyVariantChanged();
-            }
-        }
         this.updateDependencies();
     }
     private getActiveVariant() : ShaderVariant | null {
@@ -416,6 +411,9 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
         }
     }
     private updateDependency(file: ShaderVariantFile) {
+        if (this.hasActiveVariant(file))  {
+            this.notifyVariantChanged();
+        }
         // Symbols might have changed, so request them as we use this to compute symbols.
         this.requestDocumentSymbol(file.uri);
     }
