@@ -560,7 +560,7 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
             let entryPoint = await vscode.window.showInputBox({
                 title: "Entry point",
                 value: "main",
-                prompt: "Select an entry point for your variant.",
+                prompt: "Select an entry point for your variant. Note that specifying this along the stage might improve performances.",
                 placeHolder: "main"
             });
             if (entryPoint) {
