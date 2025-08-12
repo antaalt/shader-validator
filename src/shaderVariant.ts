@@ -557,25 +557,57 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
     }
     public async add(node: ShaderVariantNode) {
         if (node.kind === 'file') {
-            node.variants.push({
-                kind: 'variant',
-                uri: node.uri,
-                name: 'main',
-                isActive: false,
-                stage: {
-                    kind: 'stage',
-                    stage: ShaderStage.auto
-                },
-                defines: {
-                    kind: 'defineList',
-                    defines:[]
-                },
-                includes: {
-                    kind: 'includeList',
-                    includes:[]
-                },
+            let entryPoint = await vscode.window.showInputBox({
+                title: "Entry point",
+                value: "main",
+                prompt: "Select an entry point for your variant.",
+                placeHolder: "main"
             });
-            this.refresh(node, node);
+            if (entryPoint) {
+                let stage = await vscode.window.showQuickPick(
+                    [
+                        ShaderStage[ShaderStage.auto],
+                        ShaderStage[ShaderStage.vertex],
+                        ShaderStage[ShaderStage.fragment],
+                        ShaderStage[ShaderStage.compute],
+                        ShaderStage[ShaderStage.tesselationControl],
+                        ShaderStage[ShaderStage.tesselationEvaluation],
+                        ShaderStage[ShaderStage.mesh],
+                        ShaderStage[ShaderStage.task],
+                        ShaderStage[ShaderStage.geometry],
+                        ShaderStage[ShaderStage.rayGeneration],
+                        ShaderStage[ShaderStage.closestHit],
+                        ShaderStage[ShaderStage.anyHit],
+                        ShaderStage[ShaderStage.callable],
+                        ShaderStage[ShaderStage.miss],
+                        ShaderStage[ShaderStage.intersect],
+                    ],
+                    {
+                        title: "Shader stage"
+                    }
+                );
+                if (stage) {
+                    node.variants.push({
+                        kind: 'variant',
+                        uri: node.uri,
+                        name: entryPoint,
+                        isActive: false,
+                        stage: {
+                            kind: 'stage',
+                            stage: ShaderStage[stage as keyof typeof ShaderStage]
+                        },
+                        defines: {
+                            kind: 'defineList',
+                            defines:[]
+                        },
+                        includes: {
+                            kind: 'includeList',
+                            includes:[]
+                        },
+                    });
+                    this.refresh(node, node);
+                }
+            }
         } else if (node.kind === 'defineList') {
             let label = await vscode.window.showInputBox({
                 title: "Macro label",
@@ -583,18 +615,22 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
                 prompt: "Select a label for you macro.",
                 placeHolder: "MY_MACRO"
             });
-            let value = await vscode.window.showInputBox({
-                title: "Macro value",
-                value: "1",
-                prompt: "Select a value for you macro.",
-                placeHolder: "1"
-            });
-            node.defines.push({
-                kind: "define",
-                label: label ? label : "MY_MACRO",
-                value: value ? value : "1",
-            });
-            this.refresh(node, null);
+            if (label) {
+                let value = await vscode.window.showInputBox({
+                    title: "Macro value",
+                    value: "1",
+                    prompt: "Select a value for you macro.",
+                    placeHolder: "1"
+                });
+                if (value) {
+                    node.defines.push({
+                        kind: "define",
+                        label: label,
+                        value: value,
+                    });
+                    this.refresh(node, null);
+                }
+            }
         } else if (node.kind === 'includeList') {
             let include = await vscode.window.showInputBox({
                 title: "Include path",
@@ -602,11 +638,13 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
                 prompt: "Select a path for your include.",
                 placeHolder: "${workspaceFolder}/"
             });
-            node.includes.push({
-                kind: "include",
-                include: include ? include : "${workspaceFolder}/",
-            });
-            this.refresh(node, null);
+            if (include) {
+                node.includes.push({
+                    kind: "include",
+                    include: include,
+                });
+                this.refresh(node, null);
+            }
         }
     }
     public async edit(node: ShaderVariantNode) {
