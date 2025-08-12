@@ -208,6 +208,37 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
             }
             this.save();
         }));
+        context.subscriptions.push(vscode.commands.registerCommand("shader-validator.addCurrentFileVariant", async () => {
+            let supportedLangId = ["hlsl", "glsl", "wgsl"];
+            if (vscode.window.activeTextEditor && supportedLangId.includes(vscode.window.activeTextEditor.document.languageId)) {
+                let entryPoint = await this.promptEntryPoint();
+                if (entryPoint) {
+                    let stage = await this.promptShaderStage();
+                    if (stage) {
+                        let uri = vscode.window.activeTextEditor.document.uri;
+                        this.openOrAddVariant(uri, {
+                            kind: 'variant',
+                            uri: uri,
+                            name: entryPoint,
+                            isActive: false,
+                            stage: {
+                                kind: 'stage',
+                                stage: stage
+                            },
+                            defines: {
+                                kind: 'defineList',
+                                defines:[]
+                            },
+                            includes: {
+                                kind: 'includeList',
+                                includes:[]
+                            },
+                        });
+                    }
+                }
+            }
+            this.save();
+        }));
         context.subscriptions.push(vscode.commands.registerCommand("shader-validator.addMenu", async (node: ShaderVariantNode) => {
             await this.add(node);
             this.save();
@@ -330,11 +361,11 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
         return null;
     }
 
-    public refresh(node: ShaderVariantNode, file: ShaderVariantFile | null, updateFileNode?: boolean) {
+    public refresh(node: ShaderVariantNode | null, file: ShaderVariantFile | null) {
         this.onDidChangeTreeDataEmitter.fire();
         if (file) {
             this.updateDependency(file);
-        } else {
+        } else if (node) {
             let result = this.getFileAndParentNode(node);
             if (result) {
                 let [file, parent] = result;
@@ -531,6 +562,9 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
     }
 
     public open(uri: vscode.Uri): void {
+        this.openOrAddVariant(uri, null);
+    }
+    public openOrAddVariant(uri: vscode.Uri, variant: ShaderVariant | null): void {
         if (uri.scheme !== 'file') {
             return;
         }
@@ -539,10 +573,13 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
             let newFile : ShaderVariantFile = {
                 kind: 'file',
                 uri: uri,
-                variants: []
+                variants: variant ? [variant] : []
             };
             this.files.set(uri.path, newFile);
-            this.refreshAll();
+            this.refresh(null, this.files.get(uri.path)!); // This has to be here
+        } else if (variant) {
+            file.variants.push(variant);
+            this.refresh(null, file);
         }
     }
     public close(uri: vscode.Uri): void {
@@ -555,37 +592,48 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
             }
         }
     }
+    async promptEntryPoint() : Promise<string | undefined> {
+        return await vscode.window.showInputBox({
+            title: "Entry point",
+            value: "main",
+            prompt: "Select an entry point for your variant. Note that specifying this along the stage might improve performances.",
+            placeHolder: "main"
+        });
+    }
+    async promptShaderStage() : Promise<ShaderStage | undefined> {
+        let stage = await vscode.window.showQuickPick(
+            [
+                ShaderStage[ShaderStage.auto],
+                ShaderStage[ShaderStage.vertex],
+                ShaderStage[ShaderStage.fragment],
+                ShaderStage[ShaderStage.compute],
+                ShaderStage[ShaderStage.tesselationControl],
+                ShaderStage[ShaderStage.tesselationEvaluation],
+                ShaderStage[ShaderStage.mesh],
+                ShaderStage[ShaderStage.task],
+                ShaderStage[ShaderStage.geometry],
+                ShaderStage[ShaderStage.rayGeneration],
+                ShaderStage[ShaderStage.closestHit],
+                ShaderStage[ShaderStage.anyHit],
+                ShaderStage[ShaderStage.callable],
+                ShaderStage[ShaderStage.miss],
+                ShaderStage[ShaderStage.intersect],
+            ],
+            {
+                title: "Shader stage"
+            }
+        );
+        if (stage) {
+            return ShaderStage[stage as keyof typeof ShaderStage];
+        } else {
+            return undefined;
+        }
+    }
     public async add(node: ShaderVariantNode) {
         if (node.kind === 'file') {
-            let entryPoint = await vscode.window.showInputBox({
-                title: "Entry point",
-                value: "main",
-                prompt: "Select an entry point for your variant. Note that specifying this along the stage might improve performances.",
-                placeHolder: "main"
-            });
+            let entryPoint = await this.promptEntryPoint();
             if (entryPoint) {
-                let stage = await vscode.window.showQuickPick(
-                    [
-                        ShaderStage[ShaderStage.auto],
-                        ShaderStage[ShaderStage.vertex],
-                        ShaderStage[ShaderStage.fragment],
-                        ShaderStage[ShaderStage.compute],
-                        ShaderStage[ShaderStage.tesselationControl],
-                        ShaderStage[ShaderStage.tesselationEvaluation],
-                        ShaderStage[ShaderStage.mesh],
-                        ShaderStage[ShaderStage.task],
-                        ShaderStage[ShaderStage.geometry],
-                        ShaderStage[ShaderStage.rayGeneration],
-                        ShaderStage[ShaderStage.closestHit],
-                        ShaderStage[ShaderStage.anyHit],
-                        ShaderStage[ShaderStage.callable],
-                        ShaderStage[ShaderStage.miss],
-                        ShaderStage[ShaderStage.intersect],
-                    ],
-                    {
-                        title: "Shader stage"
-                    }
-                );
+                let stage = await this.promptShaderStage();
                 if (stage) {
                     node.variants.push({
                         kind: 'variant',
@@ -594,7 +642,7 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
                         isActive: false,
                         stage: {
                             kind: 'stage',
-                            stage: ShaderStage[stage as keyof typeof ShaderStage]
+                            stage: stage
                         },
                         defines: {
                             kind: 'defineList',
@@ -693,30 +741,9 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
                 this.refresh(node, null);
             }
         } else if (node.kind === 'stage') {
-            let stage = await vscode.window.showQuickPick(
-                [
-                    ShaderStage[ShaderStage.auto],
-                    ShaderStage[ShaderStage.vertex],
-                    ShaderStage[ShaderStage.fragment],
-                    ShaderStage[ShaderStage.compute],
-                    ShaderStage[ShaderStage.tesselationControl],
-                    ShaderStage[ShaderStage.tesselationEvaluation],
-                    ShaderStage[ShaderStage.mesh],
-                    ShaderStage[ShaderStage.task],
-                    ShaderStage[ShaderStage.geometry],
-                    ShaderStage[ShaderStage.rayGeneration],
-                    ShaderStage[ShaderStage.closestHit],
-                    ShaderStage[ShaderStage.anyHit],
-                    ShaderStage[ShaderStage.callable],
-                    ShaderStage[ShaderStage.miss],
-                    ShaderStage[ShaderStage.intersect],
-                ],
-                {
-                    title: "Shader stage"
-                }
-            );
+            let stage = await this.promptShaderStage();
             if (stage) {
-                node.stage = ShaderStage[stage as keyof typeof ShaderStage];
+                node.stage = stage;
                 this.refresh(node, null);
             }
         }

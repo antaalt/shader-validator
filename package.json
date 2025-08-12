@@ -316,6 +316,12 @@
         "enablement": "view == shader-validator-variants"
       },
       {
+        "command": "shader-validator.addCurrentFileVariant",
+        "title": "Add a shader variant for current file",
+        "category": "Shader validator",
+        "icon": "$(add)"
+      },
+      {
         "command": "shader-validator.editMenu",
         "title": "Edit",
         "category": "Shader validator",
