@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [unreleased]
 
+## [1.0.0] - 2025-08-25
+
+### Changed
+
+- There can be only one variant selected for all files now to prevent issues and conflict server side.
+- Open macro & include popup as soon as we add it.
+- Send config to server as soon as its created to increase startup speed.
+- Using [shader-language-server v1.0.0](https://github.com/antaalt/shader-sense/releases/tag/v1.0.0) with improvements for variant, performances and bug fixes.
+
+### Added
+
+- Adding an include or macro will now directly prompt for values instead of creating one with default.
+- Adding an entry point will now directly prompt for entry point and stage aswell.
+- Added a command to add entry point directly from palette `shader-validator.addCurrentFileVariant`
+
+### Fixed
+
+- Fixed variant incorrectly updated
 
 ## [0.7.0] - 2025-08-03
 
@@ -266,7 +284,8 @@ Initial release of this extension using [shader-language-server v0.0.1](https://
 
 
 <!-- Below are link for above changelog titles-->
-[unreleased]: https://github.com/antaalt/shader-validator/compare/v0.7.0...HEAD
+[unreleased]: https://github.com/antaalt/shader-validator/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/antaalt/shader-validator/compare/v0.7.0...v1.0.0
 [0.7.0]: https://github.com/antaalt/shader-validator/compare/v0.6.5...v0.7.0
 [0.6.5]: https://github.com/antaalt/shader-validator/compare/v0.6.4...v0.6.5
 [0.6.4]: https://github.com/antaalt/shader-validator/compare/v0.6.3...v0.6.4
