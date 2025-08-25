@@ -4,7 +4,7 @@ import { resolveVSCodeVariables } from './validator';
 
 interface ShaderVariantSerialized {
     url: DocumentUri,
-    language: string,
+    shadingLanguage: string,
     entryPoint: string,
     stage: string | null,
     defines: Object,
@@ -17,7 +17,7 @@ function shaderVariantToSerialized(url: DocumentUri, languageId: string, e: Shad
     }
     return {
         url: url,
-        language: languageId,
+        shadingLanguage: languageId,
         entryPoint: e.name,
         stage: (e.stage.stage === ShaderStage.auto) ? null : cameltoPascalCase(ShaderStage[e.stage.stage]),
         defines: Object.fromEntries(e.defines.defines.map(e => [e.label, e.value])),
