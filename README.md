@@ -97,6 +97,8 @@ You can then access these variants directly from the dedicated window and then a
 
 A neat feature for big shader codebase with lot of entry point everywhere !
 
+You can add one with the dedicated window or using the command `shader-validator.addCurrentFileVariant`. It will also help dxc and glslang validating your file in a huge codebase where DXC take a lot of time to validate using the lib profile.
+
 ![shader-variant](res/doc/variants.png)
 
 ### Regions
@@ -152,9 +154,9 @@ This extension run on the web on [vscode.dev](https://vscode.dev/). It is relyin
 
 You can use shader variant to declare the entry point and the necessary macro without having to pass through global defines which might impact global state. It will also speed up validation by setting a stage and entry point.
 
-### Validation is really slow on big HLSL files
+### Request are really slow on big HLSL files
 
-You can use shader variant and specify an entry point to speed up things. By default the extension is using the dxc lib profile which is quite a heavy process with big files with a lot of includes. By setting an entry point along a stage, it will speed up validation, but dxc might still have a hard time.
+You can use shader variant and specify an entry point to speed up things. By default the extension is using the dxc lib profile which is quite a heavy process with big files with a lot of includes. By setting an entry point along a stage, it will speed up validation, but dxc might still have a hard time. Letting the server know where your code start can help it cache everything to the right place !
 
 ### How to check the logs ?
 
