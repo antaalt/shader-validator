@@ -421,7 +421,7 @@
                 {
                     "comment": "struct declaration",
                     "name": "keyword.declaration.struct.hlsl",
-                    "match": "\\b(struct|class|interface|cbuffer|tbuffer)\\s+(\\[[a-z]+\\]\\s+)?([a-zA-Z][a-zA-Z0-9_]*)?(\\s+:\\s+[a-zA-Z][a-zA-Z0-9_]*)?",
+                    "match": "\\b(struct|class|interface|cbuffer|tbuffer|enum class|enum)\\s+(\\[[a-z]+\\]\\s+)?([a-zA-Z][a-zA-Z0-9_]*)?(\\s+:\\s+[a-zA-Z][a-zA-Z0-9_]*)?",
                     "captures": {
                         "1": {
                             "name": "keyword.declaration.struct.hlsl"
@@ -641,7 +641,7 @@
                 {
                     "comment": "other keywords",
                     "name": "keyword.control.hlsl",
-                    "match": "\\b(goto|void|break|typedef|using|case|continue|default|discard|else|export|do|enum|for|function|if|private|return|switch|while|workgroup|operator)\\b"
+                    "match": "\\b(goto|void|break|typedef|using|case|continue|default|discard|else|export|do|for|function|if|private|return|switch|while|workgroup|operator)\\b"
                 },
                 {
                     "comment": "reserved keywords",
