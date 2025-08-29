@@ -23,8 +23,11 @@ import {
     LanguageClientOptions,
     Message,
     Middleware,
+    ProtocolNotificationType,
     ProvideDocumentSymbolsSignature,
+    RequestType,
     ServerOptions,
+    Trace,
     TransportKind
 } from 'vscode-languageclient/node';
 import { sidebar } from "./extension";
@@ -230,15 +233,71 @@ class ShaderErrorHandler implements ErrorHandler {
         }
     }
 }
+function getChannelName(): string {
+    return 'Shader language Server';
+}
 
-export async function createLanguageClient(context: vscode.ExtensionContext): Promise<LanguageClient | null> {
+export class ShaderLanguageClient {
+    private client: LanguageClient | null = null;
+    private channel: vscode.OutputChannel | null = null;
+
+    async start(context: vscode.ExtensionContext): Promise<boolean> {
+        let levelString = vscode.workspace.getConfiguration("shader-validator").get<string>("trace.server")!;
+        let level = Trace.fromString(levelString);
+        switch (level) {
+            case Trace.Verbose:
+            case Trace.Compact:
+            case Trace.Messages:
+                this.channel = vscode.window.createOutputChannel(getChannelName());
+                break;
+            case Trace.Off:
+                this.channel = null;
+                break;
+        }
+        this.client = await createLanguageClient(context, this.channel);
+        return this.client !== null;
+    }
+    async restart(context: vscode.ExtensionContext) {
+        await this.client?.stop(100);
+        this.dispose();
+        await this.start(context);
+    }
+    showLogs() {
+        if (this.channel) {
+            this.channel.show(false);
+        }
+    }
+    dispose() {
+        this.client?.dispose();
+        this.channel?.dispose();
+    }
+    sendNotification<P, RO>(type: ProtocolNotificationType<P, RO>, params?: P): Promise<void> {
+        return this.client!.sendNotification(type, params);
+    }
+    sendRequest<P, R, E>(type: RequestType<P, R, E>, params: P): Promise<R> {
+        return this.client!.sendRequest(type, params);
+    }
+    uriAsString(uri: vscode.Uri): string {
+        return this.client!.code2ProtocolConverter.asUri(uri);
+    }
+    stringAsUri(str: string): vscode.Uri {
+        return this.client!.protocol2CodeConverter.asUri(str);
+    }
+    log(message: string) {
+        if (this.channel) {
+            this.channel.appendLine(message);
+        }
+    }
+}
+
+export async function createLanguageClient(context: vscode.ExtensionContext, channel: vscode.OutputChannel | null): Promise<LanguageClient | null> {
     // Create validator
     // Web does not support child process, use wasi instead.
     let platform = getServerPlatform();
     if (platform === ServerPlatform.wasi) {
-        return createLanguageClientWASI(context);
+        return createLanguageClientWASI(context, channel);
     } else {
-        return createLanguageClientStandard(context, platform);
+        return createLanguageClientStandard(context, channel, platform);
     }
 }
 function getConfigurationAsString(): string {
@@ -249,11 +308,7 @@ function getConfigurationAsString(): string {
     }
     return JSON.stringify(configObject);
 }
-async function createLanguageClientStandard(context: vscode.ExtensionContext, platform : ServerPlatform) : Promise<LanguageClient | null> {
-    const channelName = 'Shader language Server'; // For trace option, need same name
-    const channel = vscode.window.createOutputChannel(channelName);
-    context.subscriptions.push(channel);
-    
+async function createLanguageClientStandard(context: vscode.ExtensionContext, channel: vscode.OutputChannel | null, platform : ServerPlatform) : Promise<LanguageClient | null> {
     const executable = getPlatformBinaryUri(context.extensionUri, platform);
     const version = getServerVersion(executable.fsPath, platform);
     if (!version) {
@@ -297,14 +352,15 @@ async function createLanguageClientStandard(context: vscode.ExtensionContext, pl
             { scheme: 'file', language: 'glsl' },
             { scheme: 'file', language: 'wgsl' },
         ],
-        outputChannel: channel,
+        outputChannel: channel ? channel : undefined,
+        traceOutputChannel: channel ? channel : undefined,
         middleware: getMiddleware(),
         errorHandler: new ShaderErrorHandler()
     };
 
     let client = new LanguageClient(
         'shader-validator',
-        channelName,
+        channel ? channel.name : getChannelName(),
         serverOptions,
         clientOptions,
         context.extensionMode === vscode.ExtensionMode.Development 
@@ -315,11 +371,7 @@ async function createLanguageClientStandard(context: vscode.ExtensionContext, pl
 
     return client;
 }
-async function createLanguageClientWASI(context: vscode.ExtensionContext) : Promise<LanguageClient | null> {
-    const channelName = 'Shader language Server WASI'; // For trace option, need same name
-    const channel = vscode.window.createOutputChannel(channelName);
-    context.subscriptions.push(channel);
-    
+async function createLanguageClientWASI(context: vscode.ExtensionContext, channel: vscode.OutputChannel | null) : Promise<LanguageClient | null> {
     // Load the WASM API
     const wasm: Wasm = await Wasm.load();
 
@@ -385,12 +437,12 @@ async function createLanguageClientWASI(context: vscode.ExtensionContext) : Prom
         wasmProcess.stderr!.onData(data => {
             const text = decoder.decode(data);
             console.log("Received error:", text);
-            channel.appendLine("[shader-language-server::error]" + text);
+            channel!.appendLine("[shader-language-server::error]" + text);
         });
         wasmProcess.stdout!.onData(data => {
             const text = decoder.decode(data);
             console.log("Received data:", text);
-            channel.appendLine("[shader-language-server::data]" + text);
+            channel!.appendLine("[shader-language-server::data]" + text);
         });
         return startServer(wasmProcess);
     };
@@ -402,9 +454,9 @@ async function createLanguageClientWASI(context: vscode.ExtensionContext) : Prom
             { scheme: 'file', language: 'glsl' },
             { scheme: 'file', language: 'wgsl' },
         ],
-        outputChannel: channel,
+        outputChannel: channel ? channel : undefined,
+        traceOutputChannel: channel ? channel : undefined,
         uriConverters: createUriConverters(),
-        traceOutputChannel: channel,
         middleware: getMiddleware(),
         errorHandler: new ShaderErrorHandler()
     };
@@ -412,7 +464,7 @@ async function createLanguageClientWASI(context: vscode.ExtensionContext) : Prom
 
     let client = new LanguageClient(
         'shader-validator',
-        channelName,
+        channel ? channel.name : getChannelName(),
         serverOptions,
         clientOptions,
         context.extensionMode === vscode.ExtensionMode.Development 

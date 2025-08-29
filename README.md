@@ -136,6 +136,14 @@ This extension contributes the following settings:
 *   `shader-validator.glsl.targetClient`: Specify the OpenGL or Vulkan version for GLSL
 *   `shader-validator.glsl.spirvVersion`: Specify the SPIRV version to target for GLSL
 
+
+## Commands
+
+*   `shader-validator.restartServer`: Restart the server if you have any issue
+*   `shader-validator.addCurrentFileVariant`: Add a variant to the current file.
+*   `shader-validator.dumpDependency`: Print dependency tree in logs. mostly for debug.
+*   `shader-validator.dumpAst`: Print internal ast in logs. mostly for debug.
+
 ## Platform support
 
 This extension is supported on every platform, but some limitations are to be expected on some:

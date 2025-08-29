@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { CancellationToken, DocumentSymbol, DocumentSymbolRequest, DocumentUri, LanguageClient, ProtocolNotificationType, ProtocolRequestType, Range, SymbolInformation, SymbolKind, TextDocumentIdentifier, TextDocumentItem, TextDocumentRegistrationOptions } from 'vscode-languageclient/node';
-import { resolveVSCodeVariables } from './validator';
+import { resolveVSCodeVariables, ShaderLanguageClient } from './validator';
 
 interface ShaderVariantSerialized {
     url: DocumentUri,
@@ -121,7 +121,7 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
     // using vscode.Uri as key does not match well with Memento state storage...
     private files: Map<string, ShaderVariantFile>;
     private tree: vscode.TreeView<ShaderVariantNode>;
-    private client: LanguageClient;
+    private server: ShaderLanguageClient;
     private decorator: vscode.TextEditorDecorationType;
     private workspaceState: vscode.Memento;
     private shaderEntryPointList: Map<string, ShaderEntryPoint[]>;
@@ -143,12 +143,12 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
         this.workspaceState.update(shaderVariantTreeKey, array);
     }
 
-    constructor(context: vscode.ExtensionContext, client: LanguageClient) {
+    constructor(context: vscode.ExtensionContext, server: ShaderLanguageClient) {
         this.workspaceState = context.workspaceState;
         this.files = new Map;
         this.load();
         this.shaderEntryPointList = new Map;
-        this.client = client;
+        this.server = server;
         this.tree = vscode.window.createTreeView<ShaderVariantNode>("shader-validator-variants", {
             treeDataProvider: this
             // TODO: drag and drop for better ux.
@@ -252,6 +252,10 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
             this.save();
         }));
         context.subscriptions.push(vscode.commands.registerCommand("shader-validator.gotoShaderEntryPoint", (uri: vscode.Uri, entryPointName: string) => {
+            // sometimes, its goes in random place in file... 
+            // TODO: Should use regex & read diag region instead.
+            let diagnostic = vscode.languages.getDiagnostics().find(([diagUri, diags]) => diagUri === uri);
+            
             this.goToShaderEntryPoint(uri, entryPointName, true);
         }));
         // Prepare entry point symbol cache
@@ -267,6 +271,35 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
         }));
         context.subscriptions.push(vscode.workspace.onDidCloseTextDocument(document => {
             this.shaderEntryPointList.delete(document.uri.path);
+        }));
+        context.subscriptions.push(vscode.workspace.onDidRenameFiles(document => {
+            for (const fileObj of document.files) {
+                const { oldUri, newUri } = fileObj;
+                // To update the key in a Map, you need to remove the old key and add the new one.
+                const oldPath = oldUri.path;
+                const newPath = newUri.path;
+                const file = this.files.get(oldPath);
+                if (file) {
+                    // Update the uri inside the file object
+                    file.uri = newUri;
+                    // Remove the old key and set the new key
+                    this.files.delete(oldPath);
+                    this.files.set(newPath, file);
+                }
+                // Also update entry point and async maps
+                const entryPoints = this.shaderEntryPointList.get(oldPath);
+                if (entryPoints) {
+                    this.shaderEntryPointList.delete(oldPath);
+                    this.shaderEntryPointList.set(newPath, entryPoints);
+                }
+                const asyncEntryPoint = this.asyncGoToShaderEntryPoint.get(oldUri);
+                if (asyncEntryPoint) {
+                    this.asyncGoToShaderEntryPoint.delete(oldUri);
+                    this.asyncGoToShaderEntryPoint.set(newUri, asyncEntryPoint);
+                }
+                this.shaderEntryPointList;
+                this.asyncGoToShaderEntryPoint;
+            }
         }));
         this.updateDependencies();
     }
@@ -390,17 +423,17 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
             // Open document to get language ID.
             // This does not open the document in the editor, only internally.
             vscode.workspace.openTextDocument(fileActiveVariant.uri).then(doc => {
-                this.client.sendNotification(didChangeShaderVariantNotification, {
+                this.server.sendNotification(didChangeShaderVariantNotification, {
                     // Need this check again here because its async
                     shaderVariant: fileActiveVariant ? shaderVariantToSerialized(
-                        this.client.code2ProtocolConverter.asUri(fileActiveVariant.uri), 
+                        this.server.uriAsString(fileActiveVariant.uri), 
                         capitalizeFirstLetter(doc.languageId), // Server expect it with capitalized first letter.
                         fileActiveVariant
                     ) : null,
                 });
             });
         } else {
-            this.client.sendNotification(didChangeShaderVariantNotification, {
+            this.server.sendNotification(didChangeShaderVariantNotification, {
                 shaderVariant: null,
             });
         }
@@ -421,24 +454,29 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
         // Dirty hack to trigger document symbol update
         // Ideally, it should retrigger dependencies aswell.
         // See https://github.com/microsoft/vscode/issues/108722 (Old one https://github.com/microsoft/vscode/issues/71454)
-        let visibleEditor = vscode.window.visibleTextEditors.find(e => e.document.uri.path === uri.path);
-        if (visibleEditor) {
-            let editor = visibleEditor;
-            editor.edit(editBuilder => {
-                for (let iLine = 0; iLine < editor.document.lineCount; iLine++) {
-                    // Find first non-empty line to avoid crashing on empty line with negative position.
-                    let line = editor.document.lineAt(iLine);
-                    if (line.text.length > 0) {
-                        const text = line.text;
-                        const c = line.range.end.character;
-                        // Remove last character of first line and add it back.
-                        editBuilder.delete(new vscode.Range(iLine, c-1, iLine, c));
-                        editBuilder.insert(new vscode.Position(iLine, c), text[c-1]);
-                        break;
+
+        // Only trigger it if requested by user as it may be a bit invasive.
+        let updateSymbolsOnVariantUpdate = vscode.workspace.getConfiguration("shader-validator").get<boolean>("updateSymbolsOnVariantUpdate");
+        if (updateSymbolsOnVariantUpdate) {
+            let visibleEditor = vscode.window.visibleTextEditors.find(e => e.document.uri.path === uri.path);
+            if (visibleEditor) {
+                let editor = visibleEditor;
+                editor.edit(editBuilder => {
+                    for (let iLine = 0; iLine < editor.document.lineCount; iLine++) {
+                        // Find first non-empty line to avoid crashing on empty line with negative position.
+                        let line = editor.document.lineAt(iLine);
+                        if (line.text.length > 0) {
+                            const text = line.text;
+                            const c = line.range.end.character;
+                            // Remove last character of first line and add it back.
+                            editBuilder.delete(new vscode.Range(iLine, c-1, iLine, c));
+                            editBuilder.insert(new vscode.Position(iLine, c), text[c-1]);
+                            break;
+                        }
                     }
-                }
-                // All empty lines means no symbols !
-            });
+                    // All empty lines means no symbols !
+                });
+            }
         }
     }
     private updateDependency(file: ShaderVariantFile) {
@@ -567,6 +605,24 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
     public openOrAddVariant(uri: vscode.Uri, variant: ShaderVariant | null): void {
         if (uri.scheme !== 'file') {
             return;
+        }
+        // If adding active variant, remove all currently active ones.
+        if (variant) {
+            if (variant.isActive) {
+                for (let [url, file] of this.files) {
+                    let needRefresh = false;
+                    for (let otherVariant of file.variants) {
+                        if (otherVariant.isActive) {
+                            needRefresh = true;
+                            otherVariant.isActive = false;
+                        }
+                    }
+                    if (needRefresh) {
+                        // Refresh file & all its childs
+                        this.refresh(file, file);
+                    }
+                }
+            }
         }
         let file = this.files.get(uri.path);
         if (!file) {

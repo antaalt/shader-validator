@@ -120,6 +120,11 @@
             "type": "boolean",
             "default": false
           },
+          "shader-validator.updateSymbolsOnVariantUpdate": {
+            "description": "Automatically update the symbols on variant update. Will trigger a save on the file.",
+            "type": "boolean",
+            "default": false
+          },
           "shader-validator.severity": {
             "type": "string",
             "description": "Minimum linting severity. Set it lower to display some hints aswell. Might not be supported by all languages.",
@@ -290,6 +295,12 @@
       }
     ],
     "commands": [
+      {
+        "command": "shader-validator.restartServer",
+        "title": "Restart server",
+        "category": "Shader validator",
+        "icon": "$(check)"
+      },
       {
         "command": "shader-validator.validateFile",
         "title": "Validate file",
