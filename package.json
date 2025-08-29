@@ -296,10 +296,28 @@
     ],
     "commands": [
       {
+        "command": "shader-validator.showLogs",
+        "title": "Show logs",
+        "category": "Shader validator",
+        "icon": "$(terminal)"
+      },
+      {
+        "command": "shader-validator.startServer",
+        "title": "Start server",
+        "category": "Shader validator",
+        "icon": "$(debug-start)"
+      },
+      {
+        "command": "shader-validator.stopServer",
+        "title": "Stop server",
+        "category": "Shader validator",
+        "icon": "$(debug-stop)"
+      },
+      {
         "command": "shader-validator.restartServer",
         "title": "Restart server",
         "category": "Shader validator",
-        "icon": "$(check)"
+        "icon": "$(debug-restart)"
       },
       {
         "command": "shader-validator.validateFile",

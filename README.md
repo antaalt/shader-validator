@@ -139,8 +139,11 @@ This extension contributes the following settings:
 
 ## Commands
 
-*   `shader-validator.restartServer`: Restart the server if you have any issue
+*   `shader-validator.startServer`: Start the server if it was stopped or crashed.
+*   `shader-validator.stopServer`: Stop the server.
+*   `shader-validator.restartServer`: Restart the server if you have any issue.
 *   `shader-validator.addCurrentFileVariant`: Add a variant to the current file.
+*   `shader-validator.showLogs`: Open the extension log window.
 *   `shader-validator.dumpDependency`: Print dependency tree in logs. mostly for debug.
 *   `shader-validator.dumpAst`: Print internal ast in logs. mostly for debug.
 

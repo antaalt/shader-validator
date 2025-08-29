@@ -2,10 +2,11 @@
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
 
-import { createLanguageClient, getServerPlatform, ServerPlatform, ShaderLanguageClient } from './validator';
+import { createLanguageClient, getServerPlatform, ServerPlatform, ServerStatus, ShaderLanguageClient } from './validator';
 import { dumpAstRequest, dumpDependencyRequest } from './request';
 import { ShaderVariantTreeDataProvider } from './shaderVariant';
-import { DidChangeConfigurationNotification, LanguageClient } from 'vscode-languageclient';
+import { DidChangeConfigurationNotification, LanguageClient, Trace } from 'vscode-languageclient';
+import { ShaderStatusBar } from './view/shaderStatusBar';
 
 export let sidebar: ShaderVariantTreeDataProvider;
 
@@ -41,34 +42,56 @@ export async function activate(context: vscode.ExtensionContext)
     }
 
     // Create language client
-    const server = new ShaderLanguageClient;
+    const server = new ShaderLanguageClient(context);
     context.subscriptions.push(server);
-    const isInitialized = await server.start(context);
-    if (!isInitialized) {
-        console.error("Failed to launch shader-validator language server.");
-        return;
-    }
-    let supportedLangId = ["hlsl", "glsl", "wgsl"];
+    const serverStatus = await server.start(context);
 
     // Create sidebar
     sidebar = new ShaderVariantTreeDataProvider(context, server);
+    context.subscriptions.push(sidebar);
+
+    // Create status bar
+    let statusBar = new ShaderStatusBar(context, server);
+    context.subscriptions.push(statusBar);
 
     // Subscribe commands
     context.subscriptions.push(vscode.commands.registerCommand("shader-validator.validateFile", (uri: vscode.Uri) => {
         //client.sendRequest()
         vscode.window.showInformationMessage("Cannot validate file manually for now");
     }));
-    context.subscriptions.push(vscode.commands.registerCommand("shader-validator.restartServer", (uri: vscode.Uri) => {
-        server.restart(context);
+    context.subscriptions.push(vscode.commands.registerCommand("shader-validator.startServer", async () => {
+        await server.start(context);
+        statusBar.updateStatusBar();
+    }));
+    context.subscriptions.push(vscode.commands.registerCommand("shader-validator.stopServer", async () => {
+        await server.stop();
+        statusBar.updateStatusBar();
+    }));
+    context.subscriptions.push(vscode.commands.registerCommand("shader-validator.restartServer", async () => {
+        await server.restart(context);
+        statusBar.updateStatusBar();
+    }));
+    context.subscriptions.push(vscode.commands.registerCommand("shader-validator.showLogs", () => {
+        const level = ShaderLanguageClient.getTraceLevel();
+        if (level == Trace.Off) {
+            vscode.window.showWarningMessage("Server trace is set to off. Set setting shader-validator.trace.server to messages or verbose to view logs.");
+        } else {
+            server.showLogs();
+        }
     }));
     context.subscriptions.push(vscode.commands.registerCommand("shader-validator.dumpAst", () => {
         let activeTextEditor = vscode.window.activeTextEditor;
-        if (activeTextEditor && activeTextEditor.document.uri.scheme === 'file' && supportedLangId.includes(activeTextEditor.document.languageId)) {            
+        if (activeTextEditor && activeTextEditor.document.uri.scheme === 'file' && ShaderLanguageClient.isSupportedLangId(activeTextEditor.document.languageId)) {
             server.sendRequest(dumpAstRequest, {
                 uri: server.uriAsString(activeTextEditor.document.uri)
             }).then((value: string | null) => {
                 console.info(value);
-                server.log(value || "No AST to dump");
+                if (value) {
+                    server.log(value);
+                    server.showLogs();
+                } else {
+                    server.log("No AST to dump");
+                }
             }, (reason: any) => {
                 server.log("Failed to get ast: " + reason);
             });
@@ -78,12 +101,17 @@ export async function activate(context: vscode.ExtensionContext)
     }));
     context.subscriptions.push(vscode.commands.registerCommand("shader-validator.dumpDependency", () => {
         let activeTextEditor = vscode.window.activeTextEditor;
-        if (activeTextEditor && activeTextEditor.document.uri.scheme === 'file' && supportedLangId.includes(activeTextEditor.document.languageId)) {            
+        if (activeTextEditor && activeTextEditor.document.uri.scheme === 'file' && ShaderLanguageClient.isSupportedLangId(activeTextEditor.document.languageId)) {
             server.sendRequest(dumpDependencyRequest, {
                 uri: server.uriAsString(activeTextEditor.document.uri)
             }).then((value: string | null) => {
                 console.info(value);
-                server.log(value || "No deps tree to dump");
+                if (value) {
+                    server.log(value);
+                    server.showLogs();
+                } else {
+                    server.log("No deps tree to dump");
+                }
             }, (reason: any) => {
                 server.log("Failed to get deps tree: " + reason);
             });

@@ -196,52 +196,56 @@ function getMiddleware() : Middleware {
         }
     };
 }
-
-class ShaderErrorHandler implements ErrorHandler {
-
-    private readonly restarts: number[];
-    private readonly maxRestartCount: number = 5;
-
-    constructor() {
-        this.restarts = [];
-    }
-
-    public error(_error: Error, _message: Message, count: number): ErrorHandlerResult {
-        if (count && count <= 3) {
-            vscode.window.showErrorMessage("Server encountered an error in transport. Trying to continue...");
-            return { action: ErrorAction.Continue };
-        }
-        vscode.window.showErrorMessage("Server encountered an error in transport. Shutting down.");
-        return { action: ErrorAction.Shutdown };
-    }
-
-    public closed(): CloseHandlerResult {
-        this.restarts.push(Date.now());
-        if (this.restarts.length <= this.maxRestartCount) {
-            vscode.window.showErrorMessage(`Server was unexpectedly closed ${this.restarts.length+1} times. Restarting...`);
-            return { action: CloseAction.Restart };
-        } else {
-            const diff = this.restarts[this.restarts.length - 1] - this.restarts[0];
-            if (diff <= 3 * 60 * 1000) {
-                // Log from error.
-                return { action: CloseAction.DoNotRestart, message: `The shader language server crashed ${this.maxRestartCount+1} times in the last 3 minutes. The server will not be restarted. Set shader-validator.trace.server to verbose for more information.` };
-            } else {
-                vscode.window.showErrorMessage(`Server was unexpectedly closed ${this.restarts.length+1} again. Restarting...`);
-                this.restarts.shift();
-                return { action: CloseAction.Restart };
-            }
-        }
-    }
-}
 function getChannelName(): string {
     return 'Shader language Server';
+}
+
+export enum ServerStatus {
+    running,
+    stopped,
+    error,
+}
+
+class ShaderErrorHandler implements ErrorHandler {
+    private server: ShaderLanguageClient;
+    constructor(server: ShaderLanguageClient) {
+        this.server = server;
+    }
+    public error(_error: Error, _message: Message, count: number): ErrorHandlerResult {
+        this.server.updateStatus(ServerStatus.error);
+        return { action: ErrorAction.Shutdown };
+    }
+    public closed(): CloseHandlerResult {
+        this.server.updateStatus(ServerStatus.error);
+        return { action: CloseAction.DoNotRestart, message: `The shader language server crashed. Set shader-validator.trace.server to messages or verbose for more information.` }; 
+    }
 }
 
 export class ShaderLanguageClient {
     private client: LanguageClient | null = null;
     private channel: vscode.OutputChannel | null = null;
+    private serverPath: vscode.Uri;
+    private serverVersion: string;
+    private errorHandler: ShaderErrorHandler;
+    private serverStatus: ServerStatus = ServerStatus.stopped;
+    private statusChangedCallback: (status: ServerStatus) => void;
 
-    async start(context: vscode.ExtensionContext): Promise<boolean> {
+    constructor(context: vscode.ExtensionContext) {
+        let platform = getServerPlatform();
+        this.statusChangedCallback = (status) => {};
+        this.serverPath = getPlatformBinaryUri(context.extensionUri, platform);
+        this.serverVersion = getServerVersion(this.serverPath.fsPath, platform) || "shader-language-version";
+        this.errorHandler = new ShaderErrorHandler(this);
+    }
+
+    onStatusChanged(statusChangedCallback: (status: ServerStatus) => void) {
+        this.statusChangedCallback = statusChangedCallback;
+    }
+
+    async start(context: vscode.ExtensionContext): Promise<ServerStatus> {
+        if (this.serverStatus === ServerStatus.running) {
+            return ServerStatus.running;
+        }
         let levelString = vscode.workspace.getConfiguration("shader-validator").get<string>("trace.server")!;
         let level = Trace.fromString(levelString);
         switch (level) {
@@ -254,13 +258,31 @@ export class ShaderLanguageClient {
                 this.channel = null;
                 break;
         }
-        this.client = await createLanguageClient(context, this.channel);
-        return this.client !== null;
+        this.client = await createLanguageClient(context, this.channel, this.errorHandler);
+        this.serverStatus = this.client !== null ? ServerStatus.running : ServerStatus.error;
+        return this.serverStatus;
     }
     async restart(context: vscode.ExtensionContext) {
-        await this.client?.stop(100);
-        this.dispose();
+        await this.stop();
         await this.start(context);
+    }
+    async stop() {
+        await this.client?.stop(100).catch(_ => {});
+        this.dispose();
+        this.serverStatus = ServerStatus.stopped;
+    }
+    updateStatus(status: ServerStatus) {
+        this.serverStatus = status;
+        this.statusChangedCallback(status);
+    }
+    getServerStatus(): ServerStatus {
+        return this.serverStatus;
+    }
+    getServerPath(): vscode.Uri {
+        return this.serverPath;
+    }
+    getServerVersion(): string {
+        return this.serverVersion;
     }
     showLogs() {
         if (this.channel) {
@@ -268,7 +290,7 @@ export class ShaderLanguageClient {
         }
     }
     dispose() {
-        this.client?.dispose();
+        this.client?.dispose(100).catch(_ => {});
         this.channel?.dispose();
     }
     sendNotification<P, RO>(type: ProtocolNotificationType<P, RO>, params?: P): Promise<void> {
@@ -288,16 +310,24 @@ export class ShaderLanguageClient {
             this.channel.appendLine(message);
         }
     }
+    static isSupportedLangId(langId: string) {
+        const supportedLangId = ["hlsl", "glsl", "wgsl"];
+        return supportedLangId.includes(langId);
+    }
+    static getTraceLevel(): Trace {
+        let levelString = vscode.workspace.getConfiguration("shader-validator").get<string>("trace.server")!;
+        return Trace.fromString(levelString);
+    }
 }
 
-export async function createLanguageClient(context: vscode.ExtensionContext, channel: vscode.OutputChannel | null): Promise<LanguageClient | null> {
+export async function createLanguageClient(context: vscode.ExtensionContext, channel: vscode.OutputChannel | null, errorHandler: ShaderErrorHandler): Promise<LanguageClient | null> {
     // Create validator
     // Web does not support child process, use wasi instead.
     let platform = getServerPlatform();
     if (platform === ServerPlatform.wasi) {
-        return createLanguageClientWASI(context, channel);
+        return createLanguageClientWASI(context, channel, errorHandler);
     } else {
-        return createLanguageClientStandard(context, channel, platform);
+        return createLanguageClientStandard(context, channel, errorHandler, platform);
     }
 }
 function getConfigurationAsString(): string {
@@ -308,7 +338,7 @@ function getConfigurationAsString(): string {
     }
     return JSON.stringify(configObject);
 }
-async function createLanguageClientStandard(context: vscode.ExtensionContext, channel: vscode.OutputChannel | null, platform : ServerPlatform) : Promise<LanguageClient | null> {
+async function createLanguageClientStandard(context: vscode.ExtensionContext, channel: vscode.OutputChannel | null, errorHandler: ShaderErrorHandler, platform : ServerPlatform) : Promise<LanguageClient | null> {
     const executable = getPlatformBinaryUri(context.extensionUri, platform);
     const version = getServerVersion(executable.fsPath, platform);
     if (!version) {
@@ -355,7 +385,7 @@ async function createLanguageClientStandard(context: vscode.ExtensionContext, ch
         outputChannel: channel ? channel : undefined,
         traceOutputChannel: channel ? channel : undefined,
         middleware: getMiddleware(),
-        errorHandler: new ShaderErrorHandler()
+        errorHandler: errorHandler
     };
 
     let client = new LanguageClient(
@@ -366,12 +396,20 @@ async function createLanguageClientStandard(context: vscode.ExtensionContext, ch
         context.extensionMode === vscode.ExtensionMode.Development 
     );
 
-    // Start the client. This will also launch the server
-    await client.start();
-
-    return client;
+    // Start the client. This will also launch the server.
+    return await client.start().then(_ => {
+        if (client.isRunning()) {
+            return client;
+        } else {
+            return null;
+        }
+    }, async e => {
+        await client.dispose().catch(_ => {});
+        console.error("Failed to start server: " + e);
+        return null;
+    });
 }
-async function createLanguageClientWASI(context: vscode.ExtensionContext, channel: vscode.OutputChannel | null) : Promise<LanguageClient | null> {
+async function createLanguageClientWASI(context: vscode.ExtensionContext, channel: vscode.OutputChannel | null, errorHandler: ShaderErrorHandler) : Promise<LanguageClient | null> {
     // Load the WASM API
     const wasm: Wasm = await Wasm.load();
 
@@ -437,12 +475,12 @@ async function createLanguageClientWASI(context: vscode.ExtensionContext, channe
         wasmProcess.stderr!.onData(data => {
             const text = decoder.decode(data);
             console.log("Received error:", text);
-            channel!.appendLine("[shader-language-server::error]" + text);
+            channel?.appendLine("[shader-language-server::error]" + text.trim());
         });
         wasmProcess.stdout!.onData(data => {
             const text = decoder.decode(data);
             console.log("Received data:", text);
-            channel!.appendLine("[shader-language-server::data]" + text);
+            channel?.appendLine("[shader-language-server::data]" + text.trim());
         });
         return startServer(wasmProcess);
     };
@@ -458,7 +496,7 @@ async function createLanguageClientWASI(context: vscode.ExtensionContext, channe
         traceOutputChannel: channel ? channel : undefined,
         uriConverters: createUriConverters(),
         middleware: getMiddleware(),
-        errorHandler: new ShaderErrorHandler()
+        errorHandler: errorHandler
     };
 
 
@@ -471,11 +509,15 @@ async function createLanguageClientWASI(context: vscode.ExtensionContext, channe
     );
     
     // Start the client. This will also launch the server
-    try {
-        await client.start();
-    } catch (error) {
-        client.error(`Start failed`, error, 'force');
-    }
-
-    return client;
+    return await client.start().then(_ => {
+        if (client.isRunning()) {
+            return client;
+        } else {
+            return null;
+        }
+    }, async e => {
+        await client.dispose().catch(_ => {});
+        console.error("Failed to start server: " + e);
+        return null;
+    });
 }
