@@ -123,7 +123,7 @@
           "shader-validator.updateSymbolsOnVariantUpdate": {
             "description": "Automatically update the symbols on variant update. Will trigger a save on the file.",
             "type": "boolean",
-            "default": false
+            "default": true
           },
           "shader-validator.severity": {
             "type": "string",

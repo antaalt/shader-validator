@@ -123,6 +123,7 @@ This extension contributes the following settings:
 *   `shader-validator.pathRemapping`: All virtual paths.
 *   `shader-validator.defines`: All custom macros and their values for linting.
 *   `shader-validator.serverPath`: Use a custom server instead of the bundled one.
+*   `shader-validator.updateSymbolsOnVariantUpdate`: Update symbol outline when changing variant. Will trigger a save event.
 
 ### HLSL specific settings: 
 
