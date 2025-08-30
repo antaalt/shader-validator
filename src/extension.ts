@@ -62,6 +62,7 @@ export async function activate(context: vscode.ExtensionContext)
     context.subscriptions.push(vscode.commands.registerCommand("shader-validator.startServer", async () => {
         await server.start(context);
         statusBar.updateStatusBar();
+        sidebar.onServerStart();
     }));
     context.subscriptions.push(vscode.commands.registerCommand("shader-validator.stopServer", async () => {
         await server.stop();
@@ -70,10 +71,11 @@ export async function activate(context: vscode.ExtensionContext)
     context.subscriptions.push(vscode.commands.registerCommand("shader-validator.restartServer", async () => {
         await server.restart(context);
         statusBar.updateStatusBar();
+        sidebar.onServerStart();
     }));
     context.subscriptions.push(vscode.commands.registerCommand("shader-validator.showLogs", () => {
         const level = ShaderLanguageClient.getTraceLevel();
-        if (level == Trace.Off) {
+        if (level === Trace.Off) {
             vscode.window.showWarningMessage("Server trace is set to off. Set setting shader-validator.trace.server to messages or verbose to view logs.");
         } else {
             server.showLogs();
@@ -82,19 +84,23 @@ export async function activate(context: vscode.ExtensionContext)
     context.subscriptions.push(vscode.commands.registerCommand("shader-validator.dumpAst", () => {
         let activeTextEditor = vscode.window.activeTextEditor;
         if (activeTextEditor && activeTextEditor.document.uri.scheme === 'file' && ShaderLanguageClient.isSupportedLangId(activeTextEditor.document.languageId)) {
-            server.sendRequest(dumpAstRequest, {
-                uri: server.uriAsString(activeTextEditor.document.uri)
-            }).then((value: string | null) => {
-                console.info(value);
-                if (value) {
-                    server.log(value);
-                    server.showLogs();
-                } else {
-                    server.log("No AST to dump");
-                }
-            }, (reason: any) => {
-                server.log("Failed to get ast: " + reason);
-            });
+            if (server.getServerStatus() === ServerStatus.running) {
+                server.sendRequest(dumpAstRequest, {
+                    uri: server.uriAsString(activeTextEditor.document.uri)
+                }).then((value: string | null) => {
+                    console.info(value);
+                    if (value) {
+                        server.log(value);
+                        server.showLogs();
+                    } else {
+                        server.log("No AST to dump");
+                    }
+                }, (reason: any) => {
+                    server.log("Failed to get ast: " + reason);
+                });
+            } else {
+                vscode.window.showWarningMessage("Server is not running");
+            }
         } else {
             server.log("No active file for dumping ast");
         }
@@ -102,19 +108,23 @@ export async function activate(context: vscode.ExtensionContext)
     context.subscriptions.push(vscode.commands.registerCommand("shader-validator.dumpDependency", () => {
         let activeTextEditor = vscode.window.activeTextEditor;
         if (activeTextEditor && activeTextEditor.document.uri.scheme === 'file' && ShaderLanguageClient.isSupportedLangId(activeTextEditor.document.languageId)) {
-            server.sendRequest(dumpDependencyRequest, {
-                uri: server.uriAsString(activeTextEditor.document.uri)
-            }).then((value: string | null) => {
-                console.info(value);
-                if (value) {
-                    server.log(value);
-                    server.showLogs();
-                } else {
-                    server.log("No deps tree to dump");
-                }
-            }, (reason: any) => {
-                server.log("Failed to get deps tree: " + reason);
-            });
+            if (server.getServerStatus() === ServerStatus.running) {
+                server.sendRequest(dumpDependencyRequest, {
+                    uri: server.uriAsString(activeTextEditor.document.uri)
+                }).then((value: string | null) => {
+                    console.info(value);
+                    if (value) {
+                        server.log(value);
+                        server.showLogs();
+                    } else {
+                        server.log("No deps tree to dump");
+                    }
+                }, (reason: any) => {
+                    server.log("Failed to get deps tree: " + reason);
+                });
+            } else {
+                vscode.window.showWarningMessage("Server is not running");
+            }
         } else {
             server.log("No active file for dumping deps tree");
         }

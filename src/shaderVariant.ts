@@ -299,10 +299,13 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
                 this.asyncGoToShaderEntryPoint;
             }
         }));
+        this.onServerStart();
+    }
+    onServerStart() {
         this.updateDependencies();
     }
     dispose() {
-        
+        // Nothing to do here.
     }
     private getActiveVariant() : ShaderVariant | null {
         for (const file of this.files.values()) {
@@ -481,6 +484,7 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
         }
     }
     private updateDependency(file: ShaderVariantFile) {
+        // When editing variant, might need to send it if holding an active one.
         if (this.hasActiveVariant(file))  {
             this.notifyVariantChanged();
         }
