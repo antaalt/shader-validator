@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [unreleased]
 
+
+## [1.1.0] - 2025-08-31
+
+### Changed
+
+- When server crash, it now notifies the status bar and can be restarted from here.
+- Using [shader-language-server v1.1.0](https://github.com/antaalt/shader-sense/releases/tag/v1.1.0) with improvements for variant, performances and bug fixes.
+
+### Added
+
+- New bottom status sidebar in UI to check and control server status
+- New commands for starting / restarting / stopping server and accessing logs.
+- New setting to disable variant symbol update on change as it trigger a save and may be invasive.
+
+### Fixed
+
+- Fixed server manual restart to correctly dispose output channel and server.
+- Fixed enum highlighting which was incorrect in HLSL.
+
 ## [1.0.0] - 2025-08-25
 
 ### Changed
@@ -284,7 +303,8 @@ Initial release of this extension using [shader-language-server v0.0.1](https://
 
 
 <!-- Below are link for above changelog titles-->
-[unreleased]: https://github.com/antaalt/shader-validator/compare/v1.0.0...HEAD
+[unreleased]: https://github.com/antaalt/shader-validator/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/antaalt/shader-validator/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/antaalt/shader-validator/compare/v0.7.0...v1.0.0
 [0.7.0]: https://github.com/antaalt/shader-validator/compare/v0.6.5...v0.7.0
 [0.6.5]: https://github.com/antaalt/shader-validator/compare/v0.6.4...v0.6.5
