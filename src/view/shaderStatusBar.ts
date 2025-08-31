@@ -5,9 +5,11 @@ import { ServerStatus, ShaderLanguageClient } from "../client";
 export class ShaderStatusBar {
     private statusBar: vscode.StatusBarItem;
     private server: ShaderLanguageClient;
+    private isDevel: boolean = false;
 
     constructor(context: vscode.ExtensionContext, server: ShaderLanguageClient) {
         this.server = server;
+        this.isDevel = context.extensionMode === vscode.ExtensionMode.Development;
         this.statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left);
         this.statusBar.text = `shader-validator`;
         this.updateStatusBar();
@@ -36,8 +38,13 @@ export class ShaderStatusBar {
             case ServerStatus.running:
                 this.statusBar.color = undefined;
                 this.statusBar.backgroundColor = undefined;
-                this.statusBar.text = "shader-validator";
-                this.statusBar.command = undefined;
+                if (this.isDevel) {
+                    this.statusBar.text = "$(stop-circle) shader-validator";
+                    this.statusBar.command = "shader-validator.stopServer";
+                } else {
+                    this.statusBar.text = "shader-validator";
+                    this.statusBar.command = undefined;
+                }
                 statusString = `Server running.`;
                 statusCommand = `[$(debug-stop) Stop Server](command:shader-validator.stopServer "Stop the server")\n\n` +
                     `[$(debug-restart) Restart Server](command:shader-validator.restartServer "Restart the server")`;
