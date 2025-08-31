@@ -218,7 +218,7 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
                             kind: 'variant',
                             uri: uri,
                             name: entryPoint,
-                            isActive: false,
+                            isActive: true,
                             stage: {
                                 kind: 'stage',
                                 stage: stage
