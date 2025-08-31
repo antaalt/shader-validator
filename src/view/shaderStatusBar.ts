@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { ServerStatus, ShaderLanguageClient } from "../validator";
+import { ServerStatus, ShaderLanguageClient } from "../client";
 
 
 export class ShaderStatusBar {

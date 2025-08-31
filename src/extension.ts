@@ -2,9 +2,9 @@
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
 
-import { createLanguageClient, getServerPlatform, ServerPlatform, ServerStatus, ShaderLanguageClient } from './validator';
+import { createLanguageClient, getServerPlatform, ServerPlatform, ServerStatus, ShaderLanguageClient } from './client';
 import { dumpAstRequest, dumpDependencyRequest } from './request';
-import { ShaderVariantTreeDataProvider } from './shaderVariant';
+import { ShaderVariantTreeDataProvider } from './view/shaderVariantTreeView';
 import { DidChangeConfigurationNotification, LanguageClient, Trace } from 'vscode-languageclient';
 import { ShaderStatusBar } from './view/shaderStatusBar';
 

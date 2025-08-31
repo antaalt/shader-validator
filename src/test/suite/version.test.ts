@@ -6,7 +6,7 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as cp from 'child_process';
 import { getRootFolder } from './utils';
-import { getPlatformBinaryUri, getServerPlatform } from '../../validator';
+import { getPlatformBinaryUri, getServerPlatform } from '../../client';
 
 suite('Server version Test Suite', () => {
     test('Check server version', () => {
