@@ -15,7 +15,7 @@ export class ShaderStatusBar {
         this.updateStatusBar();
         this.server.onStatusChanged(_ => {
             this.updateStatusBar();
-        })
+        });
         this.statusBar.show();
 
         context.subscriptions.push(this.statusBar);

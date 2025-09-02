@@ -234,7 +234,7 @@ export class ShaderLanguageClient {
         let platform = getServerPlatform();
         this.statusChangedCallback = (status) => {};
         this.serverPath = getPlatformBinaryUri(context.extensionUri, platform);
-        this.serverVersion = getServerVersion(this.serverPath.fsPath, platform) || "shader-language-version";
+        this.serverVersion = getServerVersion(this.serverPath.fsPath, platform) || "shader-language-server";
         this.errorHandler = new ShaderErrorHandler(this);
     }
 
@@ -258,6 +258,9 @@ export class ShaderLanguageClient {
                 this.channel = null;
                 break;
         }
+        let platform = getServerPlatform();
+        this.serverPath = getPlatformBinaryUri(context.extensionUri, platform);
+        this.serverVersion = getServerVersion(this.serverPath.fsPath, platform) || "shader-language-server";
         this.client = await createLanguageClient(context, this.channel, this.errorHandler);
         this.serverStatus = this.client !== null ? ServerStatus.running : ServerStatus.error;
         return this.serverStatus;
