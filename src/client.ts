@@ -353,7 +353,11 @@ async function createLanguageClientStandard(context: vscode.ExtensionContext, ch
     }
     // Current working directory need to be set to executable for finding DLL.
     // But it would be better to have it pointing to workspace.
-    const cwd = getPlatformBinaryDirectoryPath(context.extensionUri, platform);
+    let cwd = getPlatformBinaryDirectoryPath(context.extensionUri, platform);
+    // Set cwd to first workspace if available.
+    if (vscode.workspace.workspaceFolders) {
+        cwd = vscode.workspace.workspaceFolders[0].uri;
+    }
     console.info(`Executing server ${executable} with working directory ${cwd}`);
     const trace = vscode.workspace.getConfiguration("shader-validator").get<string>("trace.server");
     const defaultEnv = {};
