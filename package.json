@@ -163,6 +163,11 @@
             "description": "Use an external server instead of the bundled ones.",
             "type": "string",
             "default": ""
+          },
+          "shader-validator.configOverride": {
+            "description": "Override configuration with a path to a specific configuration file.",
+            "type": "string",
+            "default": ""
           }
         }
       },
