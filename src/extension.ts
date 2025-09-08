@@ -2,7 +2,7 @@
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
 
-import { createLanguageClient, getServerPlatform, ServerPlatform, ServerStatus, ShaderLanguageClient } from './client';
+import { ServerPlatform, ServerStatus, ShaderLanguageClient, ServerVersion } from './client';
 import { dumpAstRequest, dumpDependencyRequest } from './request';
 import { ShaderVariantTreeDataProvider } from './view/shaderVariantTreeView';
 import { DidChangeConfigurationNotification, LanguageClient, Trace } from 'vscode-languageclient';
@@ -15,29 +15,32 @@ export let sidebar: ShaderVariantTreeDataProvider;
 export async function activate(context: vscode.ExtensionContext)
 {
     // Install dependencies if running on wasi
-    const msWasmWasiCoreName = 'ms-vscode.wasm-wasi-core';
-    const msWasmWasiCore = vscode.extensions.getExtension(msWasmWasiCoreName);
-    if (msWasmWasiCore === undefined && getServerPlatform() === ServerPlatform.wasi) 
+    if (ServerVersion.getServerPlatform() === ServerPlatform.wasi) 
     {
-        const message = 'It is required to install Microsoft WASM WASI core extension for running the shader validator server on wasi. Do you want to install it now?';
-        const choice = await vscode.window.showInformationMessage(message, 'Install', 'Not now');
-        if (choice === 'Install') {
-            // Wait for extension to be correctly installed.
-            await vscode.window.withProgress({ location: vscode.ProgressLocation.Notification },
-                (progress) => {
-                    progress.report({ message: "Installing Microsoft WASM wasi core extension" });
-                    return new Promise<void>((resolve, reject) => {
-                        vscode.extensions.onDidChange((e) => {
-                            console.assert(vscode.extensions.getExtension(msWasmWasiCoreName) !== undefined, "Failed to load WASM wasi core.");
-                            resolve();
+        const msWasmWasiCoreName = 'ms-vscode.wasm-wasi-core';
+        const msWasmWasiCore = vscode.extensions.getExtension(msWasmWasiCoreName);
+        if (msWasmWasiCore === undefined)
+        {
+            const message = 'It is required to install Microsoft WASM WASI core extension for running the shader validator server on wasi. Do you want to install it now?';
+            const choice = await vscode.window.showInformationMessage(message, 'Install', 'Not now');
+            if (choice === 'Install') {
+                // Wait for extension to be correctly installed.
+                await vscode.window.withProgress({ location: vscode.ProgressLocation.Notification },
+                    (progress) => {
+                        progress.report({ message: "Installing Microsoft WASM wasi core extension" });
+                        return new Promise<void>((resolve, reject) => {
+                            vscode.extensions.onDidChange((e) => {
+                                console.assert(vscode.extensions.getExtension(msWasmWasiCoreName) !== undefined, "Failed to load WASM wasi core.");
+                                resolve();
+                            });
+                            vscode.commands.executeCommand("workbench.extensions.installExtension", msWasmWasiCoreName);
                         });
-                        vscode.commands.executeCommand("workbench.extensions.installExtension", msWasmWasiCoreName);
-                    });
-                },
-            );
-        } else {
-            vscode.window.showErrorMessage("Extension shader-validator failed to install dependencies. It will not launch the shader language server.");
-            return; // Extension failed to launch.
+                    },
+                );
+            } else {
+                vscode.window.showErrorMessage("Extension shader-validator failed to install dependencies. It will not launch the shader language server.");
+                return; // Extension failed to launch.
+            }
         }
     }
 

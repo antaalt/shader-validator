@@ -6,21 +6,20 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as cp from 'child_process';
 import { getRootFolder } from './utils';
-import { getPlatformBinaryUri, getServerPlatform } from '../../client';
+import { ServerVersion } from '../../client';
 
 suite('Server version Test Suite', () => {
     test('Check server version', () => {
-        let platform = getServerPlatform();
-        let executableUri = getPlatformBinaryUri(vscode.Uri.parse(getRootFolder()), platform);
-        assert.ok(fs.existsSync(executableUri.fsPath), `Failed to find ${executableUri}`);
-        let server = cp.spawn(executableUri.fsPath, [
+        let serverVersion = new ServerVersion(vscode.Uri.parse(getRootFolder()));
+        assert.ok(fs.existsSync(serverVersion.path.fsPath), `Failed to find ${serverVersion.path}`);
+        let server = cp.spawn(serverVersion.path.fsPath, [
             "--version"
         ]);
-        const version : string = vscode.extensions.getExtension('antaalt.shader-validator')!.packageJSON.server_version;
+        const expectedVersion = ServerVersion.getBundledVersion();
         const decoder = new TextDecoder('utf-8');
         server.stdout.on('data', (data) => {
             const text = decoder.decode(data);
-            assert.equal(text.trim(), "shader-language-server v" + version.trim(), `Incompatible version: ${version}`);
+            assert.equal(text.trim(), "shader-language-server v" + expectedVersion.trim(), `Incompatible version: ${expectedVersion}`);
         });
         server.stderr.on('data', (data) => {
             assert.fail(`stderr: ${data}`);
