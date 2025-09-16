@@ -88,7 +88,7 @@
                 {
                     "comment": "attribute declaration",
                     "name": "constant.language.attribute.hlsl",
-                    "match": "\\[(?i:domain|earlydepthstencil|instance|maxtessfactor|numthreads|outputcontrolpoints|outputtopology|partitioning|patchconstantfunc|flatten|branch|loop|unroll|fastopt|allow_uav_condition|forcecase|call|clipplanes|maxvertexcount|noinline|unknown|rootsignature|raypayload)"
+                    "match": "\\[(?i:domain|earlydepthstencil|instance|maxtessfactor|numthreads|outputcontrolpoints|outputtopology|partitioning|patchconstantfunc|flatten|branch|loop|unroll|fastopt|allow_uav_condition|forcecase|call|clipplanes|maxvertexcount|noinline|unknown|rootsignature|raypayload|shader)(\\(.*\\))?\\]"
                 }
             ]
         },
