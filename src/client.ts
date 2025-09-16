@@ -151,8 +151,8 @@ export class ServerVersion {
             // For wasi, we need some runner to test version & we cant do this here. So ignore check.
             return this.getBundledVersion();
         } else {
-            // TODO:OPTIM: This is heavy, use async + reduce calls
-            // Found 3 calls to spawn in constructor and 4 in start ...
+            // Get the server version if using a custom server (if serverPath is not null)
+            // If we are using the bundled server, we never reach this path. Good because its a bit heavy on startup.
             if (fs.existsSync(serverPath)) {
                 const result = cp.execSync(serverPath + " --version");
                 const version = result.toString("utf8").trim();
