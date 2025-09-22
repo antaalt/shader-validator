@@ -4,15 +4,13 @@ body:
   - type: markdown
     attributes:
       value: |
-        If your issue is related to the features of the extension (goto, diagnostics, enhancement), please post your issue to the [language server repository](https://github.com/antaalt/shader-sense/issues) instead. 
+        If your issue is related to the features of the extension (goto, diagnostics, enhancement), please post your issue to the [shader-sense language server repository](https://github.com/antaalt/shader-sense/issues) instead. This repository is for the extension only and is mostly UI related issues. If you are not sure, feel free to post here, issue might be transfered.
 
-        This repository is for the extension only and is mostly UI related issues.
-
-        If you are not sure, feel free to post here, issue might be transfered.
+        Do not hesitate to check the logs of the extension first. You can do so by setting `shader-validator.trace.server` to messages or verbose and check the extension log (accessible via status bar).
   - type: textarea
     id: issue
     attributes:
       label: "Issue:"
-      placeholder: "Type your issue here..."
+      placeholder: "Type your issue here. Please specify OS, version of the extension and how it can be reproduced."
     validations:
       required: true

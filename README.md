@@ -124,6 +124,7 @@ This extension contributes the following settings:
 *   `shader-validator.defines`: All custom macros and their values for linting.
 *   `shader-validator.serverPath`: Use a custom server instead of the bundled one.
 *   `shader-validator.updateSymbolsOnVariantUpdate`: Update symbol outline when changing variant. Will trigger a save event.
+*   `shader-validator.trace.server`: Show debug logs into an output channel. Can be accessed via shader-validator status bar.
 
 ### HLSL specific settings: 
 
@@ -170,9 +171,9 @@ You can use shader variant to declare the entry point and the necessary macro wi
 
 You can use shader variant and specify an entry point to speed up things. By default the extension is using the dxc lib profile which is quite a heavy process with big files with a lot of includes. By setting an entry point along a stage, it will speed up validation, but dxc might still have a hard time. Letting the server know where your code start can help it cache everything to the right place !
 
-### How to check the logs ?
+### I am having an issue, how to handle it ?
 
-If you encounter an issue with the extension, you might want to check the log to see what is happening. You can simply go to the output tab of the terminal and use the scrolling menu to select Shader Language Server. Make sure you have set setting `shader-validator.trace.server` to verbose or messages at least.
+If you encounter an issue with the extension, first you can check the server status by looking at the status bar below. If everything seems fine, you might want to check the log to see what is happening. You can simply click on the link in the status bar or go to the output tab of the terminal and use the scrolling menu to select Shader Language Server. Make sure you have set setting `shader-validator.trace.server` to verbose or messages at least.
 
 ## Credits
 
