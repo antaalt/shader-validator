@@ -156,6 +156,10 @@ This extension is supported on every platform, but some limitations are to be ex
 -   Linux x86_64: full feature set.
 -   Mac & ARM Linux / Windows: Rely on WASI version of server, same as web, see web support for limitations.
 
+## IDE support
+
+This extension is based on a [language-server](https://github.com/antaalt/shader-sense/tree/main/shader-language-server) written in Rust and following the [LSP protocol](https://microsoft.github.io/language-server-protocol/). This client will only work on VSCode. But what is cool about a language server is that not only VSCode support this protocol ! I personnally don't have the time for implementing and supporting all supporting IDE, but feel free to create a client for your favorite IDE using the language server.
+
 ## Web support
 
 This extension run on the web on [vscode.dev](https://vscode.dev/). It is relying on the [WebAssembly Execution engine](https://marketplace.visualstudio.com/items?itemName=ms-vscode.wasm-wasi-core). Because of this restriction, we can't use dxc on the web as it does not compile to WASI and instead rely on glslang, which is more limited in linting (Only support some basic features of SM 6.0, while DXC support all newly added SM (current 6.8)).
