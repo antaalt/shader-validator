@@ -79,7 +79,11 @@ export async function activate(context: vscode.ExtensionContext)
     context.subscriptions.push(vscode.commands.registerCommand("shader-validator.showLogs", () => {
         const level = ShaderLanguageClient.getTraceLevel();
         if (level === Trace.Off) {
-            vscode.window.showWarningMessage("Server trace is set to off. Set setting shader-validator.trace.server to messages or verbose to view logs.");
+            vscode.window.showWarningMessage("Server logs are disabled. Do you want to enable them ? Server will restart.", "Yes", "No").then((value) => {
+                if (value === "Yes") {
+                    vscode.workspace.getConfiguration("shader-validator").update("trace.server", "messages", true);
+                }
+            });
         } else {
             server.showLogs();
         }
