@@ -368,13 +368,23 @@ export class ShaderLanguageClient {
         }
     }
     private getClientOption() {
+        // Pass languages that should be enabled to server.
+        let hlslSupported = vscode.workspace.getConfiguration("shader-validator").get<boolean>("hlsl.enabled")!;
+        let glslSupported = vscode.workspace.getConfiguration("shader-validator").get<boolean>("glsl.enabled")!;
+        let wgslSupported = vscode.workspace.getConfiguration("shader-validator").get<boolean>("wgsl.enabled")!;
+        let documentSelector = [];
+        if (hlslSupported) {
+            documentSelector.push({ scheme: 'file', language: 'hlsl' });
+        }
+        if (glslSupported) {
+            documentSelector.push({ scheme: 'file', language: 'glsl' });
+        }
+        if (wgslSupported) {
+            documentSelector.push({ scheme: 'file', language: 'wgsl' });
+        }
         const clientOptions: LanguageClientOptions = {
             // Register the server for shader documents
-            documentSelector: [
-                { scheme: 'file', language: 'hlsl' },
-                { scheme: 'file', language: 'glsl' },
-                { scheme: 'file', language: 'wgsl' },
-            ],
+            documentSelector: documentSelector,
             outputChannel: this.channel ? this.channel : undefined,
             traceOutputChannel: this.channel ? this.channel : undefined,
             middleware: getMiddleware(),
@@ -384,10 +394,26 @@ export class ShaderLanguageClient {
         return clientOptions;
     }
     private getServerArg(): string[] {
-        return [
+        let hlslSupported = vscode.workspace.getConfiguration("shader-validator").get<boolean>("hlsl.enabled")!;
+        let glslSupported = vscode.workspace.getConfiguration("shader-validator").get<boolean>("glsl.enabled")!;
+        let wgslSupported = vscode.workspace.getConfiguration("shader-validator").get<boolean>("wgsl.enabled")!;
+        let commonArgs = [
             "--config",
             getConfigurationAsString()
         ];
+        if (hlslSupported) {
+            commonArgs.push("--hlsl");
+        }
+        if (glslSupported) {
+            commonArgs.push("--glsl");
+        }
+        if (wgslSupported) {
+            commonArgs.push("--wgsl");
+        }
+        if (!hlslSupported && !glslSupported && !wgslSupported) {
+            vscode.window.showWarningMessage("No language enabled for shader-language-server. Server will still start.");
+        }
+        return commonArgs;
     }
     private getServerEnv() {
         const trace = vscode.workspace.getConfiguration("shader-validator").get<string>("trace.server");

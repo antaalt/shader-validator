@@ -174,6 +174,11 @@
       {
         "title": "Hlsl",
         "properties": {
+          "shader-validator.hlsl.enabled": {
+            "description": "Enable HLSL support for language server.",
+            "type": "boolean",
+            "default": true
+          },
           "shader-validator.hlsl.shaderModel": {
             "type": "string",
             "description": "Shader model targeted for DXC HLSL (DXC only support up to sm 6.0).",
@@ -233,6 +238,11 @@
       {
         "title": "Glsl",
         "properties": {
+          "shader-validator.glsl.enabled": {
+            "description": "Enable GLSL support for language server.",
+            "type": "boolean",
+            "default": true
+          },
           "shader-validator.glsl.targetClient": {
             "type": "string",
             "description": "Shader client for GLSL.",
@@ -274,6 +284,16 @@
               "Spirv 1.5",
               "Spirv 1.6"
             ]
+          }
+        }
+      },
+      {
+        "title": "Wgsl",
+        "properties": {
+          "shader-validator.wgsl.enabled": {
+            "description": "Enable WGSL support for language server.",
+            "type": "boolean",
+            "default": true
           }
         }
       },

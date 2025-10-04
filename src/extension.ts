@@ -139,8 +139,21 @@ export async function activate(context: vscode.ExtensionContext)
     context.subscriptions.push(
         vscode.workspace.onDidChangeConfiguration(async (event : vscode.ConfigurationChangeEvent) => {
             if (event.affectsConfiguration("shader-validator")) {
-                if (event.affectsConfiguration("shader-validator.trace.server") || 
-                    event.affectsConfiguration("shader-validator.serverPath")) {
+                let configurationRequiringAServerRestart = [
+                    "shader-validator.trace.server",
+                    "shader-validator.serverPath",
+                    "shader-validator.hlsl.enabled",
+                    "shader-validator.glsl.enabled",
+                    "shader-validator.wgsl.enabled",
+                ];
+                let requiresRestart = false;
+                for (let configuration of configurationRequiringAServerRestart) {
+                    if (event.affectsConfiguration(configuration)) {
+                        requiresRestart = true;
+                        break;
+                    }
+                }
+                if (requiresRestart) {
                     server.restart(context);
                 } else {
                     await server.sendNotification(DidChangeConfigurationNotification.type, {
