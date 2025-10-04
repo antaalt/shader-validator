@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [unreleased]
 
+## [1.2.0] - 2025-10-04
+
+### Changed
+
+- Server current working directory is now set to the path of the first workspace, which should help finding relative include & such.
+- Hide log in WASI if trace is not enabled.
+- Using [shader-language-server v1.2.0](https://github.com/antaalt/shader-sense/releases/tag/v1.2.0) with improvements on config and documentation.
+
+## Added
+
+- New setting to define macro per shader stage.
+- Ability to disable a specific shader language handling for the server to coexist with some other extension or free up some wasted memory.
+
+### Fixed
+
+- Improved startup time which was impacted by multiple execSync for checking server version.
+- Improved HLSL syntax highlighting for attributes.
+- When trying to display logs, ask to enable them for convenience.
+- Fixed an issue when vscode is trying to install the wasi runner and fail, which does not display error and load to infinity.
+
 
 ## [1.1.0] - 2025-08-31
 
@@ -303,7 +323,8 @@ Initial release of this extension using [shader-language-server v0.0.1](https://
 
 
 <!-- Below are link for above changelog titles-->
-[unreleased]: https://github.com/antaalt/shader-validator/compare/v1.1.0...HEAD
+[unreleased]: https://github.com/antaalt/shader-validator/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/antaalt/shader-validator/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/antaalt/shader-validator/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/antaalt/shader-validator/compare/v0.7.0...v1.0.0
 [0.7.0]: https://github.com/antaalt/shader-validator/compare/v0.6.5...v0.7.0
