@@ -473,6 +473,7 @@ export class ShaderLanguageClient {
         // So we can use VS Code's file system API to load it. Makes it
         // independent of whether the code runs in the desktop or the web.
         const serverOptions: ServerOptions = async () => {
+            const trace = vscode.workspace.getConfiguration("shader-validator").get<string>("trace.server");
             // Create virtual file systems to access workspaces from wasi app
             const mountPoints: MountPointDescriptor[] = [
                 { kind: 'workspaceFolder'}, // Workspaces
@@ -486,7 +487,7 @@ export class ShaderLanguageClient {
                 env: this.getServerEnv(),
                 args: this.getServerArg(),
                 mountPoints: mountPoints,
-                trace: true,
+                trace: trace === "verbose" || trace === "messages",
             };
             // Memory options required by wasm32-wasip1-threads target
             const memory : WebAssembly.MemoryDescriptor = {
@@ -498,18 +499,20 @@ export class ShaderLanguageClient {
             // Create a WASM process.
             const wasmProcess = await wasm.createProcess('shader-validator', module, memory, options);
             
-            // Hook stderr to the output channel
-            const decoder = new TextDecoder('utf-8');
-            wasmProcess.stderr!.onData(data => {
-                const text = decoder.decode(data);
-                console.log("Received error:", text);
-                this.channel?.appendLine("[shader-language-server::error]" + text.trim());
-            });
-            wasmProcess.stdout!.onData(data => {
-                const text = decoder.decode(data);
-                console.log("Received data:", text);
-                this.channel?.appendLine("[shader-language-server::data]" + text.trim());
-            });
+            // Hook stderr to the output channel if trace enabled.
+            if (trace === "verbose" || trace === "messages") {
+                const decoder = new TextDecoder('utf-8');
+                wasmProcess.stderr!.onData(data => {
+                    const text = decoder.decode(data);
+                    console.log("Received error:", text);
+                    this.channel?.appendLine("[shader-language-server::error]" + text.trim());
+                });
+                wasmProcess.stdout!.onData(data => {
+                    const text = decoder.decode(data);
+                    console.log("Received data:", text);
+                    this.channel?.appendLine("[shader-language-server::data]" + text.trim());
+                });
+            }
             return startServer(wasmProcess);
         };
 
