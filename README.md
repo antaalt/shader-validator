@@ -121,13 +121,15 @@ This extension contributes the following settings:
 *   `shader-validator.severity`: Select minimal log severity for linting.
 *   `shader-validator.includes`: All custom includes for linting.
 *   `shader-validator.pathRemapping`: All virtual paths.
-*   `shader-validator.defines`: All custom macros and their values for linting.
+*   `shader-validator.defines`: All custom macros and their values.
+*   `shader-validator.stageDefine.[vertex|fragment|compute...]`: All custom macros and their values for custom shader stages.
 *   `shader-validator.serverPath`: Use a custom server instead of the bundled one.
 *   `shader-validator.updateSymbolsOnVariantUpdate`: Update symbol outline when changing variant. Will trigger a save event.
 *   `shader-validator.trace.server`: Show debug logs into an output channel. Can be accessed via shader-validator status bar.
 
 ### HLSL specific settings: 
 
+*   `shader-validator.hlsl.enabled`: Control if server handle this language.
 *   `shader-validator.hlsl.shaderModel`: Specify the shader model to target for HLSL
 *   `shader-validator.hlsl.version`: Specify the HLSL version
 *   `shader-validator.hlsl.enable16bitTypes`: Enable 16 bit types support with HLSL
@@ -135,9 +137,13 @@ This extension contributes the following settings:
 
 ### GLSL specific settings:
 
+*   `shader-validator.glsl.enabled`: Control if server handle this language.
 *   `shader-validator.glsl.targetClient`: Specify the OpenGL or Vulkan version for GLSL
 *   `shader-validator.glsl.spirvVersion`: Specify the SPIRV version to target for GLSL
 
+### WGSL specific settings:
+
+*   `shader-validator.wgsl.enabled`: Control if server handle this language.
 
 ## Commands
 
