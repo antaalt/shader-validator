@@ -28,15 +28,14 @@ export async function activate(context: vscode.ExtensionContext)
                 await vscode.window.withProgress({ location: vscode.ProgressLocation.Notification },
                     (progress) => {
                         progress.report({ message: "Installing Microsoft WASM wasi core extension" });
-                        return new Promise<void>((resolve, reject) => {
-                            vscode.extensions.onDidChange((e) => {
-                                console.assert(vscode.extensions.getExtension(msWasmWasiCoreName) !== undefined, "Failed to load WASM wasi core.");
-                                resolve();
-                            });
-                            vscode.commands.executeCommand("workbench.extensions.installExtension", msWasmWasiCoreName);
-                        });
+                        return vscode.commands.executeCommand("workbench.extensions.installExtension", msWasmWasiCoreName);
                     },
-                );
+                ).then(success => {
+                    console.assert(vscode.extensions.getExtension(msWasmWasiCoreName) !== undefined, "Failed to load WASM wasi core.");
+                    vscode.window.showInformationMessage("Microsoft WASM wasi core extension installed with success !");
+                }, failure => {
+                    vscode.window.showErrorMessage(`Failed to install Microsoft WASM wasi core: ${failure} You will have to install ms-vscode.wasm-wasi-core yourself through the extensions tab.`);
+                });
             } else {
                 vscode.window.showErrorMessage("Extension shader-validator failed to install dependencies. It will not launch the shader language server.");
                 return; // Extension failed to launch.
