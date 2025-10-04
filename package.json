@@ -152,6 +152,104 @@
               "type": "string"
             }
           },
+          "shader-validator.stageDefine.vertex": {
+            "description": "Preprocessor variables for vertex shader stage.",
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "shader-validator.stageDefine.fragment": {
+            "description": "Preprocessor variables for fragment shader stage.",
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "shader-validator.stageDefine.compute": {
+            "description": "Preprocessor variables for compute shader stage.",
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "shader-validator.stageDefine.geometry": {
+            "description": "Preprocessor variables for geometry shader stage.",
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "shader-validator.stageDefine.tesselationControl": {
+            "description": "Preprocessor variables for tesselation control shader stage.",
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "shader-validator.stageDefine.tesselationEvaluation": {
+            "description": "Preprocessor variables for tesselation evaluation shader stage.",
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "shader-validator.stageDefine.mesh": {
+            "description": "Preprocessor variables for mesh shader stage.",
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "shader-validator.stageDefine.task": {
+            "description": "Preprocessor variables for task shader stage.",
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "shader-validator.stageDefine.rayGeneration": {
+            "description": "Preprocessor variables for ray generation shader stage.",
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "shader-validator.stageDefine.closestHit": {
+            "description": "Preprocessor variables for closest hit shader stage.",
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "shader-validator.stageDefine.anyHit": {
+            "description": "Preprocessor variables for any hit shader stage.",
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "shader-validator.stageDefine.callable": {
+            "description": "Preprocessor variables for callable shader stage.",
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "shader-validator.stageDefine.miss": {
+            "description": "Preprocessor variables for miss shader stage.",
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "shader-validator.stageDefine.intersect": {
+            "description": "Preprocessor variables for intersect shader stage.",
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
           "shader-validator.pathRemapping": {
             "description": "Remap virtual path starting with / to an absolute path.",
             "type": "object",

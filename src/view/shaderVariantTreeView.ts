@@ -12,14 +12,11 @@ interface ShaderVariantSerialized {
 }
 
 function shaderVariantToSerialized(url: DocumentUri, languageId: string, e: ShaderVariant) : ShaderVariantSerialized {
-    function cameltoPascalCase(s: string) : string {
-        return String(s[0]).toUpperCase() + String(s).slice(1);
-    }
     return {
         url: url,
         shadingLanguage: languageId,
         entryPoint: e.name,
-        stage: (e.stage.stage === ShaderStage.auto) ? null : cameltoPascalCase(ShaderStage[e.stage.stage]),
+        stage: (e.stage.stage === ShaderStage.auto) ? null : ShaderStage[e.stage.stage],
         defines: Object.fromEntries(e.defines.defines.map(e => [e.label, e.value])),
         includes: e.includes.includes.map(e => resolveVSCodeVariables(e.include))
     };
