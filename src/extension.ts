@@ -52,7 +52,7 @@ export async function activate(context: vscode.ExtensionContext)
     // Create language client
     const server = new ShaderLanguageClient(context);
     context.subscriptions.push(server);
-    const serverStatus = await server.start(context);
+    const serverStatus = await server.start(context, false);
 
     // Create sidebar
     sidebar = new ShaderVariantTreeDataProvider(context, server);
@@ -67,8 +67,8 @@ export async function activate(context: vscode.ExtensionContext)
         //client.sendRequest()
         vscode.window.showInformationMessage("Cannot validate file manually for now");
     }));
-    context.subscriptions.push(vscode.commands.registerCommand("shader-validator.startServer", async () => {
-        await server.start(context);
+    context.subscriptions.push(vscode.commands.registerCommand("shader-validator.startServer", async (updateServerUsed: boolean) => {
+        await server.start(context, updateServerUsed);
         statusBar.updateStatusBar();
         sidebar.onServerStart();
     }));
@@ -150,6 +150,7 @@ export async function activate(context: vscode.ExtensionContext)
                     "shader-validator.hlsl.enabled",
                     "shader-validator.glsl.enabled",
                     "shader-validator.wgsl.enabled",
+                    "shader-validator.useWasiServer",
                 ];
                 let requiresRestart = false;
                 for (let configuration of configurationRequiringAServerRestart) {

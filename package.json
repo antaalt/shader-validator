@@ -266,6 +266,11 @@
             "description": "Override configuration with a path to a specific configuration file.",
             "type": "string",
             "default": ""
+          },
+          "shader-validator.useWasiServer": {
+            "description": "Use the wasi server instead of the native server. Only working for platform where DXC is available.",
+            "type": "boolean",
+            "default": false
           }
         }
       },

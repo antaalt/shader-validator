@@ -52,10 +52,10 @@ export class ShaderStatusBar {
             case ServerStatus.stopped:
                 this.statusBar.color = new vscode.ThemeColor("statusBarItem.warningForeground");
                 this.statusBar.backgroundColor = new vscode.ThemeColor("statusBarItem.warningBackground");
-                this.statusBar.command = "shader-validator.startServer";
+                this.statusBar.command = "shader-validator.startServer true";
                 this.statusBar.text = "$(play-circle) shader-validator";
                 statusString = `Server stopped.`;
-                statusCommand = `[$(debug-start) Start Server](command:shader-validator.startServer "Start the server")`;
+                statusCommand = `[$(debug-start) Start Server](command:shader-validator.startServer?%22true%22 "Start the server")`;
                 break;
             default:
                 break;

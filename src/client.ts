@@ -108,12 +108,9 @@ export class ServerVersion {
             this.cwd = ServerVersion.getPlatformBinaryDirectoryPath(extensionUri, null, this.platform);
         }
     }
-    update() {
-
-    }
     private static getUserServerPathAndVersion(platform: ServerPlatform) : [string, string] | null {
-        if (isRunningOnWeb()) {
-            return null;
+        if (platform === ServerPlatform.wasi) {
+            return null; // Bundled wasi version
         } else {
             // Check configuration.
             let serverPath = vscode.workspace.getConfiguration("shader-validator").get<string>("serverPath");
@@ -201,10 +198,14 @@ export class ServerVersion {
         return vscode.Uri.joinPath(ServerVersion.getPlatformBinaryDirectoryPath(extensionUri, serverPath, platform), ServerVersion.getPlatformBinaryName(serverPath, platform));
     }
     static getServerPlatform() : ServerPlatform {
-        if (isRunningOnWeb()) {
+        let useWasiServer = vscode.workspace.getConfiguration("shader-validator").get<boolean>("useWasiServer")!;
+        if (isRunningOnWeb() || useWasiServer) {
             return ServerPlatform.wasi;
         } else {
             // Dxc only built for linux x64 & windows x64. Fallback to WASI for every other situations.
+            // TODO: ARM DLL available aswell, need to bundle them, along with correct version of server. 
+            // Should have an extension version per platform.
+            // Could have a setting for user provided DLL path aswell, but useless if server does not match the platform.
             switch (process.platform) {
                 case "win32":
                     return (process.arch === 'x64') ? ServerPlatform.windows : ServerPlatform.wasi;
@@ -280,7 +281,7 @@ export class ShaderLanguageClient {
         this.statusChangedCallback = statusChangedCallback;
     }
 
-    async start(context: vscode.ExtensionContext): Promise<ServerStatus> {
+    async start(context: vscode.ExtensionContext, updateServerUsed: boolean): Promise<ServerStatus> {
         if (this.serverStatus === ServerStatus.running) {
             return ServerStatus.running;
         }
@@ -296,19 +297,24 @@ export class ShaderLanguageClient {
                 this.channel = null;
                 break;
         }
-        this.serverVersion.update();
+        if (updateServerUsed) {
+            this.updateServerVersion(context.extensionUri);
+        }
         this.client = await this.createLanguageClient(context);
         this.serverStatus = this.client !== null ? ServerStatus.running : ServerStatus.error;
         return this.serverStatus;
     }
     async restart(context: vscode.ExtensionContext) {
         await this.stop();
-        await this.start(context);
+        await this.start(context, true);
     }
     async stop() {
         await this.client?.stop(100).catch(_ => {});
         this.dispose();
         this.serverStatus = ServerStatus.stopped;
+    }
+    updateServerVersion(extensionUri: vscode.Uri) {
+        this.serverVersion = new ServerVersion(extensionUri);
     }
     updateStatus(status: ServerStatus) {
         this.serverStatus = status;
