@@ -15,7 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Hide log in WASI if trace is not enabled.
 - Using [shader-language-server v1.2.0](https://github.com/antaalt/shader-sense/releases/tag/v1.2.0) with improvements on config and documentation.
 
-## Added
+### Added
 
 - New setting to define macro per shader stage.
 - Ability to disable a specific shader language handling for the server to coexist with some other extension or free up some wasted memory.
