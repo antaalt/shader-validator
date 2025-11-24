@@ -12,20 +12,14 @@ suite('Server version Test Suite', () => {
     test('Check server version', () => {
         let serverVersion = new ServerVersion(vscode.Uri.parse(getRootFolder()));
         assert.ok(fs.existsSync(serverVersion.path.fsPath), `Failed to find ${serverVersion.path}`);
-        let server = cp.spawn(serverVersion.path.fsPath, [
+        let server = cp.spawnSync(serverVersion.path.fsPath, [
             "--version"
-        ]);
+        ], {
+            encoding: "utf-8"
+        });
         const expectedVersion = ServerVersion.getBundledVersion();
-        const decoder = new TextDecoder('utf-8');
-        server.stdout.on('data', (data) => {
-            const text = decoder.decode(data);
-            assert.equal(text.trim(), expectedVersion.trim(), `Incompatible version, got ${text}, expected: ${expectedVersion}`);
-        });
-        server.stderr.on('data', (data) => {
-            assert.fail(`stderr: ${data}`);
-        });
-        server.on('error', (data) => {
-            assert.fail(`Error: ${data}`);
-        });
+        assert.equal(server.stdout.trim(), expectedVersion.trim(), `Incompatible version, got ${server.stdout}, expected: ${expectedVersion}`);
+        assert.ok(server.stderr.length === 0);
+        assert.ok(server.status === 0);
     });
 });
