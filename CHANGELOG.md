@@ -7,7 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [unreleased]
 
-## [1.2.1] - 2025-11-30
+## [1.2.2] - 2025-11-24
+
+### Changed
+
+- Using [shader-language-server v1.2.2](https://github.com/antaalt/shader-sense/releases/tag/v1.2.2) with some minor bug fixes.
+
+## [1.2.1] - 2025-11-23
 
 ### Added
 
@@ -333,7 +339,8 @@ Initial release of this extension using [shader-language-server v0.0.1](https://
 
 
 <!-- Below are link for above changelog titles-->
-[unreleased]: https://github.com/antaalt/shader-validator/compare/v1.2.1...HEAD
+[unreleased]: https://github.com/antaalt/shader-validator/compare/v1.2.2...HEAD
+[1.2.2]: https://github.com/antaalt/shader-validator/compare/v1.2.1...v1.2.2
 [1.2.1]: https://github.com/antaalt/shader-validator/compare/v1.2.0...v1.2.1
 [1.2.0]: https://github.com/antaalt/shader-validator/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/antaalt/shader-validator/compare/v1.0.0...v1.1.0
