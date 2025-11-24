@@ -19,7 +19,7 @@ suite('Server version Test Suite', () => {
         const decoder = new TextDecoder('utf-8');
         server.stdout.on('data', (data) => {
             const text = decoder.decode(data);
-            assert.equal(text.trim(), "shader-language-server v" + expectedVersion.trim(), `Incompatible version: ${expectedVersion}`);
+            assert.equal(text.trim(), expectedVersion.trim(), `Incompatible version, got ${text}, expected: ${expectedVersion}`);
         });
         server.stderr.on('data', (data) => {
             assert.fail(`stderr: ${data}`);
