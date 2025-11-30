@@ -147,6 +147,7 @@ export async function activate(context: vscode.ExtensionContext)
                 let configurationRequiringAServerRestart = [
                     "shader-validator.trace.server",
                     "shader-validator.serverPath",
+                    "shader-validator.slang.enabled",
                     "shader-validator.hlsl.enabled",
                     "shader-validator.glsl.enabled",
                     "shader-validator.wgsl.enabled",

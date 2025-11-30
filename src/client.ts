@@ -356,16 +356,18 @@ export class ShaderLanguageClient {
         }
     }
     static getSupportedLangId() {
-        return ["hlsl", "glsl", "wgsl"];
+        return ["hlsl", "glsl", "wgsl", "slang"];
     }
     static isEnabledLangId(langId: string) {
         let hlslSupported = vscode.workspace.getConfiguration("shader-validator").get<boolean>("hlsl.enabled")!;
+        let slangSupported = vscode.workspace.getConfiguration("shader-validator").get<boolean>("slang.enabled")!;
         let glslSupported = vscode.workspace.getConfiguration("shader-validator").get<boolean>("glsl.enabled")!;
         let wgslSupported = vscode.workspace.getConfiguration("shader-validator").get<boolean>("wgsl.enabled")!;
         switch(langId) {
             case "hlsl": return hlslSupported;
             case "glsl": return glslSupported;
             case "wgsl": return wgslSupported;
+            case "slang": return slangSupported;
             default: return false;
         }
     }

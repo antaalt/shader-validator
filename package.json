@@ -82,6 +82,17 @@
           "dark": "./res/icons/wgsl-icon.svg"
         },
         "configuration": "./language-configuration.json"
+      },
+      {
+        "id": "slang",
+        "extensions": [
+          ".slang"
+        ],
+        "icon": {
+          "light": "./res/icons/slang-icon.svg",
+          "dark": "./res/icons/slang-icon.svg"
+        },
+        "configuration": "./language-configuration.json"
       }
     ],
     "grammars": [
@@ -99,6 +110,11 @@
         "language": "wgsl",
         "scopeName": "source.wgsl",
         "path": "./syntaxes/wgsl.tmLanguage.json"
+      },
+      {
+        "language": "slang",
+        "scopeName": "source.slang",
+        "path": "./syntaxes/slang.tmLanguage.json"
       }
     ],
     "configuration": [
@@ -395,6 +411,16 @@
         "properties": {
           "shader-validator.wgsl.enabled": {
             "description": "Enable WGSL support for language server.",
+            "type": "boolean",
+            "default": true
+          }
+        }
+      },
+      {
+        "title": "Slang",
+        "properties": {
+          "shader-validator.slang.enabled": {
+            "description": "Enable Slang support for language server.",
             "type": "boolean",
             "default": true
           }
