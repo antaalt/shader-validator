@@ -355,9 +355,19 @@ export class ShaderLanguageClient {
             this.channel.appendLine(message);
         }
     }
-    static isSupportedLangId(langId: string) {
-        const supportedLangId = ["hlsl", "glsl", "wgsl"];
-        return supportedLangId.includes(langId);
+    static getSupportedLangId() {
+        return ["hlsl", "glsl", "wgsl"];
+    }
+    static isEnabledLangId(langId: string) {
+        let hlslSupported = vscode.workspace.getConfiguration("shader-validator").get<boolean>("hlsl.enabled")!;
+        let glslSupported = vscode.workspace.getConfiguration("shader-validator").get<boolean>("glsl.enabled")!;
+        let wgslSupported = vscode.workspace.getConfiguration("shader-validator").get<boolean>("wgsl.enabled")!;
+        switch(langId) {
+            case "hlsl": return hlslSupported;
+            case "glsl": return glslSupported;
+            case "wgsl": return wgslSupported;
+            default: return false;
+        }
     }
     static getTraceLevel(): Trace {
         let levelString = vscode.workspace.getConfiguration("shader-validator").get<string>("trace.server")!;
@@ -375,18 +385,11 @@ export class ShaderLanguageClient {
     }
     private getClientOption() {
         // Pass languages that should be enabled to server.
-        let hlslSupported = vscode.workspace.getConfiguration("shader-validator").get<boolean>("hlsl.enabled")!;
-        let glslSupported = vscode.workspace.getConfiguration("shader-validator").get<boolean>("glsl.enabled")!;
-        let wgslSupported = vscode.workspace.getConfiguration("shader-validator").get<boolean>("wgsl.enabled")!;
         let documentSelector = [];
-        if (hlslSupported) {
-            documentSelector.push({ scheme: 'file', language: 'hlsl' });
-        }
-        if (glslSupported) {
-            documentSelector.push({ scheme: 'file', language: 'glsl' });
-        }
-        if (wgslSupported) {
-            documentSelector.push({ scheme: 'file', language: 'wgsl' });
+        for (var langId of ShaderLanguageClient.getSupportedLangId()) {
+            if (ShaderLanguageClient.isEnabledLangId(langId)) {
+                documentSelector.push({ scheme: 'file', language: langId });
+            }
         }
         const clientOptions: LanguageClientOptions = {
             // Register the server for shader documents
@@ -400,23 +403,20 @@ export class ShaderLanguageClient {
         return clientOptions;
     }
     private getServerArg(): string[] {
-        let hlslSupported = vscode.workspace.getConfiguration("shader-validator").get<boolean>("hlsl.enabled")!;
-        let glslSupported = vscode.workspace.getConfiguration("shader-validator").get<boolean>("glsl.enabled")!;
-        let wgslSupported = vscode.workspace.getConfiguration("shader-validator").get<boolean>("wgsl.enabled")!;
         let commonArgs = [
             "--config",
             getConfigurationAsString()
         ];
-        if (hlslSupported) {
-            commonArgs.push("--hlsl");
+        // Add languages support for server.
+        const supportedLangIds = ShaderLanguageClient.getSupportedLangId();
+        let hasAtLeastOneLangEnabled = false;
+        for (let supportedLangId of supportedLangIds) {
+            if (ShaderLanguageClient.isEnabledLangId(supportedLangId)) {
+                hasAtLeastOneLangEnabled = true;
+                commonArgs.push("--" + supportedLangId);
+            }
         }
-        if (glslSupported) {
-            commonArgs.push("--glsl");
-        }
-        if (wgslSupported) {
-            commonArgs.push("--wgsl");
-        }
-        if (!hlslSupported && !glslSupported && !wgslSupported) {
+        if (!hasAtLeastOneLangEnabled) {
             vscode.window.showWarningMessage("No language enabled for shader-language-server. Server will still start.");
         }
         return commonArgs;
@@ -486,7 +486,8 @@ export class ShaderLanguageClient {
             ];
             console.info(`Executing wasi server ${this.serverVersion.path}`);
             const bits = await vscode.workspace.fs.readFile(this.serverVersion.path);
-            const module = await WebAssembly.compile(bits);
+            const bytes: ArrayBuffer = new Uint8Array(bits).buffer;
+            const module = await WebAssembly.compile(bytes);
 
             const options : ProcessOptions = {
                 stdio: createStdioOptions(),

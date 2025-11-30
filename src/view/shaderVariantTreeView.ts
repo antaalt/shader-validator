@@ -199,13 +199,13 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
             borderStyle: 'solid',
         });
         context.subscriptions.push(vscode.commands.registerCommand("shader-validator.addCurrentFile", (): void => {
-            if (vscode.window.activeTextEditor && ShaderLanguageClient.isSupportedLangId(vscode.window.activeTextEditor.document.languageId)) {
+            if (vscode.window.activeTextEditor && ShaderLanguageClient.isEnabledLangId(vscode.window.activeTextEditor.document.languageId)) {
                 this.open(vscode.window.activeTextEditor.document.uri);
             }
             this.save();
         }));
         context.subscriptions.push(vscode.commands.registerCommand("shader-validator.addCurrentFileVariant", async () => {
-            if (vscode.window.activeTextEditor && ShaderLanguageClient.isSupportedLangId(vscode.window.activeTextEditor.document.languageId)) {
+            if (vscode.window.activeTextEditor && ShaderLanguageClient.isEnabledLangId(vscode.window.activeTextEditor.document.languageId)) {
                 let entryPoint = await this.promptEntryPoint();
                 if (entryPoint) {
                     let stage = await this.promptShaderStage();

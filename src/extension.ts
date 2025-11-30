@@ -95,7 +95,7 @@ export async function activate(context: vscode.ExtensionContext)
     }));
     context.subscriptions.push(vscode.commands.registerCommand("shader-validator.dumpAst", () => {
         let activeTextEditor = vscode.window.activeTextEditor;
-        if (activeTextEditor && activeTextEditor.document.uri.scheme === 'file' && ShaderLanguageClient.isSupportedLangId(activeTextEditor.document.languageId)) {
+        if (activeTextEditor && activeTextEditor.document.uri.scheme === 'file' && ShaderLanguageClient.isEnabledLangId(activeTextEditor.document.languageId)) {
             if (server.getServerStatus() === ServerStatus.running) {
                 server.sendRequest(dumpAstRequest, {
                     uri: server.uriAsString(activeTextEditor.document.uri)
@@ -119,7 +119,7 @@ export async function activate(context: vscode.ExtensionContext)
     }));
     context.subscriptions.push(vscode.commands.registerCommand("shader-validator.dumpDependency", () => {
         let activeTextEditor = vscode.window.activeTextEditor;
-        if (activeTextEditor && activeTextEditor.document.uri.scheme === 'file' && ShaderLanguageClient.isSupportedLangId(activeTextEditor.document.languageId)) {
+        if (activeTextEditor && activeTextEditor.document.uri.scheme === 'file' && ShaderLanguageClient.isEnabledLangId(activeTextEditor.document.languageId)) {
             if (server.getServerStatus() === ServerStatus.running) {
                 server.sendRequest(dumpDependencyRequest, {
                     uri: server.uriAsString(activeTextEditor.document.uri)
