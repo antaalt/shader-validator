@@ -119,7 +119,7 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
     private files: Map<string, ShaderVariantFile>;
     private tree: vscode.TreeView<ShaderVariantNode>;
     private server: ShaderLanguageClient;
-    private decorator: vscode.TextEditorDecorationType;
+    private decorator: Map<string, vscode.TextEditorDecorationType>;
     private workspaceState: vscode.Memento;
     private shaderEntryPointList: Map<string, ShaderEntryPoint[]>;
     private asyncGoToShaderEntryPoint: Map<vscode.Uri, string>;
@@ -186,18 +186,22 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
             this.save();
             this.updateDecorations();
         });
-        this.decorator = vscode.window.createTextEditorDecorationType({
-            // Icon
-            gutterIconPath: context.asAbsolutePath('./res/icons/hlsl-icon.svg'),
-            gutterIconSize: "contain",
-            // Minimap
-            overviewRulerColor: "rgb(0, 174, 255)",  
-            overviewRulerLane: vscode.OverviewRulerLane.Full,  
-            rangeBehavior: vscode.DecorationRangeBehavior.OpenOpen,
-            // Border
-            borderWidth: '1px',
-            borderStyle: 'solid',
-        });
+        this.decorator = new Map;
+        const supportedLangIds = ShaderLanguageClient.getSupportedLangId();
+        for (var supportedLangId of supportedLangIds) {
+            this.decorator.set(supportedLangId, vscode.window.createTextEditorDecorationType({
+                // Icon
+                gutterIconPath: context.asAbsolutePath(`./res/icons/${supportedLangId}-icon.svg`),
+                gutterIconSize: "contain",
+                // Minimap
+                overviewRulerColor: "rgb(0, 174, 255)",
+                overviewRulerLane: vscode.OverviewRulerLane.Full,
+                rangeBehavior: vscode.DecorationRangeBehavior.OpenOpen,
+                // Border
+                borderWidth: '1px',
+                borderStyle: 'solid',
+            }));
+        }
         context.subscriptions.push(vscode.commands.registerCommand("shader-validator.addCurrentFile", (): void => {
             if (vscode.window.activeTextEditor && ShaderLanguageClient.isEnabledLangId(vscode.window.activeTextEditor.document.languageId)) {
                 this.open(vscode.window.activeTextEditor.document.uri);
@@ -856,6 +860,18 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
             }
         }
     }
+    private getDecorator(langId: string) : vscode.TextEditorDecorationType {
+        // Use decorator or a default one.
+        return this.decorator.get(langId) || vscode.window.createTextEditorDecorationType({
+            // Minimap
+            overviewRulerColor: "rgb(0, 174, 255)",
+            overviewRulerLane: vscode.OverviewRulerLane.Full,
+            rangeBehavior: vscode.DecorationRangeBehavior.OpenOpen,
+            // Border
+            borderWidth: '1px',
+            borderStyle: 'solid',
+        });
+    }
     private updateDecoration(editor: vscode.TextEditor) {
         let file = this.files.get(editor.document.uri.path);
         let entryPoints = this.shaderEntryPointList.get(editor.document.uri.path);
@@ -868,21 +884,21 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
                     if (entryPoint.entryPoint === variant.name) {
                         let decorations : vscode.DecorationOptions[]= [];
                         decorations.push({ range: entryPoint.range, hoverMessage: variant.name });
-                        editor.setDecorations(this.decorator, decorations);
+                        editor.setDecorations(this.getDecorator(editor.document.languageId), decorations);
                         found = true;
                         break;
                     }
                 }
                 if (!found) {
                     console.info("Entry point not found in ", entryPoints);
-                    editor.setDecorations(this.decorator, []);
+                    editor.setDecorations(this.getDecorator(editor.document.languageId), []);
                 }
             } else {
                 console.info("No active variant ", entryPoints);
-                editor.setDecorations(this.decorator, []);
+                editor.setDecorations(this.getDecorator(editor.document.languageId), []);
             }
         } else {
-            editor.setDecorations(this.decorator, []);
+            editor.setDecorations(this.getDecorator(editor.document.languageId), []);
         }
     }
     private updateDecorations(uri?: vscode.Uri) {
