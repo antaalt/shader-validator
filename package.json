@@ -365,6 +365,11 @@
               "OpenGL"
             ]
           },
+          "shader-validator.glsl.preamble": {
+            "type": "string",
+            "description": "Specify a path to a file containing a preamble for all GLSL files.",
+            "default": ""
+          },
           "shader-validator.glsl.spirvVersion": {
             "type": "string",
             "description": "SPIRV version targeted for GLSL.",
