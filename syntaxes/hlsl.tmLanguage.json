@@ -309,8 +309,20 @@
                 {
                     "comment": "string constant",
                     "name": "string.quoted.double.hlsl",
-                    "begin": "[\"']",
-                    "end": "[\"']",
+                    "begin": "[']",
+                    "end": "[']",
+                    "patterns": [
+                        {
+                            "name": "constant.character.escape.hlsl",
+                            "match": "\\\\."
+                        }
+                    ]
+                },
+                {
+                    "comment": "string constant",
+                    "name": "string.quoted.double.hlsl",
+                    "begin": "[\"]",
+                    "end": "[\"]",
                     "patterns": [
                         {
                             "name": "constant.character.escape.hlsl",
