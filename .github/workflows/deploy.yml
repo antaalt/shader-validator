@@ -30,6 +30,7 @@ jobs:
         uses: HaaLeo/publish-vscode-extension@v1
         id: publishToOpenVSX
         with:
+          skipDuplicate: true # In case script is relaunched only for the second marketplace, fail silently this one
           pat: ${{ secrets.OPEN_VSX_PAT }}
           extensionFile: shader-validator.vsix
           preRelease: ${{ github.event.release.prerelease }}
