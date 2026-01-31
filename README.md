@@ -140,6 +140,7 @@ This extension contributes the following settings:
 *   `shader-validator.glsl.enabled`: Control if server handle this language.
 *   `shader-validator.glsl.targetClient`: Specify the OpenGL or Vulkan version for GLSL
 *   `shader-validator.glsl.spirvVersion`: Specify the SPIRV version to target for GLSL
+*   `shader-validator.glsl.preamble`: Add a path to a preamble file for all GLSL shaders.
 
 ### WGSL specific settings:
 
