@@ -292,6 +292,10 @@ export class ShaderLanguageClient {
             case Trace.Compact:
             case Trace.Messages:
                 this.channel = vscode.window.createOutputChannel(getChannelName());
+                // Make logs display conveniently when in debug.
+                if (context.extensionMode === vscode.ExtensionMode.Development) {
+                    this.channel.show();
+                }
                 break;
             case Trace.Off:
                 this.channel = null;
