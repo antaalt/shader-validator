@@ -97,6 +97,7 @@ jobs:
         run: chmod +x ./bin/${{ matrix.npm-target }}/shader-language-server
       - name: Get server version
         run: ./bin/${{ matrix.npm-target }}/shader-language-server${{ env.EXTENSION }} --version
+        if: ${{ matrix.npm-target != 'wasi' }}
         env:
           EXTENSION: ${{ runner.os == 'Windows' && '.exe' || '' }}
       # VScode need a framebuffer to run test on bash. So create one.
