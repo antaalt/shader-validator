@@ -93,7 +93,7 @@ jobs:
         run: mkdir ./bin/wasi && unzip shader-language-server-wasm32-wasip1-threads.zip -d ./bin/wasi && rm ./shader-language-server-wasm32-wasip1-threads.zip
       - name: Mark server as executable on Linux and MacOS
         # https://docs.github.com/en/actions/reference/workflows-and-actions/contexts#runner-context
-        if: runner.os == 'Linux' || runner.os == 'macOS'
+        if: (runner.os == 'Linux' || runner.os == 'macOS') && matrix.npm-target != 'wasi'
         run: chmod +x ./bin/${{ matrix.npm-target }}/shader-language-server
       - name: Get server version
         run: ./bin/${{ matrix.npm-target }}/shader-language-server${{ env.EXTENSION }} --version
