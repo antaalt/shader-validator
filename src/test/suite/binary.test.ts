@@ -32,7 +32,7 @@ suite('Binary Test Suite', () => {
 			assert.ok(doesBinaryExist("windows/dxil.dll"));
 		});
 	}
-	if (platform == ServerPlatform.windows) {
+	if (platform == ServerPlatform.linux) {
 		test('Check linux binary', () => {
 			assert.ok(doesBinaryExist("linux/shader-language-server"));
 			// Dxc need these dll or it will crash.
