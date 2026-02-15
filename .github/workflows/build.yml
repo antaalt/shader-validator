@@ -108,13 +108,13 @@ jobs:
       - name: Test extension with virtual framebuffer
         if: runner.os == 'Linux' || runner.os == 'macOS'
         run: |
-          npm pretest
+          npm run pretest
           xvfb-run --auto-servernum npm run test${{ matrix.npm-target == 'wasi' && '-wasi' || '' }}
       - name: Test extension on Windows
         if: runner.os == 'Windows'
         # prestest run automatically by npm run test but not by npm run wasi-test. So explicitely call it to be sure.
         run: |
-          npm pretest
+          npm run pretest
           npm run test${{ matrix.npm-target == 'wasi' && '-wasi' || '' }}
       # The wasi extension only have the wasi server, while the native have both wasi and native (for fallback reason if native does not work)
       - name: Package wasi only extension
