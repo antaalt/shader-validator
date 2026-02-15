@@ -20,6 +20,7 @@ jobs:
           # All rust target with their related rust target.
           # https://doc.rust-lang.org/beta/rustc/platform-support.html
           # https://code.visualstudio.com/api/working-with-extensions/publishing-extension#platformspecific-extensions
+          # https://github.com/microsoft/vscode-platform-specific-sample/
           - os: windows-latest
             npm-target: win32-x64
             rust-target: x86_64-pc-windows-msvc
@@ -109,7 +110,10 @@ jobs:
         run: xvfb-run --auto-servernum npm test
       - name: Test extension on Windows
         if: runner.os == 'Windows'
-        run: npm test
+        # prestest run automatically by npm run test but not by npm run wasi-test. So explicitely call it to be sure.
+        run: |
+          npm pretest
+          npm run test${{ matrix.npm-target == 'wasi' && '-wasi' || '' }}
       # The wasi extension only have the wasi server, while the native have both wasi and native (for fallback reason if native does not work)
       - name: Package wasi only extension
         if: ${{ matrix.npm-target == 'wasi' }}
