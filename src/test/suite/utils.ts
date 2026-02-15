@@ -12,7 +12,7 @@ export async function activate(docUri: vscode.Uri, waitServer: boolean) : Promis
 	// Here set the configuration if we are testing wasi. Read a command line argument, and enforce wasi server.
 	const isTestingWasiServer = process.env.USE_WASI_SERVER === "true";
 	if (isTestingWasiServer) {
-		vscode.workspace.getConfiguration('antaalt.shader-validator').update("shader-validator.useWasiServer", true);
+		vscode.workspace.getConfiguration("shader-validator").update("useWasiServer", true);
 		console.info("Activating wasi server for test");
 	} else {
 		console.info("Activating native server for test");
