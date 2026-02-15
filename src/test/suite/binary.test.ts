@@ -20,11 +20,12 @@ suite('Binary Test Suite', () => {
 		vscode.window.showInformationMessage('All binary tests done!');
 	});
 	// Wasm target should always be here.
+	const useWasiServer = process.env.USE_WASI_SERVER === "true";
 	test('Check wasm binary', () => {
 		assert.ok(doesBinaryExist("wasi/shader-language-server.wasm"));
 	});
 	const platform = ServerVersion.getServerPlatform();
-	if (platform == ServerPlatform.windows) {
+	if (platform == ServerPlatform.windows && !useWasiServer) {
 		test('Check windows binary', () => {
 			assert.ok(doesBinaryExist("windows/shader-language-server.exe"));
 			// Dxc need these dll or it will crash.
@@ -32,7 +33,7 @@ suite('Binary Test Suite', () => {
 			assert.ok(doesBinaryExist("windows/dxil.dll"));
 		});
 	}
-	if (platform == ServerPlatform.linux) {
+	if (platform == ServerPlatform.linux && !useWasiServer) {
 		test('Check linux binary', () => {
 			assert.ok(doesBinaryExist("linux/shader-language-server"));
 			// Dxc need these dll or it will crash.
