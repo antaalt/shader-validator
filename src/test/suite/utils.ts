@@ -23,7 +23,7 @@ export async function activate(docUri: vscode.Uri, waitServer: boolean) : Promis
 		let doc = await vscode.workspace.openTextDocument(docUri);
 		let editor = await vscode.window.showTextDocument(doc);
         if (waitServer) {
-		    await sleep(1000); // Wait for server activation
+		    await sleep(2000); // Wait for server activation
         }
 		return [doc, editor];
 	} catch (e) {
