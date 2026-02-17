@@ -25,7 +25,7 @@ suite('Binary Test Suite', () => {
 		assert.ok(doesBinaryExist("wasi/shader-language-server.wasm"));
 	});
 	const platform = ServerVersion.getServerPlatform();
-	if (platform == ServerPlatform.windows && !useWasiServer) {
+	if (platform === ServerPlatform.windows && !useWasiServer) {
 		test('Check windows binary', () => {
 			assert.ok(doesBinaryExist("windows/shader-language-server.exe"));
 			// Dxc need these dll or it will crash.
@@ -33,7 +33,7 @@ suite('Binary Test Suite', () => {
 			assert.ok(doesBinaryExist("windows/dxil.dll"));
 		});
 	}
-	if (platform == ServerPlatform.linux && !useWasiServer) {
+	if (platform === ServerPlatform.linux && !useWasiServer) {
 		test('Check linux binary', () => {
 			assert.ok(doesBinaryExist("linux/shader-language-server"));
 			// Dxc need these dll or it will crash.
