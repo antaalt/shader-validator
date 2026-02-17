@@ -169,11 +169,12 @@ export class ServerVersion {
             return vscode.Uri.file(path.dirname(serverPath));
         } else {
             // CI is handling the copy to bin folder to avoid storage of exe on git.
+            // Should only support arm64 & x64
             switch (platform) {
             case ServerPlatform.windows:
-                return vscode.Uri.joinPath(extensionUri, "bin/windows/");
+                return vscode.Uri.joinPath(extensionUri, `bin/win32-${process.arch}/`);
             case ServerPlatform.linux:
-                return vscode.Uri.joinPath(extensionUri, "bin/linux/");
+                return vscode.Uri.joinPath(extensionUri, `bin/linux-${process.arch}`);
             case ServerPlatform.wasi:
                 return vscode.Uri.joinPath(extensionUri, "bin/wasi/");
             }
@@ -204,8 +205,10 @@ export class ServerVersion {
         } else {
             // Dxc only built for linux x64 & windows x64. Fallback to WASI for every other situations.
             // TODO: ARM DLL available aswell, need to bundle them, along with correct version of server. 
+            // TODO: this once we pushed a new server version.
             // Should have an extension version per platform.
             // Could have a setting for user provided DLL path aswell, but useless if server does not match the platform.
+            // ISSUE: Here we pick linux but we are testing the wasi only version. So kaboom.
             switch (process.platform) {
                 case "win32":
                     return (process.arch === 'x64') ? ServerPlatform.windows : ServerPlatform.wasi;

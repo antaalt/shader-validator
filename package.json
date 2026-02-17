@@ -592,6 +592,7 @@
     "open-in-browser": "vscode-test-web --extensionDevelopmentPath=. .",
     "pretest": "webpack --mode development && tsc -p . --outDir out",
     "test": "node ./out/test/runTest.js",
+    "test-wasi": "node ./out/test/runTest.js -- --useWasiServer",
     "lint": "eslint src --ext ts"
   },
   "devDependencies": {

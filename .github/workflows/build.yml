@@ -14,7 +14,47 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-24.04 # ubuntu-latest which is still based on 22.04 as of now does not have right GCC lib
+    strategy:
+      matrix:
+        include:
+          # All rust target with their related rust target.
+          # https://doc.rust-lang.org/beta/rustc/platform-support.html
+          # https://code.visualstudio.com/api/working-with-extensions/publishing-extension#platformspecific-extensions
+          # https://github.com/microsoft/vscode-platform-specific-sample/
+          - os: windows-latest
+            npm-target: win32-x64
+            rust-target: x86_64-pc-windows-msvc
+          #- os: windows-latest
+          #  npm-target: win32-arm64
+          #  rust-target: aarch64-pc-windows-msvc
+          - os: ubuntu-latest
+            npm-target: linux-x64
+            rust-target: x86_64-unknown-linux-gnu
+          #- os: ubuntu-latest
+          #  npm-target: linux-arm64
+          #  rust-target: aarch64-unknown-linux-gnu
+          # Mac and alpine not available in DXC available target, default with wasi version.
+          #- os: ubuntu-latest
+          #  npm-target: linux-armhf
+          #  rust-target: armv7-unknown-linux-gnueabihf
+          #- os: ubuntu-latest
+          #  npm-target: alpine-x64
+          #  rust-target: x86_64-unknown-linux-musl
+          #- os: ubuntu-latest
+          #  npm-target: alpine-arm64
+          #  rust-target: aarch64-unknown-linux-musl
+          #- os: macos-latest
+          #  npm-target: darwin-x64
+          #  rust-target: x86_64-apple-darwin
+          #- os: macos-latest
+          #  npm-target: darwin-arm64
+          #  rust-target: aarch64-apple-darwin
+
+          # This is the default version when native server cannot be compiled on this target.
+          - os: ubuntu-latest
+            npm-target: wasi
+            rust-target: wasm32-wasip1-threads
+    runs-on: ${{ matrix.os }}
 
     steps:
       - uses: actions/checkout@v4
@@ -26,60 +66,65 @@ jobs:
       - name: Install VSCE
         run: npm i -g vsce
       - name: Read package JSON
-        id: get_package_json
-        run: |
-          content=`cat ./package.json`
-          # the following lines are only required for multi line json
-          content="${content//'%'/'%25'}"
-          content="${content//$'\n'/'%0A'}"
-          content="${content//$'\r'/'%0D'}"
-          # end of optional handling for multi line json
-          echo "::set-output name=packageJson::$content" # This is deprecated, should change
-          # This below should work and is not deprecated but it does not...
-          #echo "packageJson=${content}" >> $GITHUB_OUTPUT
+        id: package_json
+        uses: ActionsTools/read-json-action@main
+        with:
+          file_path: "package.json"
       - name: Display requested server version
-        run: echo '${{ fromJson(steps.get_package_json.outputs.packageJson).server_version }}'
-        env:
-          PACKAGE_JSON: echo $PACKAGE_JSON
-      - name: Download shader language servers.
+        run: echo '${{ steps.package_json.outputs.server_version }}'
+      - name: Download native shader language server.
         uses: robinraju/release-downloader@v1.11
-        env:
-          PACKAGE_JSON: echo $PACKAGE_JSON
+        if: ${{ matrix.npm-target != 'wasi' }}
         with:
           repository: 'antaalt/shader-sense'
-          tag: ${{ format('v{0}', fromJson(steps.get_package_json.outputs.packageJson).server_version) }}
-          fileName: '*.zip'
+          tag: ${{ format('v{0}', steps.package_json.outputs.server_version) }}
+          fileName: 'shader-language-server-${{ matrix.rust-target }}.zip'
+      - name: Download wasi shader language server.
+        uses: robinraju/release-downloader@v1.11
+        with:
+          repository: 'antaalt/shader-sense'
+          tag: ${{ format('v{0}', steps.package_json.outputs.server_version) }}
+          fileName: 'shader-language-server-wasm32-wasip1-threads.zip'
       - name: Create bin folder
         run: mkdir ./bin
-      - name: Copy windows binaries to bin
-        run: mkdir ./bin/windows && unzip shader-language-server-x86_64-pc-windows-msvc.zip -d ./bin/windows && rm ./shader-language-server-x86_64-pc-windows-msvc.zip
-      - name: Copy linux binaries to bin
-        run: mkdir ./bin/linux && unzip shader-language-server-x86_64-unknown-linux-gnu.zip -d ./bin/linux && rm ./shader-language-server-x86_64-unknown-linux-gnu.zip
-      - name: Copy wasi binaries to bin
+      - name: Copy native binary to bin
+        if: ${{ matrix.npm-target != 'wasi' }}
+        run: mkdir ./bin/${{ matrix.npm-target }} && unzip shader-language-server-${{ matrix.rust-target }}.zip -d ./bin/${{ matrix.npm-target }} && rm ./shader-language-server-${{ matrix.rust-target }}.zip
+      - name: Copy wasi binary to bin
         run: mkdir ./bin/wasi && unzip shader-language-server-wasm32-wasip1-threads.zip -d ./bin/wasi && rm ./shader-language-server-wasm32-wasip1-threads.zip
-      - name: Mark server as executable on Linux
-        run: chmod +x ./bin/linux/shader-language-server
+      - name: Mark server as executable on Linux and MacOS
+        # https://docs.github.com/en/actions/reference/workflows-and-actions/contexts#runner-context
+        if: (runner.os == 'Linux' || runner.os == 'macOS') && matrix.npm-target != 'wasi'
+        run: chmod +x ./bin/${{ matrix.npm-target }}/shader-language-server
       - name: Get server version
-        run: echo "SERVER_VERSION=$(./bin/linux/shader-language-server --version | sed 's/shader-language-server v//g')" >> $GITHUB_ENV
-      # VScode need a framebuffer to run test. So create one.
-      - name: Create framebuffer to run test
+        run: ./bin/${{ matrix.npm-target }}/shader-language-server${{ env.EXTENSION }} --version
+        if: ${{ matrix.npm-target != 'wasi' }}
+        env:
+          EXTENSION: ${{ runner.os == 'Windows' && '.exe' || '' }}
+      # VScode need a framebuffer to run test on bash. So create one.
+      - name: Create framebuffer to run test on Linux and MacOS
+        if: runner.os == 'Linux' || runner.os == 'macOS'
         run: sudo apt-get install xvfb
-      - name: Test extension
+      - name: Test extension with virtual framebuffer
+        if: runner.os == 'Linux' || runner.os == 'macOS'
         run: xvfb-run --auto-servernum npm test
-      - name: Package extension
-        if: ${{ !inputs.prerelease }}
-        run: vsce package
-      - name: Package prerelease extension
-        if: ${{ inputs.prerelease }}
-        run: vsce package --pre-release
-      - name: Get version
-        run: echo "PACKAGE_VERSION=$(npm pkg get version | sed 's/"//g')" >> $GITHUB_ENV
-      - name: Check version
-        run: echo $PACKAGE_VERSION
-      - name: Copy VSIX
-        run: mkdir -p ./ext/ && cp ./shader-validator-$PACKAGE_VERSION.vsix ./ext/shader-validator.vsix
+        env:
+          USE_WASI_SERVER: ${{ matrix.npm-target == 'wasi' && 'true' || 'false' }}
+      - name: Test extension on Windows
+        if: runner.os == 'Windows'
+        run: npm test
+        env:
+          USE_WASI_SERVER: ${{ matrix.npm-target == 'wasi' && 'true' || 'false' }}
+      # The wasi extension only have the wasi server, while the native have both wasi and native (for fallback reason if native does not work)
+      - name: Package wasi only extension
+        if: ${{ matrix.npm-target == 'wasi' }}
+        run: vsce package ${{ inputs.prerelease && '--pre-release' || '' }} --out shader-validator-${{ matrix.npm-target }}.vsix
+      - name: Package native extension
+        if: ${{ matrix.npm-target != 'wasi' }}
+        run: vsce package ${{ inputs.prerelease && '--pre-release' || '' }} --target ${{ matrix.npm-target }} --out shader-validator-${{ matrix.npm-target }}.vsix
+          
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: extension
-          path: ./ext/
+          name: shader-validator-${{ matrix.npm-target }}.vsix
+          path: shader-validator-${{ matrix.npm-target }}.vsix

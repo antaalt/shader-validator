@@ -9,17 +9,20 @@ import { getRootFolder } from './utils';
 import { ServerVersion } from '../../client';
 
 suite('Server version Test Suite', () => {
-    test('Check server version', () => {
-        let serverVersion = new ServerVersion(vscode.Uri.parse(getRootFolder()));
-        assert.ok(fs.existsSync(serverVersion.path.fsPath), `Failed to find ${serverVersion.path}`);
-        let server = cp.spawnSync(serverVersion.path.fsPath, [
-            "--version"
-        ], {
-            encoding: "utf-8"
+    // Cant spawn wasi server.
+    if (process.env.USE_WASI_SERVER !== "true") {
+        test('Check server version', () => {
+            let serverVersion = new ServerVersion(vscode.Uri.parse(getRootFolder()));
+            assert.ok(fs.existsSync(serverVersion.path.fsPath), `Failed to find ${serverVersion.path}`);
+            let server = cp.spawnSync(serverVersion.path.fsPath, [
+                "--version"
+            ], {
+                encoding: "utf-8"
+            });
+            const expectedVersion = ServerVersion.getBundledVersion();
+            assert.equal(server.stdout.trim(), expectedVersion.trim(), `Incompatible version, got ${server.stdout}, expected: ${expectedVersion}`);
+            assert.ok(server.stderr.length === 0);
+            assert.ok(server.status === 0);
         });
-        const expectedVersion = ServerVersion.getBundledVersion();
-        assert.equal(server.stdout.trim(), expectedVersion.trim(), `Incompatible version, got ${server.stdout}, expected: ${expectedVersion}`);
-        assert.ok(server.stderr.length === 0);
-        assert.ok(server.status === 0);
-    });
+    }
 });
