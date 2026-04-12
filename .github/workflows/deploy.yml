@@ -21,8 +21,8 @@ jobs:
         include:
           - os: windows-latest
             npm-target: win32-x64
-          #- os: windows-latest
-          #  npm-target: win32-arm64
+          - os: windows-latest
+            npm-target: win32-arm64
           - os: ubuntu-latest
             npm-target: linux-x64
           #- os: ubuntu-latest
@@ -47,16 +47,17 @@ jobs:
           pat: ${{ secrets.OPEN_VSX_PAT }}
           extensionFile: shader-validator-${{ matrix.npm-target }}.vsix
           preRelease: ${{ github.event.release.prerelease }}
-          target: ${{ matrix.npm-target != 'wasi' && matrix.npm-target || '' }}
+          # No need to specify target as we are publishing pre-packaged package.
       - name: Publish to Visual Studio Marketplace
         uses: HaaLeo/publish-vscode-extension@v1
         # Dont publish pre-release here, vscode marketplace dont support semver != major.minor.patch
         if: ${{ !github.event.release.prerelease }}
         with:
+          skipDuplicate: true # In case script is relaunched.
           pat: ${{ secrets.MARKETPLACE_PAT }}
           registryUrl: https://marketplace.visualstudio.com
           extensionFile: shader-validator-${{ matrix.npm-target }}.vsix
-          target: ${{ matrix.npm-target != 'wasi' && matrix.npm-target || '' }}
+          # No need to specify target as we are publishing pre-packaged package.
       - name: Upload assets to release
         run: gh release upload ${{ github.ref_name }} "shader-validator-${{ matrix.npm-target }}.vsix"
         env:
