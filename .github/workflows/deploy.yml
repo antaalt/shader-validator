@@ -45,8 +45,9 @@ jobs:
         with:
           skipDuplicate: true # In case script is relaunched only for the second marketplace, fail silently this one
           pat: ${{ secrets.OPEN_VSX_PAT }}
-          extensionFile: shader-validator${{ matrix.npm-target }}.vsix
+          extensionFile: shader-validator-${{ matrix.npm-target }}.vsix
           preRelease: ${{ github.event.release.prerelease }}
+          target: ${{ matrix.npm-target != 'wasi' && matrix.npm-target || '' }}
       - name: Publish to Visual Studio Marketplace
         uses: HaaLeo/publish-vscode-extension@v1
         # Dont publish pre-release here, vscode marketplace dont support semver != major.minor.patch
@@ -54,8 +55,9 @@ jobs:
         with:
           pat: ${{ secrets.MARKETPLACE_PAT }}
           registryUrl: https://marketplace.visualstudio.com
-          extensionFile: shader-validator${{ matrix.npm-target }}.vsix
+          extensionFile: shader-validator-${{ matrix.npm-target }}.vsix
+          target: ${{ matrix.npm-target != 'wasi' && matrix.npm-target || '' }}
       - name: Upload assets to release
-        run: gh release upload ${{ github.ref_name }} "shader-validator${{ matrix.npm-target }}.vsix"
+        run: gh release upload ${{ github.ref_name }} "shader-validator-${{ matrix.npm-target }}.vsix"
         env:
           GH_TOKEN: ${{ github.token }}
