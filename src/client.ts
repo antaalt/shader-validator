@@ -203,15 +203,10 @@ export class ServerVersion {
         if (isRunningOnWeb() || useWasiServer) {
             return ServerPlatform.wasi;
         } else {
-            // Dxc only built for linux x64 & windows x64. Fallback to WASI for every other situations.
-            // TODO: ARM DLL available aswell, need to bundle them, along with correct version of server. 
-            // TODO: this once we pushed a new server version.
-            // Should have an extension version per platform.
-            // Could have a setting for user provided DLL path aswell, but useless if server does not match the platform.
-            // ISSUE: Here we pick linux but we are testing the wasi only version. So kaboom.
+            // Dxc only built for linux x64 & windows x64 & arm. Fallback to WASI for every other situations.
             switch (process.platform) {
                 case "win32":
-                    return (process.arch === 'x64') ? ServerPlatform.windows : ServerPlatform.wasi;
+                    return (process.arch === 'x64' || process.arch === 'arm64') ? ServerPlatform.windows : ServerPlatform.wasi;
                 case "linux":
                     return (process.arch === 'x64') ? ServerPlatform.linux : ServerPlatform.wasi;
                 default:
