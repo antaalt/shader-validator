@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [unreleased]
 
+## [1.3.2] - 2026-04-12
+
+### Added
+
+- Use native server on arm windows instead of wasi.
+
+### Changed
+
+- Using [shader-language-server v1.3.1](https://github.com/antaalt/shader-sense/releases/tag/v1.3.1) with some minor bug fixes.
+
 ## [1.3.1] - 2026-02-14
 
 ### Fixed
@@ -360,7 +370,8 @@ Initial release of this extension using [shader-language-server v0.0.1](https://
 
 
 <!-- Below are link for above changelog titles-->
-[unreleased]: https://github.com/antaalt/shader-validator/compare/v1.3.1...HEAD
+[unreleased]: https://github.com/antaalt/shader-validator/compare/v1.3.2...HEAD
+[1.3.2]: https://github.com/antaalt/shader-validator/compare/v1.3.1...v1.3.2
 [1.3.1]: https://github.com/antaalt/shader-validator/compare/v1.3.0...v1.3.1
 [1.3.0]: https://github.com/antaalt/shader-validator/compare/v1.2.2...v1.3.0
 [1.2.2]: https://github.com/antaalt/shader-validator/compare/v1.2.1...v1.2.2
