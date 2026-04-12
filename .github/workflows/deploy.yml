@@ -16,7 +16,20 @@ jobs:
   deploy:
     permissions: write-all
     needs: build
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            npm-target: win32-x64
+          #- os: windows-latest
+          #  npm-target: win32-arm64
+          - os: ubuntu-latest
+            npm-target: linux-x64
+          #- os: ubuntu-latest
+          #  npm-target: linux-arm64
+          - os: ubuntu-latest
+            npm-target: wasi
+    runs-on: ${{ matrix.os }}
 
     # Handle secrets: https://docs.github.com/fr/actions/security-guides/using-secrets-in-github-actions
     # Get tokens: https://code.visualstudio.com/api/working-with-extensions/publishing-extension#get-a-personal-access-token
@@ -25,14 +38,14 @@ jobs:
       - name: Download VSIX
         uses: actions/download-artifact@v4
         with:
-          name: extension
+          name: shader-language-server-${{ matrix.npm-target }}
       - name: Publish to Open VSX Registry
         uses: HaaLeo/publish-vscode-extension@v1
         id: publishToOpenVSX
         with:
           skipDuplicate: true # In case script is relaunched only for the second marketplace, fail silently this one
           pat: ${{ secrets.OPEN_VSX_PAT }}
-          extensionFile: shader-validator.vsix
+          extensionFile: shader-validator${{ matrix.npm-target }}.vsix
           preRelease: ${{ github.event.release.prerelease }}
       - name: Publish to Visual Studio Marketplace
         uses: HaaLeo/publish-vscode-extension@v1
@@ -41,8 +54,8 @@ jobs:
         with:
           pat: ${{ secrets.MARKETPLACE_PAT }}
           registryUrl: https://marketplace.visualstudio.com
-          extensionFile: shader-validator.vsix
+          extensionFile: shader-validator${{ matrix.npm-target }}.vsix
       - name: Upload assets to release
-        run: gh release upload ${{ github.ref_name }} "shader-validator.vsix"
+        run: gh release upload ${{ github.ref_name }} "shader-validator${{ matrix.npm-target }}.vsix"
         env:
           GH_TOKEN: ${{ github.token }}
