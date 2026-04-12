@@ -24,9 +24,9 @@ jobs:
           - os: windows-latest
             npm-target: win32-x64
             rust-target: x86_64-pc-windows-msvc
-          #- os: windows-latest
-          #  npm-target: win32-arm64
-          #  rust-target: aarch64-pc-windows-msvc
+          - os: windows-latest
+            npm-target: win32-arm64
+            rust-target: aarch64-pc-windows-msvc
           - os: ubuntu-latest
             npm-target: linux-x64
             rust-target: x86_64-unknown-linux-gnu
