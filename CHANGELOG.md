@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [unreleased]
 
+## [1.3.3] - 2026-05-24
+
+### Added
+
+- New option for automatically discovery of main file. WIP and experimental.
+
+
+### Changed
+
+- Using [shader-language-server v1.3.2](https://github.com/antaalt/shader-sense/releases/tag/v1.3.2) with some fix and improvements on macro.
+- serverPath and pathRemapping settings can now use vscode builtin variables such as workspaceFolder.
+
+### 
+
 ## [1.3.2] - 2026-04-12
 
 ### Added
@@ -370,7 +384,8 @@ Initial release of this extension using [shader-language-server v0.0.1](https://
 
 
 <!-- Below are link for above changelog titles-->
-[unreleased]: https://github.com/antaalt/shader-validator/compare/v1.3.2...HEAD
+[unreleased]: https://github.com/antaalt/shader-validator/compare/v1.3.3...HEAD
+[1.3.3]: https://github.com/antaalt/shader-validator/compare/v1.3.2...v1.3.3
 [1.3.2]: https://github.com/antaalt/shader-validator/compare/v1.3.1...v1.3.2
 [1.3.1]: https://github.com/antaalt/shader-validator/compare/v1.3.0...v1.3.1
 [1.3.0]: https://github.com/antaalt/shader-validator/compare/v1.2.2...v1.3.0
