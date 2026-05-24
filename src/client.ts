@@ -504,7 +504,7 @@ export class ShaderLanguageClient {
             };
             // Memory options required by wasm32-wasip1-threads target
             const memory : WebAssembly.MemoryDescriptor = {
-                initial: 160, 
+                initial: 200, 
                 maximum: 1024, // Big enough to handle glslang heavy RAM usage.
                 shared: true
             };
