@@ -231,13 +231,17 @@ function getMiddleware() : Middleware {
             async configuration(params: ConfigurationParams, token: vscode.CancellationToken, next : ConfigurationRequest.HandlerSignature) {
                 // Here we resolve vscode variables ourselves as there is no API for this.
                 // see https://github.com/microsoft/vscode/issues/140056
-                // Only solve them for includes as we are dealing with path.
                 let result = await next(params, token);
                 console.debug("initial configuration", result);
                 let resultArray = result as any[];
                 let config = resultArray[0];
+                // Only solve them for path variables.
                 config["includes"] = config["includes"].map((include: string) => {
                     return resolveVSCodeVariables(include);
+                });
+                config["serverPath"] = resolveVSCodeVariables(config["serverPath"]);
+                Object.entries(config["pathRemapping"]).forEach(([key, value]) => {
+                    config["pathRemapping"][key] = resolveVSCodeVariables(value as string);
                 });
                 console.debug("resolved configuration", config);
                 return [config];
