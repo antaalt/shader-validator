@@ -13,7 +13,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - New option for automatically discovery of main file. WIP and experimental.
 
-
 ### Changed
 
 - Using [shader-language-server v1.3.2](https://github.com/antaalt/shader-sense/releases/tag/v1.3.2) with some fix and improvements on macro.
