@@ -145,8 +145,8 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
     readonly onDidChangeTreeData: vscode.Event<ShaderVariantNode | undefined | void> = this.onDidChangeTreeDataEmitter.event;
 
     // using vscode.Uri as key does not match well with Memento state storage...
-    private files: Map<string, ShaderVariantFile>;
-    private database: Map<string, Map<string, ShaderVariantFile>>;
+    private files: Map<vscode.Uri, ShaderVariantFile>;
+    private database: Map<vscode.Uri, Map<vscode.Uri, ShaderVariantFile>>;
 
     // Serialization & Editor
     private server: ShaderLanguageClient;
@@ -154,7 +154,7 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
     private decorator: Map<string, vscode.TextEditorDecorationType>;
     private workspaceState: vscode.Memento;
     // Async symbol loading
-    private shaderEntryPointList: Map<string, ShaderEntryPoint[]>;
+    private shaderEntryPointList: Map<vscode.Uri, ShaderEntryPoint[]>;
     private asyncGoToShaderEntryPoint: Map<vscode.Uri, string>;
 
     private load() {
@@ -165,7 +165,7 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
             for (let variant of e.variants) {
                 variant.uri = vscode.Uri.from(variant.uri);
             }
-            return [e.uri.path, e];
+            return [e.uri, e];
         }));
     }
     private save() {
@@ -209,7 +209,7 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
                         variant.isActive = true; // checked
                     } else {
                         variant.isActive = false; // unchecked
-                        let file = this.files.get(variant.uri.path);
+                        let file = this.files.get(variant.uri);
                         if (file) {
                             this.refresh(file, file);
                         }
@@ -325,23 +325,23 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
         // Prepare entry point symbol cache
         for (let editor of vscode.window.visibleTextEditors) {
             if (editor.document.uri.scheme === 'file') {
-                this.shaderEntryPointList.set(editor.document.uri.path, []);
+                this.shaderEntryPointList.set(editor.document.uri, []);
             }
         }
         context.subscriptions.push(vscode.workspace.onDidOpenTextDocument(document => {
             if (document.uri.scheme === 'file') {
-                this.shaderEntryPointList.set(document.uri.path, []);
+                this.shaderEntryPointList.set(document.uri, []);
             }
         }));
         context.subscriptions.push(vscode.workspace.onDidCloseTextDocument(document => {
-            this.shaderEntryPointList.delete(document.uri.path);
+            this.shaderEntryPointList.delete(document.uri);
         }));
         context.subscriptions.push(vscode.workspace.onDidRenameFiles(document => {
             for (const fileObj of document.files) {
                 const { oldUri, newUri } = fileObj;
                 // To update the key in a Map, you need to remove the old key and add the new one.
-                const oldPath = oldUri.path;
-                const newPath = newUri.path;
+                const oldPath = oldUri;
+                const newPath = newUri;
                 const file = this.files.get(oldPath);
                 if (file) {
                     // Update the uri inside the file object
@@ -391,7 +391,7 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
     }
 
     private goToShaderEntryPoint(uri: vscode.Uri, entryPointName: string, defer: boolean) {
-        let shaderEntryPointList = this.shaderEntryPointList.get(uri.path);
+        let shaderEntryPointList = this.shaderEntryPointList.get(uri);
         let entryPoint = shaderEntryPointList?.find(e => e.entryPoint === entryPointName);
         // TOOD: Could instead regex + check regions via vscode.
         if (entryPoint) {
@@ -413,7 +413,7 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
 
     private getFileAndParentNode(node: ShaderVariantNode) : [ShaderVariantFile, ShaderVariantNode | null] | null {
         if (node.kind === 'variant') {
-            let file = this.files.get(node.uri.path);
+            let file = this.files.get(node.uri);
             if (file) {
                 return [file, null]; // No parent
             }
@@ -561,7 +561,7 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
     }
     public onDocumentSymbols(uri: vscode.Uri, symbols: vscode.DocumentSymbol[]) {
         // TODO:TREE: need to recurse child as well.
-        this.shaderEntryPointList.set(uri.path, symbols.filter(symbol => symbol.kind === vscode.SymbolKind.Function).map(symbol => {
+        this.shaderEntryPointList.set(uri, symbols.filter(symbol => symbol.kind === vscode.SymbolKind.Function).map(symbol => {
             return {
                 entryPoint: symbol.name, 
                 range: symbol.selectionRange
@@ -679,8 +679,8 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
             this.database.forEach((database, databaseUri) => {
                 rootArray.push({
                     kind: 'root',
-                    uri: vscode.Uri.parse(databaseUri),
-                    label: databaseUri,
+                    uri: databaseUri,
+                    label: databaseUri.path,
                     files: Array.from(database.values())
                 } as ShaderVariantRoot);
             });
@@ -719,26 +719,26 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
                 }
             }
         }
-        let file = this.files.get(uri.path);
+        let file = this.files.get(uri);
         if (!file) {
             let newFile : ShaderVariantFile = {
                 kind: 'file',
                 uri: uri,
                 variants: variant ? [variant] : []
             };
-            this.files.set(uri.path, newFile);
-            this.refresh(null, this.files.get(uri.path)!); // This has to be here
+            this.files.set(uri, newFile);
+            this.refresh(null, this.files.get(uri)!); // This has to be here
         } else if (variant) {
             file.variants.push(variant);
             this.refresh(null, file);
         }
     }
     public close(uri: vscode.Uri): void {
-        let file = this.files.get(uri.path);
+        let file = this.files.get(uri);
         if (file) {
             // We keep it if some variants where defied.
             if (file.variants.length === 0) {
-                this.files.delete(uri.path);
+                this.files.delete(uri);
                 this.refreshAll();
             }
         }
@@ -906,10 +906,10 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
     }
     public delete(node: ShaderVariantNode) {
         if (node.kind === 'file') {
-            this.files.delete(node.uri.path);
+            this.files.delete(node.uri);
             this.refreshAll();
         } else if (node.kind === 'variant') {
-            let cachedFile = this.files.get(node.uri.path);
+            let cachedFile = this.files.get(node.uri);
             if (cachedFile) {
                 let index = cachedFile.variants.indexOf(node);
                 if (index > -1) {
@@ -969,8 +969,8 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
         });
     }
     private updateDecoration(editor: vscode.TextEditor) {
-        let file = this.files.get(editor.document.uri.path);
-        let entryPoints = this.shaderEntryPointList.get(editor.document.uri.path);
+        let file = this.files.get(editor.document.uri);
+        let entryPoints = this.shaderEntryPointList.get(editor.document.uri);
 
         let variant = this.getActiveVariant();
         if (file && entryPoints) {
