@@ -100,13 +100,19 @@ export type ShaderVariantFile = {
     uri: vscode.Uri,
     variants: ShaderVariant[],
 };
+export type ShaderVariantRoot = {
+    kind: 'root'
+    uri: vscode.Uri | undefined,
+    label: string,
+    files: ShaderVariantFile[],
+};
 
 export type ShaderEntryPoint = {
     entryPoint: string,
     range: vscode.Range,
 };
 
-export type ShaderVariantNode = ShaderVariant | ShaderVariantFile | ShaderVariantDefineList | ShaderVariantIncludeList | ShaderVariantDefine | ShaderVariantInclude | ShaderVariantStage;
+export type ShaderVariantNode = ShaderVariant | ShaderVariantFile | ShaderVariantDefineList | ShaderVariantIncludeList | ShaderVariantDefine | ShaderVariantInclude | ShaderVariantStage |ShaderVariantRoot;
 
 const shaderVariantTreeKey : string = 'shader-validator.shader-variant-tree-key';
 
@@ -117,10 +123,14 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
 
     // using vscode.Uri as key does not match well with Memento state storage...
     private files: Map<string, ShaderVariantFile>;
-    private tree: vscode.TreeView<ShaderVariantNode>;
+    private database: Map<string, Map<string, ShaderVariantFile>>;
+
+    // Serialization & Editor
     private server: ShaderLanguageClient;
+    private tree: vscode.TreeView<ShaderVariantNode>;
     private decorator: Map<string, vscode.TextEditorDecorationType>;
     private workspaceState: vscode.Memento;
+    // Async symbol loading
     private shaderEntryPointList: Map<string, ShaderEntryPoint[]>;
     private asyncGoToShaderEntryPoint: Map<vscode.Uri, string>;
 
@@ -143,6 +153,7 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
     constructor(context: vscode.ExtensionContext, server: ShaderLanguageClient) {
         this.workspaceState = context.workspaceState;
         this.files = new Map;
+        this.database = new Map;
         this.load();
         this.shaderEntryPointList = new Map;
         this.server = server;
@@ -202,6 +213,51 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
                 borderStyle: 'solid',
             }));
         }
+        context.subscriptions.push(vscode.commands.registerCommand("shader-validator.loadVariantDatabase", async () => {
+            let fileUris = await vscode.window.showOpenDialog({
+                canSelectMany: false,
+                title: 'Load Variant Database',
+                openLabel: 'Load',
+                filters: {
+                    'json': ['json']
+                }
+            });
+            if (fileUris) {
+                for (let fileUri of fileUris) {
+                    // TODO: handle file out of workspace, but web version won't work. Requires it ?
+                    // TODO: vscode.workspace.createFileSystemWatcher
+                    const file = await vscode.workspace.fs.readFile(fileUri);
+                    const database = JSON.parse(file.toString());
+                    let map = new Map;
+                    // TODO: parse json to correct data
+                    map.set(fileUri, {
+                        kind:'file',
+                        uri: fileUri,
+                        variants: [
+                            {
+                                kind: 'variant',
+                                uri: fileUri,
+                                name: 'oui',
+                                isActive: false,
+                                stage: {
+                                    kind: 'stage',
+                                    stage: ShaderStage.auto,
+                                } as ShaderVariantStage, 
+                                defines: {},
+                                includes: {}
+                            } as ShaderVariant
+                        ]
+                    } as ShaderVariantFile);
+                    this.database.set(fileUri.path, map);
+                    this.onDidChangeTreeDataEmitter.fire();
+                }
+                // TODO: load file as db. 
+                // - Hot reload, or simply update button
+                // - Read only (need to edit file instead)
+                
+                //this.save();
+            }
+        }));
         context.subscriptions.push(vscode.commands.registerCommand("shader-validator.addCurrentFile", (): void => {
             if (vscode.window.activeTextEditor && ShaderLanguageClient.isEnabledLangId(vscode.window.activeTextEditor.document.languageId)) {
                 this.open(vscode.window.activeTextEditor.document.uri);
@@ -394,6 +450,8 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
                     }
                 }
             }
+        } else {
+            console.error("Node kind not implemented", node);
         }
         console.warn("Failed to find file for node ", node);
         return null;
@@ -573,6 +631,12 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
             item.iconPath = new vscode.ThemeIcon('code');
             item.contextValue = element.kind;
             return item;
+        } else if (element.kind === 'root') {
+            let item = new vscode.TreeItem(element.label, vscode.TreeItemCollapsibleState.Expanded);
+            item.tooltip = element.uri ? `All variants parsed from config file ${element.uri.path} .` : 'All variants defined.';
+            item.iconPath = vscode.ThemeIcon.File;
+            item.contextValue = element.kind;
+            return item;
         } else {
             console.error("Unimplemented kind: ", element);
             return undefined!; // unreachable
@@ -595,13 +659,29 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
                 return [];
             } else if (element.kind === 'stage') {
                 return [];
+            } else if (element.kind === 'root') {
+                return element.files;
             } else {
                 console.error("Reached unreachable", element);
                 return undefined!; // unreachable
             }
         } else {
-            // Convert to array
-            return Array.from(this.files.values());
+            let rootArray : ShaderVariantRoot[] = [];
+            this.database.forEach((database, databaseUri) => {
+                rootArray.push({
+                    kind: 'root',
+                    uri: vscode.Uri.parse(databaseUri),
+                    label: databaseUri,
+                    files: Array.from(database.values())
+                } as ShaderVariantRoot);
+            });
+            rootArray.push({
+                kind: 'root',
+                uri: undefined,
+                label: 'Main',
+                files: Array.from(this.files.values())
+            } as ShaderVariantRoot);
+            return rootArray;
         }
     }
 
@@ -756,6 +836,8 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
                 });
                 this.refresh(node, null);
             }
+        } else{
+            console.error("Unimplemented kind for add", node);
         }
     }
     public async edit(node: ShaderVariantNode) {
@@ -809,6 +891,8 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
                 node.stage = stage;
                 this.refresh(node, null);
             }
+        } else {
+            console.error("Unimplemented kind for edit", node);
         }
     }
     public delete(node: ShaderVariantNode) {
@@ -859,6 +943,8 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
                     break;
                 }
             }
+        } else {
+            console.error("Unimplemented kind for delete", node);
         }
     }
     private getDecorator(langId: string) : vscode.TextEditorDecorationType {
