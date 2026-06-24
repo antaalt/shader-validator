@@ -21,6 +21,29 @@ function shaderVariantToSerialized(url: DocumentUri, languageId: string, e: Shad
         includes: e.includes.includes.map(e => resolveVSCodeVariables(e.include))
     };
 }
+
+// Runtime validator using a type predicate
+function isShaderVariantList(obj: unknown): obj is ShaderVariantFile[] {
+    // TODO: this should be easier and could be automated (memento does it). 
+    // Should also have concise feedback when format incorrect
+    // Format is array at root, then file object with specific fields.
+  if (typeof obj !== "object" || obj === null) {
+    return false;
+  }
+
+  //const o = obj as Record<string, unknown>;
+  // Validate required fields
+  //if (typeof o.kind !== "string" && o.kind === 'file') return false;
+  // Optional field
+  //if (o.email !== undefined && typeof o.email !== "string") return false;
+
+  return true;
+}
+// Safe cast
+function castToShaderVariantList(obj: unknown): ShaderVariantFile[] | null {
+  return isShaderVariantList(obj) ? obj : null;
+}
+
 // Notification from client to change shader variant
 interface DidChangeShaderVariantParams {
     shaderVariant: ShaderVariantSerialized | null
@@ -224,38 +247,24 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
             });
             if (fileUris) {
                 for (let fileUri of fileUris) {
-                    // TODO: handle file out of workspace, but web version won't work. Requires it ?
                     // TODO: vscode.workspace.createFileSystemWatcher
                     const file = await vscode.workspace.fs.readFile(fileUri);
-                    const database = JSON.parse(file.toString());
-                    let map = new Map;
-                    // TODO: parse json to correct data
-                    map.set(fileUri, {
-                        kind:'file',
-                        uri: fileUri,
-                        variants: [
-                            {
-                                kind: 'variant',
-                                uri: fileUri,
-                                name: 'oui',
-                                isActive: false,
-                                stage: {
-                                    kind: 'stage',
-                                    stage: ShaderStage.auto,
-                                } as ShaderVariantStage, 
-                                defines: {},
-                                includes: {}
-                            } as ShaderVariant
-                        ]
-                    } as ShaderVariantFile);
-                    this.database.set(fileUri.path, map);
-                    this.onDidChangeTreeDataEmitter.fire();
+                    const database = castToShaderVariantList(JSON.parse(file.toString()));
+                    if (database) {
+                        let databaseMap = new Map(database.map((e : ShaderVariantFile) => {
+                            // Seems that serialisation is breaking something, so this is required for uri & range to behave correctly.
+                            e.uri = vscode.Uri.from(e.uri);
+                            for (let variant of e.variants) {
+                                variant.uri = vscode.Uri.from(variant.uri);
+                            }
+                            return [e.uri.path, e];
+                        }));
+                        this.database.set(fileUri.path, databaseMap);
+                        this.onDidChangeTreeDataEmitter.fire();
+                    } else {
+                        vscode.window.showWarningMessage(`Failed to load variant database ${fileUri.path}: Invalid JSON`);
+                    }
                 }
-                // TODO: load file as db. 
-                // - Hot reload, or simply update button
-                // - Read only (need to edit file instead)
-                
-                //this.save();
             }
         }));
         context.subscriptions.push(vscode.commands.registerCommand("shader-validator.addCurrentFile", (): void => {
