@@ -694,9 +694,10 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
     public async add(node: ShaderVariantNode) {
         if (node.kind === 'file') {
             let entryPoint = await this.promptEntryPoint();
-            if (entryPoint) {
+            if (entryPoint !== undefined) {
                 let stage = await this.promptShaderStage();
-                if (stage) {
+                // stage might be zero but valid
+                if (stage !== undefined) {
                     node.variants.push({
                         kind: 'variant',
                         uri: node.uri,
