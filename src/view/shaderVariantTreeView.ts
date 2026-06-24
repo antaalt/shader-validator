@@ -22,26 +22,93 @@ function shaderVariantToSerialized(url: DocumentUri, languageId: string, e: Shad
     };
 }
 
-// Runtime validator using a type predicate
-function isShaderVariantList(obj: unknown): obj is ShaderVariantFile[] {
-    // TODO: this should be easier and could be automated (memento does it). 
-    // Should also have concise feedback when format incorrect
-    // Format is array at root, then file object with specific fields.
-  if (typeof obj !== "object" || obj === null) {
-    return false;
-  }
-
-  //const o = obj as Record<string, unknown>;
-  // Validate required fields
-  //if (typeof o.kind !== "string" && o.kind === 'file') return false;
-  // Optional field
-  //if (o.email !== undefined && typeof o.email !== "string") return false;
-
-  return true;
+function serializeShaderVariantNode(data: ShaderVariantNode): string {
+    return JSON.stringify(data);
 }
-// Safe cast
-function castToShaderVariantList(obj: unknown): ShaderVariantFile[] | null {
-  return isShaderVariantList(obj) ? obj : null;
+function deserializeShaderVariant(data: any, uri: vscode.Uri): ShaderVariant {
+    if (typeof data !== 'object') {
+        throw new SyntaxError(`variant ${data} is not an object`);
+    }
+    if (typeof data["name"] !== 'string') {
+        throw new SyntaxError(`variant name ${data["name"]} is not an string`);
+    }
+    if (typeof data["stage"] !== 'string') {
+        throw new SyntaxError(`variant stage ${data["stage"]} is not an string`);
+    }
+    if (typeof data["defines"] !== 'object') {
+        throw new SyntaxError(`variant defines ${data["defines"]} is not an object`);
+    }
+    if (!Array.isArray(data["includes"])) {
+        throw new SyntaxError(`variant include ${data["includes"]} is not an include`);
+    }
+    return {
+        'kind': 'variant',
+        'uri': uri,
+        'name': data["name"] as string,
+        'isActive': false,
+        'stage': {
+            'kind': 'stage',
+            'stage': ShaderStage[data["stage"] as keyof typeof ShaderStage] 
+        } as ShaderVariantStage,
+        'defines': {
+            kind: 'defineList',
+            defines: Object.entries(data["defines"]).map(e => {
+                if (typeof e[0] !== 'string') {
+                    throw new SyntaxError(`variant define key ${e[0]} is not a string`);
+                }
+                if (typeof e[1] !== 'string') {
+                    throw new SyntaxError(`variant define value ${e[1]} is not a string`);
+                }
+                return {
+                    kind: 'define',
+                    label: e[0] as string,
+                    value: e[1] as string
+                } as ShaderVariantDefine
+            }),
+        } as ShaderVariantDefineList,
+        'includes': {
+            kind: 'includeList',
+            includes: data["includes"].map(e => {
+                if (typeof e !== 'string') {
+                    throw new SyntaxError(`variant include ${e} is not a string`);
+                }
+                return {
+                    kind: 'include',
+                    include: e as string,
+                } as ShaderVariantInclude
+            }),
+        } as ShaderVariantIncludeList,
+    } as ShaderVariant;
+}
+function deserializeShaderVariantFile(data: any): ShaderVariantFile {
+    if (typeof data !== 'object') {
+        throw new SyntaxError("variant is not an object");
+    }
+    if (typeof data["uri"] !== 'string') {
+        throw new SyntaxError(`variant uri ${data["uri"]} is not a string`);
+    }
+    let uri = vscode.Uri.from({
+        scheme: "file",
+        path: data["uri"]
+    });
+    return {
+        'kind': 'file',
+        'uri': uri,
+        'variants': data["variants"].map((e: any) => deserializeShaderVariant(e, uri))
+    } as ShaderVariantFile;
+}
+/**
+ * Converts a JavaScript Object Notation (JSON) string into a ShaderVariantNode.
+ * @param data A valid JSON string.
+ * @throws {SyntaxError} If `data` is not valid JSON or incorrect format for database.
+ */
+function deserializeShaderVariantNode(data: string): ShaderVariantFile[] {
+    const json = JSON.parse(data);
+    if (Array.isArray(json)) {
+        return json.map(data => deserializeShaderVariantFile(data));
+    } else {
+        throw new SyntaxError("Incorrect database format: not an array");
+    }
 }
 
 // Notification from client to change shader variant
@@ -135,7 +202,7 @@ export type ShaderEntryPoint = {
     range: vscode.Range,
 };
 
-export type ShaderVariantNode = ShaderVariant | ShaderVariantFile | ShaderVariantDefineList | ShaderVariantIncludeList | ShaderVariantDefine | ShaderVariantInclude | ShaderVariantStage |ShaderVariantRoot;
+export type ShaderVariantNode = ShaderVariant | ShaderVariantFile | ShaderVariantDefineList | ShaderVariantIncludeList | ShaderVariantDefine | ShaderVariantInclude | ShaderVariantStage | ShaderVariantRoot;
 
 const shaderVariantTreeKey : string = 'shader-validator.shader-variant-tree-key';
 
@@ -247,22 +314,28 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
             });
             if (fileUris) {
                 for (let fileUri of fileUris) {
-                    // TODO: vscode.workspace.createFileSystemWatcher
+                    // TODO:CONFIG: vscode.workspace.createFileSystemWatcher
                     const file = await vscode.workspace.fs.readFile(fileUri);
-                    const database = castToShaderVariantList(JSON.parse(file.toString()));
-                    if (database) {
-                        let databaseMap = new Map(database.map((e : ShaderVariantFile) => {
-                            // Seems that serialisation is breaking something, so this is required for uri & range to behave correctly.
-                            e.uri = vscode.Uri.from(e.uri);
-                            for (let variant of e.variants) {
-                                variant.uri = vscode.Uri.from(variant.uri);
+                    try {
+                        const database = deserializeShaderVariantNode(file.toString());
+                        // TODO:CONFIG: make it so path is reliable. Need to check if absolute or not to use findFiles.
+                        // Should instead iterate all workspace and look into them.
+                        /*for (let file of database) {
+                            let absoluteUri = await vscode.workspace.findFiles(`**${file.uri.path}`);
+                            if (absoluteUri.length > 0) {
+                                file.uri = absoluteUri[0];
                             }
-                            return [e.uri.path, e];
+                            console.info(absoluteUri, `${file.uri.path}`);
+                            // TODO:CONFIG: remove if not found ?
+                        }*/
+                        let databaseMap = new Map(database.map((e : ShaderVariantFile) => {
+                            return [e.uri, e];
                         }));
-                        this.database.set(fileUri.path, databaseMap);
+                        this.database.set(fileUri, databaseMap);
                         this.onDidChangeTreeDataEmitter.fire();
-                    } else {
-                        vscode.window.showWarningMessage(`Failed to load variant database ${fileUri.path}: Invalid JSON`);
+                    } catch (e) {
+                        let error = e as SyntaxError;
+                        vscode.window.showErrorMessage(`Failed to load variant database ${vscode.workspace.asRelativePath(fileUri)}: ${error.message}`);
                     }
                 }
             }
@@ -680,7 +753,7 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
                 rootArray.push({
                     kind: 'root',
                     uri: databaseUri,
-                    label: databaseUri.path,
+                    label: vscode.workspace.asRelativePath(databaseUri),
                     files: Array.from(database.values())
                 } as ShaderVariantRoot);
             });
@@ -951,6 +1024,11 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
                 if (found) {
                     break;
                 }
+            }
+        } else if (node.kind == "root") {
+            // TODO:CONFIG: add ability to delete it.
+            if (node.uri) {
+                this.database.delete(node.uri);
             }
         } else {
             console.error("Unimplemented kind for delete", node);
