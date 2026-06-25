@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { CancellationToken, DocumentSymbol, DocumentSymbolRequest, DocumentUri, LanguageClient, ProtocolNotificationType, ProtocolRequestType, Range, SymbolInformation, SymbolKind, TextDocumentIdentifier, TextDocumentItem, TextDocumentRegistrationOptions } from 'vscode-languageclient/node';
 import { resolveVSCodeVariables, ShaderLanguageClient } from '../client';
+import path from 'path';
 
 interface ShaderVariantSerialized {
     url: DocumentUri,
@@ -20,6 +21,21 @@ function shaderVariantToSerialized(url: DocumentUri, languageId: string, e: Shad
         defines: Object.fromEntries(e.defines.defines.map(e => [e.label, e.value])),
         includes: e.includes.includes.map(e => resolveVSCodeVariables(e.include))
     };
+}
+
+function resolveUserPath(inputPath: string): string | undefined {
+    if (path.isAbsolute(inputPath)) {
+        return path.normalize(inputPath).replace("\\", "/");
+    }
+    if (vscode.workspace.workspaceFolders) {
+        for (let workspaceRoot of vscode.workspace.workspaceFolders) {
+            // TODO: What if not found ? Check other workspaces ?
+            return path.resolve(workspaceRoot.uri.fsPath, inputPath).replace("\\", "/");
+        }
+    } else {
+        return undefined;
+    }
+    return undefined;
 }
 
 function serializeShaderVariantNode(data: ShaderVariantNode): string {
@@ -87,10 +103,7 @@ function deserializeShaderVariantFile(data: any): ShaderVariantFile {
     if (typeof data["uri"] !== 'string') {
         throw new SyntaxError(`variant uri ${data["uri"]} is not a string`);
     }
-    let uri = vscode.Uri.from({
-        scheme: "file",
-        path: data["uri"]
-    });
+    let uri = vscode.Uri.file(resolveUserPath(data["uri"]) || data["uri"]);
     return {
         'kind': 'file',
         'uri': uri,
@@ -318,16 +331,6 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
                     const file = await vscode.workspace.fs.readFile(fileUri);
                     try {
                         const database = deserializeShaderVariantNode(file.toString());
-                        // TODO:CONFIG: make it so path is reliable. Need to check if absolute or not to use findFiles.
-                        // Should instead iterate all workspace and look into them.
-                        /*for (let file of database) {
-                            let absoluteUri = await vscode.workspace.findFiles(`**${file.uri.path}`);
-                            if (absoluteUri.length > 0) {
-                                file.uri = absoluteUri[0];
-                            }
-                            console.info(absoluteUri, `${file.uri.path}`);
-                            // TODO:CONFIG: remove if not found ?
-                        }*/
                         let databaseMap = new Map(database.map((e : ShaderVariantFile) => {
                             return [e.uri, e];
                         }));
