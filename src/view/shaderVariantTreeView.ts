@@ -23,6 +23,63 @@ function shaderVariantToSerialized(url: DocumentUri, languageId: string, e: Shad
     };
 }
 
+// using vscode.Uri as key to Map does not work as it compare by ref and not value... So we can have duplicated keys...
+// Using this wrapper to fix this by using underlying string as key.
+class UriMap<V> implements Iterable<[vscode.Uri, V]> {
+    private readonly _map = new Map<string, { uri: vscode.Uri; value: V }>();
+
+    constructor(iterable?: Iterable<readonly [vscode.Uri, V]> | null) {
+        if (iterable) {
+            for (const [uri, value] of iterable) {
+                this.set(uri, value);
+            }
+        }
+    }
+
+    set(uri: vscode.Uri, value: V): this {
+        this._map.set(uri.toString(), { uri, value });
+        return this;
+    }
+
+    get(uri: vscode.Uri): V | undefined {
+        return this._map.get(uri.toString())?.value;
+    }
+
+    has(uri: vscode.Uri): boolean {
+        return this._map.has(uri.toString());
+    }
+
+    delete(uri: vscode.Uri): boolean {
+        return this._map.delete(uri.toString());
+    }
+
+    get size(): number {
+        return this._map.size;
+    }
+
+    [Symbol.iterator](): Iterator<[vscode.Uri, V]> {
+        return this.entries();
+    }
+
+    forEach(callbackfn: (value: V, key: vscode.Uri, map: UriMap<V>) => void, thisArg?: any): void {
+        for (const { uri, value } of this._map.values()) {
+            callbackfn.call(thisArg, value, uri, this);
+        }
+    }
+
+    *entries(): IterableIterator<[vscode.Uri, V]> {
+        for (const { uri, value } of this._map.values()) {
+            yield [uri, value];
+        }
+    }
+
+    *values(): IterableIterator<V> {
+        for (const { value } of this._map.values()) {
+            yield value;
+        }
+    }
+}
+
 function resolveUserPath(inputPath: string): string | undefined {
     if (path.isAbsolute(inputPath)) {
         return path.normalize(inputPath).replace("\\", "/");
@@ -224,9 +281,8 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
     private onDidChangeTreeDataEmitter: vscode.EventEmitter<ShaderVariantNode | undefined | void> = new vscode.EventEmitter<ShaderVariantNode | undefined | void>();
     readonly onDidChangeTreeData: vscode.Event<ShaderVariantNode | undefined | void> = this.onDidChangeTreeDataEmitter.event;
 
-    // using vscode.Uri as key does not match well with Memento state storage...
-    private files: Map<vscode.Uri, ShaderVariantFile>;
-    private database: Map<vscode.Uri, Map<vscode.Uri, ShaderVariantFile>>;
+    private files: UriMap<ShaderVariantFile>;
+    private database: UriMap<Map<vscode.Uri, ShaderVariantFile>>;
 
     // Serialization & Editor
     private server: ShaderLanguageClient;
@@ -234,12 +290,12 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
     private decorator: Map<string, vscode.TextEditorDecorationType>;
     private workspaceState: vscode.Memento;
     // Async symbol loading
-    private shaderEntryPointList: Map<vscode.Uri, ShaderEntryPoint[]>;
-    private asyncGoToShaderEntryPoint: Map<vscode.Uri, string>;
+    private shaderEntryPointList: UriMap<ShaderEntryPoint[]>;
+    private asyncGoToShaderEntryPoint: UriMap<string>;
 
     private load() {
         let variants : ShaderVariantFile[] = this.workspaceState.get<ShaderVariantFile[]>(shaderVariantTreeKey, []);
-        this.files = new Map(variants.map((e : ShaderVariantFile) => {
+        this.files = new UriMap(variants.map((e : ShaderVariantFile) => {
             // Seems that serialisation is breaking something, so this is required for uri & range to behave correctly.
             e.uri = vscode.Uri.from(e.uri);
             for (let variant of e.variants) {
@@ -255,17 +311,17 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
 
     constructor(context: vscode.ExtensionContext, server: ShaderLanguageClient) {
         this.workspaceState = context.workspaceState;
-        this.files = new Map;
-        this.database = new Map;
+        this.files = new UriMap;
+        this.database = new UriMap;
         this.load();
-        this.shaderEntryPointList = new Map;
+        this.shaderEntryPointList = new UriMap;
         this.server = server;
         this.tree = vscode.window.createTreeView<ShaderVariantNode>("shader-validator-variants", {
             treeDataProvider: this
             // TODO: drag and drop for better ux.
             //dragAndDropController:
         });
-        this.asyncGoToShaderEntryPoint = new Map;
+        this.asyncGoToShaderEntryPoint = new UriMap;
         this.tree.onDidChangeCheckboxState((e: vscode.TreeCheckboxChangeEvent<ShaderVariantNode>) => {
             for (let [variant, checkboxState] of e.items) {
                 if (variant.kind === 'variant') {
