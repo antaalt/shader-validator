@@ -311,6 +311,7 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
         }));
     }
     private save() {
+        // TODO:CONFIG: save files opened as database.
         let array = Array.from(this.files.values());
         this.workspaceState.update(shaderVariantTreeKey, array);
     }
@@ -507,6 +508,7 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
     }
     private async loadDatabase(fileUri: vscode.Uri) {
         // TODO:CONFIG: vscode.workspace.createFileSystemWatcher
+        // TODO:CONFIG: what if invalid file ?
         const file = await vscode.workspace.fs.readFile(fileUri);
         try {
             const database = deserializeShaderVariantNode(file.toString());
@@ -1111,7 +1113,7 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
                 }
             }
         } else if (node.kind === "database") {
-            let result = await vscode.window.showInformationMessage(`Are you sure you want to remove database ${node.uri.path} ? It cannot be undone.`, { 
+            let result = await vscode.window.showInformationMessage(`Are you sure you want to remove database file "${vscode.workspace.asRelativePath(node.uri)}" ? It cannot be undone.`, { 
                 modal: true
             }, "Yes", "No");
             if (result === "Yes") {
