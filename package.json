@@ -522,6 +522,13 @@
         "enablement": "view == shader-validator-variants"
       },
       {
+        "command": "shader-validator.refreshMenu",
+        "title": "Refresh",
+        "category": "Shader validator",
+        "icon": "$(refresh)",
+        "enablement": "view == shader-validator-variants"
+      },
+      {
         "command": "shader-validator.gotoShaderEntryPoint",
         "title": "Go to shader entry point",
         "category": "Shader validator",
@@ -561,7 +568,12 @@
         {
           "command": "shader-validator.deleteMenu",
           "group": "inline@3",
-          "when": "view == shader-validator-variants && (viewItem == variant || viewItem == include || viewItem == define || viewItem == file)"
+          "when": "view == shader-validator-variants && (viewItem == variant || viewItem == include || viewItem == define || viewItem == file || viewItem == database)"
+        },
+        {
+          "command": "shader-validator.refreshMenu",
+          "group": "inline@4",
+          "when": "view == shader-validator-variants && (viewItem == database)"
         }
       ]
     },

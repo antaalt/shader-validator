@@ -262,7 +262,13 @@ export type ShaderVariantFile = {
 };
 export type ShaderVariantRoot = {
     kind: 'root'
-    uri: vscode.Uri | undefined,
+    label: string,
+    files: ShaderVariantFile[],
+};
+
+export type ShaderVariantDatabase = {
+    kind: 'database'
+    uri: vscode.Uri,
     label: string,
     files: ShaderVariantFile[],
 };
@@ -272,7 +278,7 @@ export type ShaderEntryPoint = {
     range: vscode.Range,
 };
 
-export type ShaderVariantNode = ShaderVariant | ShaderVariantFile | ShaderVariantDefineList | ShaderVariantIncludeList | ShaderVariantDefine | ShaderVariantInclude | ShaderVariantStage | ShaderVariantRoot;
+export type ShaderVariantNode = ShaderVariant | ShaderVariantFile | ShaderVariantDefineList | ShaderVariantIncludeList | ShaderVariantDefine | ShaderVariantInclude | ShaderVariantStage | ShaderVariantRoot | ShaderVariantDatabase;
 
 const shaderVariantTreeKey : string = 'shader-validator.shader-variant-tree-key';
 
@@ -383,19 +389,7 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
             });
             if (fileUris) {
                 for (let fileUri of fileUris) {
-                    // TODO:CONFIG: vscode.workspace.createFileSystemWatcher
-                    const file = await vscode.workspace.fs.readFile(fileUri);
-                    try {
-                        const database = deserializeShaderVariantNode(file.toString());
-                        let databaseMap = new Map(database.map((e : ShaderVariantFile) => {
-                            return [e.uri, e];
-                        }));
-                        this.database.set(fileUri, databaseMap);
-                        this.onDidChangeTreeDataEmitter.fire();
-                    } catch (e) {
-                        let error = e as SyntaxError;
-                        vscode.window.showErrorMessage(`Failed to load variant database ${vscode.workspace.asRelativePath(fileUri)}: ${error.message}`);
-                    }
+                    this.loadDatabase(fileUri);
                 }
             }
         }));
@@ -439,9 +433,15 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
             await this.add(node);
             this.save();
         }));
-        context.subscriptions.push(vscode.commands.registerCommand("shader-validator.deleteMenu", (node: ShaderVariantNode) => {
-            this.delete(node);
+        context.subscriptions.push(vscode.commands.registerCommand("shader-validator.deleteMenu", async (node: ShaderVariantNode) => {
+            await this.delete(node);
             this.save();
+        }));
+        context.subscriptions.push(vscode.commands.registerCommand("shader-validator.refreshMenu", (node: ShaderVariantNode) => {
+            if (node.kind === 'database') {
+                this.loadDatabase(node.uri);
+                this.refreshAll();
+            }
         }));
         context.subscriptions.push(vscode.commands.registerCommand("shader-validator.editMenu", async (node: ShaderVariantNode) => {
             await this.edit(node);
@@ -505,6 +505,21 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
     dispose() {
         // Nothing to do here.
     }
+    private async loadDatabase(fileUri: vscode.Uri) {
+        // TODO:CONFIG: vscode.workspace.createFileSystemWatcher
+        const file = await vscode.workspace.fs.readFile(fileUri);
+        try {
+            const database = deserializeShaderVariantNode(file.toString());
+            let databaseMap = new Map(database.map((e : ShaderVariantFile) => {
+                return [e.uri, e];
+            }));
+            this.database.set(fileUri, databaseMap);
+            this.onDidChangeTreeDataEmitter.fire();
+        } catch (e) {
+            let error = e as SyntaxError;
+            vscode.window.showErrorMessage(`Failed to load variant database ${vscode.workspace.asRelativePath(fileUri)}: ${error.message}`);
+        }
+    }
     private getActiveVariant() : ShaderVariant | null {
         for (const file of this.files.values()) {
             const activeVariant = file.variants.find((e: ShaderVariant) => e.isActive);
@@ -545,6 +560,7 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
 
     private getFileAndParentNode(node: ShaderVariantNode) : [ShaderVariantFile, ShaderVariantNode | null] | null {
         if (node.kind === 'variant') {
+            // TODO:CONFIG: this does not look at the right place...
             let file = this.files.get(node.uri);
             if (file) {
                 return [file, null]; // No parent
@@ -774,7 +790,13 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
             return item;
         } else if (element.kind === 'root') {
             let item = new vscode.TreeItem(element.label, vscode.TreeItemCollapsibleState.Expanded);
-            item.tooltip = element.uri ? `All variants parsed from config file ${element.uri.path} .` : 'All variants defined.';
+            item.tooltip = 'All variants defined.';
+            item.iconPath = new vscode.ThemeIcon('list-tree');
+            item.contextValue = element.kind;
+            return item;
+        } else if (element.kind === 'database') {
+            let item = new vscode.TreeItem(element.label, vscode.TreeItemCollapsibleState.Expanded);
+            item.tooltip = `All variants parsed from config file ${element.uri.path} .`;
             item.iconPath = vscode.ThemeIcon.File;
             item.contextValue = element.kind;
             return item;
@@ -802,23 +824,24 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
                 return [];
             } else if (element.kind === 'root') {
                 return element.files;
+            } else if (element.kind === 'database') {
+                return element.files;
             } else {
                 console.error("Reached unreachable", element);
                 return undefined!; // unreachable
             }
         } else {
-            let rootArray : ShaderVariantRoot[] = [];
+            let rootArray : ShaderVariantNode[] = [];
             this.database.forEach((database, databaseUri) => {
                 rootArray.push({
-                    kind: 'root',
+                    kind: 'database',
                     uri: databaseUri,
                     label: vscode.workspace.asRelativePath(databaseUri),
                     files: Array.from(database.values())
-                } as ShaderVariantRoot);
+                } as ShaderVariantDatabase);
             });
             rootArray.push({
                 kind: 'root',
-                uri: undefined,
                 label: 'Main',
                 files: Array.from(this.files.values())
             } as ShaderVariantRoot);
@@ -1036,8 +1059,11 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
             console.error("Unimplemented kind for edit", node);
         }
     }
-    public delete(node: ShaderVariantNode) {
+    public async delete(node: ShaderVariantNode) {
         if (node.kind === 'file') {
+            // TODO:CONFIG: this might be broken if we delete a file from config that is open in main...
+            // Need to check parent if we are inside a database, or disable remove from db via readonly flag...
+            // Works for all kind, cuz they all rely on files...
             this.files.delete(node.uri);
             this.refreshAll();
         } else if (node.kind === 'variant') {
@@ -1084,10 +1110,13 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
                     break;
                 }
             }
-        } else if (node.kind == "root") {
-            // TODO:CONFIG: add ability to delete it.
-            if (node.uri) {
+        } else if (node.kind === "database") {
+            let result = await vscode.window.showInformationMessage(`Are you sure you want to remove database ${node.uri.path} ? It cannot be undone.`, { 
+                modal: true
+            }, "Yes", "No");
+            if (result === "Yes") {
                 this.database.delete(node.uri);
+                this.refreshAll();
             }
         } else {
             console.error("Unimplemented kind for delete", node);
