@@ -1,27 +1,14 @@
 [
     {
-        "uri":"hlsl/variants.hlsl",
+        "uri":"test.variant.hlsl",
         "variants": [
             {
-                "name": "mainError",
+                "name": "mainOk",
                 "stage": "vertex",
-                "defines": [],
-                "includes": []
-            }
-        ]
-    },
-    {
-        "uri":"hlsl/include-config.hlsl",
-        "variants": [
-            {
-                "name": "main",
-                "stage": "auto",
                 "defines": {
-                    "MACRO": "0"
+                    "VARIANT_DEFINE": "1"
                 },
-                "includes": [
-                    "${workspaceFolder}/hlsl/inc0"
-                ]
+                "includes": []
             }
         ]
     }

@@ -106,18 +106,24 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
             this.save();
             this.notifier.updateDecorations();
         });
-        context.subscriptions.push(vscode.commands.registerCommand("shader-validator.loadVariantDatabase", async () => {
-            let fileUris = await vscode.window.showOpenDialog({
-                canSelectMany: false,
-                title: 'Load Variant Database',
-                openLabel: 'Load',
-                filters: {
-                    'json': ['json']
-                }
-            });
+        context.subscriptions.push(vscode.commands.registerCommand("shader-validator.loadVariantDatabase", async (uri: vscode.Uri | null) => {
+            let fileUris = undefined;
+            if (uri) {
+                fileUris = [uri];
+            } else {
+                fileUris = await vscode.window.showOpenDialog({
+                    canSelectMany: false,
+                    title: 'Load Variant Database',
+                    openLabel: 'Load',
+                    filters: {
+                        'json': ['json']
+                    }
+                });
+            }
             if (fileUris) {
                 for (let fileUri of fileUris) {
-                    this.loadDatabase(fileUri);
+                    console.info("Loading database ", fileUri);
+                    await this.loadDatabase(fileUri);
                 }
             }
         }));
