@@ -220,6 +220,8 @@ export type ShaderVariant = {
 
 export type ShaderVariantFile = {
     kind: 'file',
+    // These are currently generated at runtime, so can't get parents easily...
+    //parent: ShaderVariantRoot | ShaderVariantDatabase,
     uri: vscode.Uri,
     variants: ShaderVariant[],
 };
@@ -234,11 +236,6 @@ export type ShaderVariantDatabase = {
     uri: vscode.Uri,
     label: string,
     files: ShaderVariantFile[],
-};
-
-export type ShaderEntryPoint = {
-    entryPoint: string,
-    range: vscode.Range,
 };
 
 export type ShaderVariantNode = ShaderVariant | ShaderVariantFile | ShaderVariantDefineList | ShaderVariantIncludeList | ShaderVariantDefine | ShaderVariantInclude | ShaderVariantStage | ShaderVariantRoot | ShaderVariantDatabase;

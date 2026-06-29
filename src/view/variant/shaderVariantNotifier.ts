@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { resolveVSCodeVariables, ShaderLanguageClient } from '../../client';
-import { ShaderEntryPoint, ShaderStage, ShaderVariant, ShaderVariantFile, UriMap } from './variant';
+import { ShaderStage, ShaderVariant, ShaderVariantFile, UriMap } from './variant';
 import { DocumentUri, ProtocolNotificationType, ProtocolRequestType, TextDocumentIdentifier, TextDocumentRegistrationOptions } from 'vscode-languageclient';
 
 export interface ShaderVariantSerialized {
@@ -11,6 +11,11 @@ export interface ShaderVariantSerialized {
     defines: Object,
     includes: string[],
 }
+
+export type ShaderEntryPoint = {
+    entryPoint: string,
+    range: vscode.Range,
+};
 
 function shaderVariantToSerialized(url: DocumentUri, languageId: string, e: ShaderVariant) : ShaderVariantSerialized {
     return {
@@ -139,31 +144,33 @@ export class ShaderVariantNotifier {
         return null;
     }
 
-    notifyVariantChanged() {
+    notifyVariantChanged(variantFile: ShaderVariantFile, activeVariant: ShaderVariant | null) {
         function capitalizeFirstLetter(str: string): string {
             return str.charAt(0).toUpperCase() + str.slice(1);
         }
         // Notify server of change.
-        let fileActiveVariant = this.getActiveVariant();
-        if (fileActiveVariant) {
+        if (activeVariant) {
+            console.assert(activeVariant.isActive);
             // Open document to get language ID.
             // This does not open the document in the editor, only internally.
-            vscode.workspace.openTextDocument(fileActiveVariant.uri).then(doc => {
+            vscode.workspace.openTextDocument(activeVariant.uri).then(doc => {
                 this.server.sendNotification(didChangeShaderVariantNotification, {
                     // Need this check again here because its async
-                    shaderVariant: fileActiveVariant ? shaderVariantToSerialized(
-                        this.server.uriAsString(fileActiveVariant.uri), 
+                    shaderVariant: activeVariant ? shaderVariantToSerialized(
+                        this.server.uriAsString(activeVariant.uri), 
                         capitalizeFirstLetter(doc.languageId), // Server expect it with capitalized first letter.
-                        fileActiveVariant
+                        activeVariant
                     ) : null,
                 });
+                // Symbols might have changed, so request them as we might change context
+                this.requestDocumentSymbol(variantFile.uri);
             });
         } else {
             this.server.sendNotification(didChangeShaderVariantNotification, {
                 shaderVariant: null,
             });
+            this.requestDocumentSymbol(variantFile.uri);
         }
-        
     }
     private requestDocumentSymbol(uri: vscode.Uri) {
         // TODO: should request inlay hint aswell.
@@ -287,19 +294,6 @@ export class ShaderVariantNotifier {
             if (editor.document.uri.scheme === 'file') {
                 this.updateDecoration(editor);
             }
-        }
-    }
-    updateVariantAndSymbols(file: ShaderVariantFile) {
-        // When editing variant, might need to send it if holding an active one.
-        if (this.hasActiveVariant(file))  {
-            this.notifyVariantChanged();
-        }
-        // Symbols might have changed, so request them as we use this to compute symbols.
-        this.requestDocumentSymbol(file.uri);
-    }
-    updateAllVariantAndSymbols() {
-        for (let [_, file] of this.files) {
-            this.updateVariantAndSymbols(file);
         }
     }
 }
