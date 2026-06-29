@@ -46,20 +46,19 @@ interface ShaderVariantResponse {
 const shaderVariantRequest = new ProtocolRequestType<ShaderVariantParams, ShaderVariantResponse, never, void, ShaderVariantRegistrationOptions>('textDocument/shaderVariant');
 
 export class ShaderVariantNotifier {
-    // TODO:CONFIG: what about database ? Need a wrapper for them...
-    private readonly files: UriMap<ShaderVariantFile>;
+    private activeVariant: ShaderVariant | null;
     private server: ShaderLanguageClient;
     private decorator: Map<string, vscode.TextEditorDecorationType>;
     // Async symbol loading
     private shaderEntryPointList: UriMap<ShaderEntryPoint[]>;
     private asyncGoToShaderEntryPoint: UriMap<string>;
 
-    constructor(context: vscode.ExtensionContext, server: ShaderLanguageClient, files: UriMap<ShaderVariantFile>) {
+    constructor(context: vscode.ExtensionContext, server: ShaderLanguageClient) {
         this.decorator = new Map;
         this.shaderEntryPointList = new UriMap;
         this.asyncGoToShaderEntryPoint = new UriMap;
         this.server = server;
-        this.files = files;
+        this.activeVariant = null;
         
         const supportedLangIds = ShaderLanguageClient.getSupportedLangId();
         for (var supportedLangId of supportedLangIds) {
@@ -96,15 +95,7 @@ export class ShaderVariantNotifier {
                 // To update the key in a Map, you need to remove the old key and add the new one.
                 const oldPath = oldUri;
                 const newPath = newUri;
-                const file = this.files.get(oldPath);
-                if (file) {
-                    // Update the uri inside the file object
-                    file.uri = newUri;
-                    // Remove the old key and set the new key
-                    this.files.delete(oldPath);
-                    this.files.set(newPath, file);
-                }
-                // Also update entry point and async maps
+                // Update entry point and async maps
                 const entryPoints = this.shaderEntryPointList.get(oldPath);
                 if (entryPoints) {
                     this.shaderEntryPointList.delete(oldPath);
@@ -127,15 +118,6 @@ export class ShaderVariantNotifier {
             this.goToShaderEntryPoint(uri, entryPointName, true);
         }));
     }
-    private getActiveVariant() : ShaderVariant | null {
-        for (const file of this.files.values()) {
-            const activeVariant = file.variants.find((e: ShaderVariant) => e.isActive);
-            if (activeVariant) {
-                return activeVariant;
-            }
-        }
-        return null;
-    }
     private hasActiveVariant(file: ShaderVariantFile) : ShaderVariant | null {
         const activeVariant = file.variants.find((e: ShaderVariant) => e.isActive);
         if (activeVariant) {
@@ -148,6 +130,7 @@ export class ShaderVariantNotifier {
         function capitalizeFirstLetter(str: string): string {
             return str.charAt(0).toUpperCase() + str.slice(1);
         }
+        this.activeVariant = activeVariant;
         // Notify server of change.
         if (activeVariant) {
             console.assert(activeVariant.isActive);
@@ -261,17 +244,15 @@ export class ShaderVariantNotifier {
         });
     }
     private updateDecoration(editor: vscode.TextEditor) {
-        let file = this.files.get(editor.document.uri);
         let entryPoints = this.shaderEntryPointList.get(editor.document.uri);
 
-        let variant = this.getActiveVariant();
-        if (file && entryPoints) {
-            if (variant) {
+        if (entryPoints) {
+            if (this.activeVariant) {
                 let found = false;
                 for (let entryPoint of entryPoints) {
-                    if (entryPoint.entryPoint === variant.name) {
+                    if (entryPoint.entryPoint === this.activeVariant.name) {
                         let decorations : vscode.DecorationOptions[]= [];
-                        decorations.push({ range: entryPoint.range, hoverMessage: variant.name });
+                        decorations.push({ range: entryPoint.range, hoverMessage: this.activeVariant.name });
                         editor.setDecorations(this.getDecorator(editor.document.languageId), decorations);
                         found = true;
                         break;

@@ -41,7 +41,7 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
         this.workspaceState = context.workspaceState;
         this.files = new UriMap;
         this.database = new UriMap;
-        this.notifier = new ShaderVariantNotifier(context, server, this.files);
+        this.notifier = new ShaderVariantNotifier(context, server);
         this.load();
         this.tree = vscode.window.createTreeView<ShaderVariantNode>("shader-validator-variants", {
             treeDataProvider: this
@@ -135,6 +135,22 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
             }
             this.save();
         }));
+        context.subscriptions.push(vscode.workspace.onDidRenameFiles(document => {
+            for (const fileObj of document.files) {
+                const { oldUri, newUri } = fileObj;
+                // To update the key in a Map, you need to remove the old key and add the new one.
+                const oldPath = oldUri;
+                const newPath = newUri;
+                const file = this.files.get(oldPath);
+                if (file) {
+                    // Update the uri inside the file object
+                    file.uri = newUri;
+                    // Remove the old key and set the new key
+                    this.files.delete(oldPath);
+                    this.files.set(newPath, file);
+                }
+            }
+        }));
         context.subscriptions.push(vscode.commands.registerCommand("shader-validator.addMenu", async (node: ShaderVariantNode) => {
             await this.add(node);
             this.save();
@@ -167,6 +183,14 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
     }
     dispose() {
         // Nothing to do here.
+    }
+    getFile(uri: vscode.Uri) {
+        // TODO:CONFIG: what about database ? Need a wrapper for them...
+        return this.files.get(uri);
+    }
+    renameFile(uri: vscode.Uri) {
+        // TODO:CONFIG: what about database ? Need a wrapper for them...
+        return this.files.get(uri);
     }
     private async loadDatabase(fileUri: vscode.Uri) {
         // TODO:CONFIG: vscode.workspace.createFileSystemWatcher
@@ -480,7 +504,7 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
             return undefined;
         }
     }
-    getActiveVariant(node: ShaderVariantNode) : ShaderVariant | null {
+    getActiveVariant() : ShaderVariant | null {
         for (let [uri, file] of this.files) {
             for (let variant of file.variants) {
                 if (variant.isActive) {
@@ -639,7 +663,7 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
         if (node.kind === 'file') {
             let file = this.files.get(node.uri);
             // Disable variant if it was inside...
-            if (file && this.getActiveVariant(node) !== null) {
+            if (file && this.getActiveVariant() !== null) {
                 this.updateActiveVariant(file, null);
             }
             if (file && file === node) {
@@ -698,7 +722,7 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
                 for (let [databaseUri, database] of this.database) {
                     let file = database.get(node.uri);
                     // Disable variant if it was inside...
-                    if (file && this.getActiveVariant(node) !== null) {
+                    if (file && this.getActiveVariant() !== null) {
                         this.updateActiveVariant(file, null);
                     }
                     database.delete(node.uri);
