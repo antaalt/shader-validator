@@ -1,0 +1,28 @@
+[
+    {
+        "uri":"hlsl/variants.hlsl",
+        "variants": [
+            {
+                "name": "mainError",
+                "stage": "vertex",
+                "defines": [],
+                "includes": []
+            }
+        ]
+    },
+    {
+        "uri":"hlsl/include-config.hlsl",
+        "variants": [
+            {
+                "name": "main",
+                "stage": "auto",
+                "defines": {
+                    "MACRO": "0"
+                },
+                "includes": [
+                    "${workspaceFolder}/hlsl/inc0"
+                ]
+            }
+        ]
+    }
+]

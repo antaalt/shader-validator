@@ -53,6 +53,11 @@ export class UriMap<V> implements Iterable<[vscode.Uri, V]> {
         }
     }
 
+    *keys(): IterableIterator<string> {
+        for (const key of this._map.keys()) {
+            yield key;
+        }
+    }
     *values(): IterableIterator<V> {
         for (const { value } of this._map.values()) {
             yield value;

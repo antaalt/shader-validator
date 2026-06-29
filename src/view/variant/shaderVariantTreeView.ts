@@ -6,6 +6,7 @@ import { deserializeShaderVariantNode, ShaderStage, ShaderVariant, ShaderVariant
 import { ShaderVariantNotifier } from './shaderVariantNotifier';
 
 const shaderVariantTreeKey : string = 'shader-validator.shader-variant-tree-key';
+const shaderVariantDatabaseKey : string = 'shader-validator.shader-variant-database-key';
 
 export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<ShaderVariantNode> {
 
@@ -30,11 +31,16 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
             }
             return [e.uri, e];
         }));
+        let databaseUris : string[] = this.workspaceState.get<string[]>(shaderVariantDatabaseKey, []);
+        for (let databseUri of databaseUris) {
+            this.loadDatabase(vscode.Uri.parse(databseUri));
+        }
     }
     private save() {
-        // TODO:CONFIG: save files opened as database.
-        let array = Array.from(this.files.values());
-        this.workspaceState.update(shaderVariantTreeKey, array);
+        let treeArray = Array.from(this.files.values());
+        this.workspaceState.update(shaderVariantTreeKey, treeArray);
+        let databaseArray = Array.from(this.database.keys());
+        this.workspaceState.update(shaderVariantDatabaseKey, databaseArray);
     }
 
     constructor(context: vscode.ExtensionContext, server: ShaderLanguageClient) {
@@ -67,14 +73,30 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
                                 this.updateTreeView(file);
                             }
                         }
+                        for (let [databaseUrl, database] of this.database) {
+                            for (let [url, file] of database) {
+                                let needRefresh = false;
+                                for (let otherVariant of file.variants) {
+                                    if (otherVariant.isActive) {
+                                        needRefresh = true;
+                                        otherVariant.isActive = false;
+                                    }
+                                }
+                                if (needRefresh) {
+                                    // Notify server & update checkbox
+                                    this.updateActiveVariant(file, null);
+                                    this.updateTreeView(file);
+                                }
+                            }
+                        }
                         variant.isActive = true; // checked
-                        let file = this.files.get(variant.uri);
+                        let file = this.getNodeVariantFile(variant);
                         if (file) {
                             this.updateActiveVariant(file, variant);
                         }
                     } else {
                         variant.isActive = false; // unchecked
-                        let file = this.files.get(variant.uri);
+                        let file = this.getNodeVariantFile(variant);
                         if (file) {
                             this.updateActiveVariant(file, null);
                         }
@@ -184,19 +206,10 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
     dispose() {
         // Nothing to do here.
     }
-    getFile(uri: vscode.Uri) {
-        // TODO:CONFIG: what about database ? Need a wrapper for them...
-        return this.files.get(uri);
-    }
-    renameFile(uri: vscode.Uri) {
-        // TODO:CONFIG: what about database ? Need a wrapper for them...
-        return this.files.get(uri);
-    }
     private async loadDatabase(fileUri: vscode.Uri) {
-        // TODO:CONFIG: vscode.workspace.createFileSystemWatcher
-        // TODO:CONFIG: what if invalid file ?
-        const file = await vscode.workspace.fs.readFile(fileUri);
+        // TODO: Could be neat to hot reload the database with vscode.workspace.createFileSystemWatcher
         try {
+            const file = await vscode.workspace.fs.readFile(fileUri);
             const database = deserializeShaderVariantNode(file.toString());
             let databaseMap = new Map(database.map((e : ShaderVariantFile) => {
                 return [e.uri, e];
@@ -719,15 +732,8 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
                 modal: true
             }, "Yes", "No");
             if (result === "Yes") {
-                for (let [databaseUri, database] of this.database) {
-                    let file = database.get(node.uri);
-                    // Disable variant if it was inside...
-                    if (file && this.getActiveVariant() !== null) {
-                        this.updateActiveVariant(file, null);
-                    }
-                    database.delete(node.uri);
-                    this.updateTreeView();
-                }
+                this.database.delete(node.uri);
+                this.updateTreeView();
             }
         } else {
             console.error("Unimplemented kind for delete", node);

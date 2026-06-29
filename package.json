@@ -550,7 +550,7 @@
         },
         {
           "command": "shader-validator.loadVariantDatabase",
-          "when": "view == shader-validator-variants && editorIsOpen",
+          "when": "view == shader-validator-variants",
           "group": "navigation"
         }
       ],
