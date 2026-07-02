@@ -123,7 +123,7 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
             if (fileUris) {
                 for (let fileUri of fileUris) {
                     console.info("Loading database ", fileUri);
-                    await this.loadDatabase(fileUri);
+                    await this.loadDatabase(fileUri, context.extensionMode === vscode.ExtensionMode.Test);
                 }
             }
         }));
@@ -212,7 +212,7 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
     dispose() {
         // Nothing to do here.
     }
-    private async loadDatabase(fileUri: vscode.Uri) {
+    private async loadDatabase(fileUri: vscode.Uri, isTest?: boolean) {
         // TODO: Could be neat to hot reload the database with vscode.workspace.createFileSystemWatcher
         try {
             const file = await vscode.workspace.fs.readFile(fileUri);
@@ -220,6 +220,14 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
             let databaseMap = new UriMap(database.map((e : ShaderVariantFile) => {
                 return [e.uri, e];
             }));
+            if (isTest) {
+                // Set first variant as active for testing purpose
+                databaseMap.forEach((file, _key, _map) => {
+                    // Hardcoded value for now.
+                    file.variants[0].isActive = true;
+                    this.updateActiveVariant(file, file.variants[0]);
+                });
+            }
             // Reset variant if its inside db.
             let oldDatabase = this.database.get(fileUri);
             if (oldDatabase) {

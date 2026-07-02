@@ -113,19 +113,11 @@ export class ShaderVariantNotifier {
         context.subscriptions.push(vscode.commands.registerCommand("shader-validator.gotoShaderEntryPoint", (uri: vscode.Uri, entryPointName: string) => {
             // sometimes, its goes in random place in file... 
             // TODO: Should use regex & read diag region instead.
-            let diagnostic = vscode.languages.getDiagnostics().find(([diagUri, diags]) => diagUri === uri);
+            //let diagnostic = vscode.languages.getDiagnostics().find(([diagUri, diags]) => diagUri === uri);
             
             this.goToShaderEntryPoint(uri, entryPointName, true);
         }));
     }
-    private hasActiveVariant(file: ShaderVariantFile) : ShaderVariant | null {
-        const activeVariant = file.variants.find((e: ShaderVariant) => e.isActive);
-        if (activeVariant) {
-            return activeVariant;
-        }
-        return null;
-    }
-
     notifyVariantChanged(variantFile: ShaderVariantFile, activeVariant: ShaderVariant | null) {
         function capitalizeFirstLetter(str: string): string {
             return str.charAt(0).toUpperCase() + str.slice(1);
