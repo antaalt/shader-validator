@@ -15,7 +15,7 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
 
     private notifier: ShaderVariantNotifier;
     private files: UriMap<ShaderVariantFile>;
-    private database: UriMap<Map<vscode.Uri, ShaderVariantFile>>;
+    private database: UriMap<UriMap<ShaderVariantFile>>;
 
     // Serialization & Editor
     private tree: vscode.TreeView<ShaderVariantNode>;
@@ -217,7 +217,7 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
         try {
             const file = await vscode.workspace.fs.readFile(fileUri);
             const database = deserializeShaderVariantNode(file.toString());
-            let databaseMap = new Map(database.map((e : ShaderVariantFile) => {
+            let databaseMap = new UriMap(database.map((e : ShaderVariantFile) => {
                 return [e.uri, e];
             }));
             // Reset variant if its inside db.
