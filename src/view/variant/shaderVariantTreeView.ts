@@ -106,24 +106,23 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
             this.save();
             this.notifier.updateDecorations();
         });
-        context.subscriptions.push(vscode.commands.registerCommand("shader-validator.loadVariantDatabase", async (uri: vscode.Uri | null) => {
-            let fileUris = undefined;
-            if (uri) {
-                fileUris = [uri];
-            } else {
-                fileUris = await vscode.window.showOpenDialog({
-                    canSelectMany: false,
-                    title: 'Load Variant Database',
-                    openLabel: 'Load',
-                    filters: {
-                        'json': ['json']
-                    }
-                });
-            }
+        context.subscriptions.push(vscode.commands.registerCommand("shader-validator.loadVariantDatabaseFromUri", async (uri: vscode.Uri) => {
+            console.info("Loading database from uri", uri);
+            await this.loadDatabase(uri, context.extensionMode === vscode.ExtensionMode.Test);
+        }));
+        context.subscriptions.push(vscode.commands.registerCommand("shader-validator.loadVariantDatabase", async () => {
+            let fileUris = await vscode.window.showOpenDialog({
+                canSelectMany: false,
+                title: 'Load Variant Database',
+                openLabel: 'Load',
+                filters: {
+                    'json': ['json']
+                }
+            });
             if (fileUris) {
                 for (let fileUri of fileUris) {
                     console.info("Loading database ", fileUri);
-                    await this.loadDatabase(fileUri, context.extensionMode === vscode.ExtensionMode.Test);
+                    await this.loadDatabase(fileUri);
                 }
             }
         }));
@@ -220,14 +219,6 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
             let databaseMap = new UriMap(database.map((e : ShaderVariantFile) => {
                 return [e.uri, e];
             }));
-            if (isTest) {
-                // Set first variant as active for testing purpose
-                databaseMap.forEach((file, _key, _map) => {
-                    // Hardcoded value for now.
-                    file.variants[0].isActive = true;
-                    this.updateActiveVariant(file, file.variants[0]);
-                });
-            }
             // Reset variant if its inside db.
             let oldDatabase = this.database.get(fileUri);
             if (oldDatabase) {
@@ -239,6 +230,14 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
                         }
                     }
                 }
+            }
+            if (isTest) {
+                // Set first variant as active for testing purpose
+                databaseMap.forEach((file, _key, _map) => {
+                    // Hardcoded value for now.
+                    file.variants[0].isActive = true;
+                    this.updateActiveVariant(file, file.variants[0]);
+                });
             }
             this.database.set(fileUri, databaseMap);
             this.onDidChangeTreeDataEmitter.fire();
