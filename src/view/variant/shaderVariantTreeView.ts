@@ -570,7 +570,7 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
             let entryPoint = await this.promptEntryPoint();
             if (entryPoint !== undefined) {
                 let stage = await this.promptShaderStage();
-                // stage auto is zero...
+                // stage might be zero but valid
                 if (stage !== undefined) {
                     node.variants.push({
                         kind: 'variant',

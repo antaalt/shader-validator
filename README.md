@@ -159,9 +159,9 @@ This extension contributes the following settings:
 ## Platform support
 
 This extension is supported on every platform, but some limitations are to be expected on some:
--   Windows x86_64: full feature set.
+-   Windows x86_64 / ARM: full feature set.
 -   Linux x86_64: full feature set.
--   Mac & ARM Linux / Windows: Rely on WASI version of server, same as web, see web support for limitations.
+-   Mac & ARM Linux: Rely on WASI version of server, same as web, see web support for limitations.
 
 ## IDE support
 
