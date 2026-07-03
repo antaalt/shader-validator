@@ -3,5 +3,4 @@ uint test(uint nthNumber) {
 }
 void main() {
 	uint res = test(0);
-	
 }

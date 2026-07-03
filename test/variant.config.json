@@ -1,0 +1,15 @@
+[
+    {
+        "uri":"test.variant.hlsl",
+        "variants": [
+            {
+                "name": "mainOk",
+                "stage": "vertex",
+                "defines": {
+                    "VARIANT_DEFINE": "1"
+                },
+                "includes": []
+            }
+        ]
+    }
+]

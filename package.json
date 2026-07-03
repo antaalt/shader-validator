@@ -488,6 +488,19 @@
         "enablement": "view == shader-validator-variants"
       },
       {
+        "command": "shader-validator.loadVariantDatabase",
+        "title": "Load variant database",
+        "category": "Shader validator",
+        "icon": "$(new-file)",
+        "enablement": "view == shader-validator-variants"
+      },
+      {
+        "command": "shader-validator.loadVariantDatabaseFromUri",
+        "title": "Load variant database from uri",
+        "category": "Shader validator",
+        "icon": "$(new-file)"
+      },
+      {
         "command": "shader-validator.addCurrentFileVariant",
         "title": "Add a shader variant for current file",
         "category": "Shader validator",
@@ -515,6 +528,13 @@
         "enablement": "view == shader-validator-variants"
       },
       {
+        "command": "shader-validator.refreshMenu",
+        "title": "Refresh",
+        "category": "Shader validator",
+        "icon": "$(refresh)",
+        "enablement": "view == shader-validator-variants"
+      },
+      {
         "command": "shader-validator.gotoShaderEntryPoint",
         "title": "Go to shader entry point",
         "category": "Shader validator",
@@ -533,6 +553,11 @@
           "command": "shader-validator.addCurrentFile",
           "when": "view == shader-validator-variants && editorIsOpen",
           "group": "navigation"
+        },
+        {
+          "command": "shader-validator.loadVariantDatabase",
+          "when": "view == shader-validator-variants",
+          "group": "navigation"
         }
       ],
       "view/item/context": [
@@ -549,7 +574,12 @@
         {
           "command": "shader-validator.deleteMenu",
           "group": "inline@3",
-          "when": "view == shader-validator-variants && (viewItem == variant || viewItem == include || viewItem == define || viewItem == file)"
+          "when": "view == shader-validator-variants && (viewItem == variant || viewItem == include || viewItem == define || viewItem == file || viewItem == database)"
+        },
+        {
+          "command": "shader-validator.refreshMenu",
+          "group": "inline@4",
+          "when": "view == shader-validator-variants && (viewItem == database)"
         }
       ]
     },
@@ -566,7 +596,7 @@
       "shader-validator": [
         {
           "id": "shader-validator-variants",
-          "name": "Shader variants",
+          "name": "variants",
           "icon": "res/icons/hlsl-icon.svg"
         }
       ]
@@ -574,17 +604,17 @@
     "viewsWelcome": [
       {
         "view": "shader-validator-variants",
-        "contents": "In order to setup a shader variant, you can add a currently opened shader file & configure it from here.\n[Add Current File](command:shader-validator.addCurrentFile)\nShader variant allow you to define a context and an entry point for shader for a better validation & symbol providing experience.",
+        "contents": "In order to setup a shader variant, you can add a currently opened shader file & configure it from here.\n[Add Current File](command:shader-validator.addCurrentFile)\n[Load database](command:shader-validator.loadVariantDatabase)\nShader variant allow you to define a context and an entry point for shader for a better validation & symbol providing experience.",
         "when": "workbenchState != empty && editorIsOpen"
       },
       {
         "view": "shader-validator-variants",
-        "contents": "Open a file to be able to add it as a shader variant.",
+        "contents": "Open a file to be able to add it as a shader variant.\n[Load database](command:shader-validator.loadVariantDatabase)",
         "when": "workbenchState != empty && !editorIsOpen"
       },
       {
         "view": "shader-validator-variants",
-        "contents": "Open a file to be able to add it as a shader variant.",
+        "contents": "Open a file to be able to add it as a shader variant.\n[Load database](command:shader-validator.loadVariantDatabase)",
         "when": "workbenchState == empty"
       }
     ]
