@@ -130,8 +130,8 @@
             "type": "boolean",
             "default": false
           },
-          "shader-validator.dependencyContextDiagnostics": {
-            "description": "Look for a main file if we are on an include file to automatically resolve its context.",
+          "shader-validator.automaticVariantDiscovery": {
+            "description": "Look for a main file if we are on an include file to automatically resolve its context with a main file.",
             "type": "boolean",
             "default": false
           },
