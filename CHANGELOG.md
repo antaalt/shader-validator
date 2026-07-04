@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [unreleased]
 
+## [1.4.0] - 2026-07-04
+
+### Added
+
+- Ability to load variant config file as JSON and use its content as variant.
+
+### Changed
+
+- Rework variant window to be more reactive.
+- Renamed experimental option `dependencyContextDiagnostics` to `automaticVariantDiscovery`. Should be more reliable with new server.
+- Using [shader-language-server v1.4.0](https://github.com/antaalt/shader-sense/releases/tag/v1.4.0) with some fix and improvements on automatic variant discovery aswell as preamble.
+
 ## [1.3.3] - 2026-05-24
 
 ### Added
@@ -383,7 +395,8 @@ Initial release of this extension using [shader-language-server v0.0.1](https://
 
 
 <!-- Below are link for above changelog titles-->
-[unreleased]: https://github.com/antaalt/shader-validator/compare/v1.3.3...HEAD
+[unreleased]: https://github.com/antaalt/shader-validator/compare/v1.4.0...HEAD
+[1.4.0]: https://github.com/antaalt/shader-validator/compare/v1.3.3...v1.4.0
 [1.3.3]: https://github.com/antaalt/shader-validator/compare/v1.3.2...v1.3.3
 [1.3.2]: https://github.com/antaalt/shader-validator/compare/v1.3.1...v1.3.2
 [1.3.1]: https://github.com/antaalt/shader-validator/compare/v1.3.0...v1.3.1
