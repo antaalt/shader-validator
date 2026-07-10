@@ -1,6 +1,4 @@
 import * as vscode from 'vscode';
-import { DocumentUri } from "vscode-languageclient";
-import { resolveVSCodeVariables } from "../../client";
 import path from "path";
 
 // using vscode.Uri as key to Map does not work as it compare by ref and not value... So we can have duplicated keys...

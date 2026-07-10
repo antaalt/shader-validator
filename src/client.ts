@@ -15,7 +15,6 @@ import {
     CloseHandlerResult,
     ConfigurationParams,
     ConfigurationRequest,
-    DidChangeConfigurationNotification,
     ErrorAction,
     ErrorHandler,
     ErrorHandlerResult,

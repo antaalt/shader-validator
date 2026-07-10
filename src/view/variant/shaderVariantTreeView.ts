@@ -1,7 +1,5 @@
 import * as vscode from 'vscode';
-import { CancellationToken, DocumentSymbol, DocumentSymbolRequest, DocumentUri, LanguageClient, ProtocolNotificationType, ProtocolRequestType, Range, SymbolInformation, SymbolKind, TextDocumentIdentifier, TextDocumentItem, TextDocumentRegistrationOptions } from 'vscode-languageclient/node';
 import { resolveVSCodeVariables, ShaderLanguageClient } from '../../client';
-import path from 'path';
 import { deserializeShaderVariantNode, ShaderStage, ShaderVariant, ShaderVariantDatabase, ShaderVariantFile, ShaderVariantNode, ShaderVariantRoot, UriMap } from './variant';
 import { ShaderVariantNotifier } from './shaderVariantNotifier';
 
