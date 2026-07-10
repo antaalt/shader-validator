@@ -49,16 +49,45 @@ export function isRunningOnWeb() : boolean {
     return typeof cp.spawn !== 'function' || typeof process === 'undefined';
 }
 
+// Vscode workspaceConfiguration is relying on proxy object, so we cannot directly modify it.
+function getVsCodeConfigAsPlainObject(config: vscode.WorkspaceConfiguration): any {
+    // Small hack to handle tedious to transform proxy object used by workspaceConfiguration.
+    return JSON.parse(JSON.stringify(config));
+}
+
+function resolveConfigurationVSCodeVariables(config: any): any {
+    console.debug("initial configuration", config);
+    // Only solve them for path variables.
+    let resolvedConfigObject = config;
+    resolvedConfigObject["includes"] = config["includes"].map((include: string) => {
+        return resolveVSCodeVariables(include);
+    });
+    resolvedConfigObject["glsl"] = config["glsl"];
+    Object.entries(config["glsl"]).forEach(([key, value]) => {
+        resolvedConfigObject["glsl"][key] = (key == "preamble") ? resolveVSCodeVariables(value as string) : value;
+    });
+    resolvedConfigObject["configOverride"] = resolveVSCodeVariables(config["configOverride"]);
+    resolvedConfigObject["serverPath"] = resolveVSCodeVariables(config["serverPath"]);
+    resolvedConfigObject["pathRemapping"] = {};
+    Object.entries(config["pathRemapping"]).forEach(([key, value]) => {
+        resolvedConfigObject["pathRemapping"][key] = resolveVSCodeVariables(value as string);
+    });
+    console.debug("resolved configuration", resolvedConfigObject);
+    return resolvedConfigObject;
+}
+
 function getConfigurationAsString(): string {
-    let config = vscode.workspace.getConfiguration("shader-validator");
-    const configObject : { [key: string]: any } = {};
-    for (const [key, value] of Object.entries(config)) {
-        configObject[key] = value;
-    }
-    return JSON.stringify(configObject);
+    const config = vscode.workspace.getConfiguration("shader-validator");
+    const configObject = getVsCodeConfigAsPlainObject(config);
+    let resolvedConfigObject = resolveConfigurationVSCodeVariables(configObject);
+    return JSON.stringify(resolvedConfigObject);
 }
 
 export function resolveVSCodeVariables(content: string) : string {
+    // Check value might be undefined
+    if (!content) {
+        return "";
+    }
     return content.replace(/\$\{(.*?)\}/g, (_match: string, variable: string) : string => {
         // Solve these https://code.visualstudio.com/docs/reference/variables-reference
         if (variable.startsWith("env:")) {
@@ -232,19 +261,10 @@ function getMiddleware() : Middleware {
                 // Here we resolve vscode variables ourselves as there is no API for this.
                 // see https://github.com/microsoft/vscode/issues/140056
                 let result = await next(params, token);
-                console.debug("initial configuration", result);
                 let resultArray = result as any[];
                 let config = resultArray[0];
-                // Only solve them for path variables.
-                config["includes"] = config["includes"].map((include: string) => {
-                    return resolveVSCodeVariables(include);
-                });
-                config["serverPath"] = resolveVSCodeVariables(config["serverPath"]);
-                Object.entries(config["pathRemapping"]).forEach(([key, value]) => {
-                    config["pathRemapping"][key] = resolveVSCodeVariables(value as string);
-                });
-                console.debug("resolved configuration", config);
-                return [config];
+                let resolvedConfig = resolveConfigurationVSCodeVariables(config);
+                return [resolvedConfig];
             }
         }
     };
