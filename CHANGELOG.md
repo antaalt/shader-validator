@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [unreleased]
 
+## [1.4.1] - 2026-07-10
+
+### Fixed
+
+- Settings where not resolved at startup, which might end up with invalid config.
+- Preamble path was not resolved.
+- Server current working directory is now setup at first workspace folder, which should solve most relative path issues.
+
+### Changed
+
+- Using [shader-language-server v1.4.1](https://github.com/antaalt/shader-sense/releases/tag/v1.4.1) with some fix for preamble mostly.
+
 ## [1.4.0] - 2026-07-04
 
 ### Added
@@ -396,6 +408,7 @@ Initial release of this extension using [shader-language-server v0.0.1](https://
 
 <!-- Below are link for above changelog titles-->
 [unreleased]: https://github.com/antaalt/shader-validator/compare/v1.4.0...HEAD
+[1.4.1]: https://github.com/antaalt/shader-validator/compare/v1.4.0...v1.4.1
 [1.4.0]: https://github.com/antaalt/shader-validator/compare/v1.3.3...v1.4.0
 [1.3.3]: https://github.com/antaalt/shader-validator/compare/v1.3.2...v1.3.3
 [1.3.2]: https://github.com/antaalt/shader-validator/compare/v1.3.1...v1.3.2
