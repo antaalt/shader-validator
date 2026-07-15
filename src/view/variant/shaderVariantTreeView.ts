@@ -135,7 +135,7 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
                 let entryPoint = await this.promptEntryPoint();
                 if (entryPoint) {
                     let stage = await this.promptShaderStage();
-                    if (stage) {
+                    if (stage !== undefined) {
                         let uri = vscode.window.activeTextEditor.document.uri;
                         this.openOrAddVariant(uri, {
                             kind: 'variant',
@@ -537,7 +537,7 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
                 title: "Shader stage"
             }
         );
-        if (stage) {
+        if (stage !== undefined) {
             return ShaderStage[stage as keyof typeof ShaderStage];
         } else {
             return undefined;
@@ -727,7 +727,7 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
             }
         } else if (node.kind === 'stage') {
             let stage = await this.promptShaderStage();
-            if (stage) {
+            if (stage !== undefined) {
                 node.stage = stage;
                 this.updateTreeView(node);
                 let variant = this.getNodeVariant(node);
