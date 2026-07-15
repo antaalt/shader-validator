@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [unreleased]
 
+## [1.4.2] - 2026-07-15
+
+### Fixed
+
+- Adding a new file to variant window was not refreshing the tree view, and was requiring a refresh.
+- Same for adding a variant via command line.
+- Some invalid check were avoiding the possibilty to use auto stage as it was considered not valid
+- Small fix in readme.
+
+
 ## [1.4.1] - 2026-07-10
 
 ### Fixed
@@ -407,7 +417,8 @@ Initial release of this extension using [shader-language-server v0.0.1](https://
 
 
 <!-- Below are link for above changelog titles-->
-[unreleased]: https://github.com/antaalt/shader-validator/compare/v1.4.0...HEAD
+[unreleased]: https://github.com/antaalt/shader-validator/compare/v1.4.2...HEAD
+[1.4.2]: https://github.com/antaalt/shader-validator/compare/v1.4.1...v1.4.2
 [1.4.1]: https://github.com/antaalt/shader-validator/compare/v1.4.0...v1.4.1
 [1.4.0]: https://github.com/antaalt/shader-validator/compare/v1.3.3...v1.4.0
 [1.3.3]: https://github.com/antaalt/shader-validator/compare/v1.3.2...v1.3.3
