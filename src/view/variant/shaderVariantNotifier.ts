@@ -28,8 +28,28 @@ function shaderVariantToSerialized(url: DocumentUri, languageId: string, e: Shad
     };
 }
 
-// Notification from client to change shader variant
+// Custom LSP notification (client -> server), method `textDocument/didChangeShaderVariant`.
+//
+// This is not part of standard LSP. We send it to tell the server which "shader variant" a file
+// should be validated with. A variant pins a validation context: an entry point, an optional
+// shader stage, preprocessor defines and include paths (see `ShaderVariantSerialized`). The
+// server keeps the last one it receives as the active variant and uses it when validating and
+// resolving symbols. Sending `{ shaderVariant: null }` clears the active variant.
+//
+// This is the reference client for the notification. When implementing it:
+// - Use the exact method string `textDocument/didChangeShaderVariant` (see below). It must match
+//   the server declaration (`DidChangeShaderVariant::METHOD` in shader_variant.rs).
+// - The payload is serialized as JSON, so field names must match the server's camelCase struct
+//   (`shaderVariant`, `entryPoint`, `shadingLanguage`, ...); see `shaderVariantToSerialized`.
+// - Re-send the notification every time the user activates, edits or clears a variant; the
+//   server always replaces the active variant with the payload it receives (see
+//   `notifyVariantChanged`).
+//
+// Note: the server still accepts an older, deprecated payload shape for backward compatibility,
+// but new clients should only send the shape documented here.
 interface DidChangeShaderVariantParams {
+    // The variant to make active, or `null` to clear it. When cleared, the server drops the
+    // pinned context and validates the file without a specific variant.
     shaderVariant: ShaderVariantSerialized | null
 }
 interface DidChangeShaderVariantRegistrationOptions extends TextDocumentRegistrationOptions {}
