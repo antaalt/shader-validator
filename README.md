@@ -6,9 +6,12 @@
 [![vsmarketplace](https://img.shields.io/visual-studio-marketplace/v/antaalt.shader-validator?color=blue&label=vscode%20marketplace)](https://marketplace.visualstudio.com/items?itemName=antaalt.shader-validator)
 [![openVSX registry](https://img.shields.io/open-vsx/v/antaalt/shader-validator?color=purple)](https://open-vsx.org/extension/antaalt/shader-validator)
 
-This is a vscode extension allowing syntax highlighting, linting & symbol providing for HLSL / GLSL / WGSL shaders. It is using [shader-language-server](https://github.com/antaalt/shader-sense/tree/main/shader-language-server), a shader language server written in Rust to lint shaders using common validator API & parse symbols for some code inspection.
+[shader-validator](https://marketplace.visualstudio.com/items?itemName=antaalt.shader-validator) adds syntax highlighting, validation & symbol providing for **HLSL** / **GLSL** / **WGSL** shaders. It is mostly intended to be used with big shader codebase used in production by providing interesting features such as region selection and a shader variant entry point selection for quickly switching between two entry point context with decent performances. This make it also quite reliable for small shader codebase.
 
-It is mostly intended to be used with big shader codebase used in production by providing interesting features such as region selection and a shader variant entry point selection for quickly switching between two entry point context with decent performances. This make it also quite reliable for small shader codebase.
+
+## Features
+
+This extension is using [shader-language-server](https://github.com/antaalt/shader-sense/tree/main/shader-language-server) behind the hood, a shader language server written in Rust to lint shaders using common validator API & parse symbols for some code inspection.
 
 Currently, it support some features and languages:
 
@@ -28,8 +31,6 @@ Currently, it support some features and languages:
 |GLSL    |✅                 |✅(glslang)|✅           |✅             |✅     |✅   |
 |HLSL    |✅                 |✅(DXC)    |✅           |✅             |✅     |✅   |
 |WGSL    |✅                 |✅(Naga)   |❌           |❌             |❌     |❌   |
-
-## Features
 
 ### Syntax highlighting
 
