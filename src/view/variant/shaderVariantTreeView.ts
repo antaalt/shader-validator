@@ -469,6 +469,7 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
                     if (needRefresh) {
                         // Refresh file symbols
                         this.updateActiveVariant(file, null);
+                        this.updateTreeView(file);
                     }
                 }
             }
@@ -484,11 +485,15 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
             if (variant && variant.isActive) {
                 this.updateActiveVariant(newFile, variant);
             }
+            // Update whole tree as we added something at its root
+            this.updateTreeView();
         } else if (variant) {
             file.variants.push(variant);
             if (variant && variant.isActive) {
                 this.updateActiveVariant(file, variant);
             }
+            // Only update this file node.
+            this.updateTreeView(file);
         }
     }
     public close(uri: vscode.Uri): void {
