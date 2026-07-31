@@ -361,6 +361,7 @@
             "description": "Shader client for GLSL.",
             "default": "Vulkan1_3",
             "enum": [
+              "None",
               "Vulkan1_0",
               "Vulkan1_1",
               "Vulkan1_2",
@@ -368,11 +369,12 @@
               "OpenGL450"
             ],
             "enumItemLabels": [
-              "Vulkan 1.0",
-              "Vulkan 1.1",
-              "Vulkan 1.2",
-              "Vulkan 1.3",
-              "OpenGL"
+              "None (optional SPIRV version)",
+              "Vulkan 1.0 (requires SPIRV version)",
+              "Vulkan 1.1 (requires SPIRV version)",
+              "Vulkan 1.2 (requires SPIRV version)",
+              "Vulkan 1.3 (requires SPIRV version)",
+              "OpenGL (optional SPIRV version)"
             ]
           },
           "shader-validator.glsl.preamble": {
@@ -385,6 +387,7 @@
             "description": "SPIRV version targeted for GLSL.",
             "default": "SPIRV1_6",
             "enum": [
+              "None",
               "SPIRV1_0",
               "SPIRV1_1",
               "SPIRV1_2",
@@ -394,6 +397,7 @@
               "SPIRV1_6"
             ],
             "enumItemLabels": [
+              "None",
               "Spirv 1.0",
               "Spirv 1.1",
               "Spirv 1.2",
