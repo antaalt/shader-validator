@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { ServerStatus, ShaderLanguageClient } from "../../client";
+import { ServerStatus, ServerVersion, ShaderLanguageClient } from "../../client";
 
 
 export class ShaderStatusBar {
@@ -26,6 +26,7 @@ export class ShaderStatusBar {
 
         let statusString = null;
         let statusCommand = null;
+        let isValidServerVersion = this.server.isServerVersionValid();
         switch (serverStatus) {
             case ServerStatus.error:
                 this.statusBar.color = new vscode.ThemeColor("statusBarItem.errorForeground");
@@ -36,8 +37,8 @@ export class ShaderStatusBar {
                 statusCommand = `[$(debug-restart) Restart Server](command:shader-validator.restartServer "Restart the server")`;
                 break;
             case ServerStatus.running:
-                this.statusBar.color = undefined;
-                this.statusBar.backgroundColor = undefined;
+                this.statusBar.color = isValidServerVersion ? undefined : new vscode.ThemeColor("statusBarItem.warningForeground");
+                this.statusBar.backgroundColor = isValidServerVersion ? undefined : new vscode.ThemeColor("statusBarItem.warningBackground");
                 if (this.isDevel) {
                     this.statusBar.text = "$(stop-circle) shader-validator";
                     this.statusBar.command = "shader-validator.stopServer";
@@ -66,9 +67,10 @@ export class ShaderStatusBar {
         }
 
         const serverVersion = this.server.getServerVersion();
-        const serverPath = this.server.getServerPath().path;
+        const serverPath = this.server.getServerPath().fsPath;
         this.statusBar.tooltip = new vscode.MarkdownString(
             `**${serverVersion}**\n\n` +
+            (!isValidServerVersion ? `*Using incorrect server version. Expecting version ${ServerVersion.getBundledVersion()}.*\n\n` : ``) +
             `${serverPath}\n\n` +
             (statusString ? `${statusString}\n\n` : ``) +
             `---\n\n` +

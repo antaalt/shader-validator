@@ -187,10 +187,8 @@ export class ServerVersion {
             }
         }
     }
-    private isValidVersion() {
-        const requestedServerVersion = vscode.extensions.getExtension('antaalt.shader-validator')!.packageJSON.server_version;
-        const versionExpected = "shader-language-server v" + requestedServerVersion;
-        return this.version === versionExpected;
+    isValidVersion() {
+        return this.version === ServerVersion.getBundledVersion();
     }
     static getPlatformBinaryDirectoryPath(extensionUri: vscode.Uri, serverPath: string | null, platform: ServerPlatform) : vscode.Uri {
         if (serverPath) {
@@ -353,6 +351,9 @@ export class ShaderLanguageClient {
     }
     getServerVersion(): string {
         return this.serverVersion.version;
+    }
+    isServerVersionValid(): boolean {
+        return this.serverVersion.isValidVersion();
     }
     showLogs() {
         if (this.channel) {
