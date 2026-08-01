@@ -4,9 +4,9 @@ import * as vscode from 'vscode';
 
 import { ServerPlatform, ServerStatus, ShaderLanguageClient, ServerVersion } from './client';
 import { dumpAstRequest, dumpDependencyRequest } from './request';
-import { ShaderVariantTreeDataProvider } from './view/shaderVariantTreeView';
+import { ShaderVariantTreeDataProvider } from './view/variant/shaderVariantTreeView';
 import { DidChangeConfigurationNotification, LanguageClient, Trace } from 'vscode-languageclient';
-import { ShaderStatusBar } from './view/shaderStatusBar';
+import { ShaderStatusBar } from './view/status/shaderStatusBar';
 
 export let sidebar: ShaderVariantTreeDataProvider;
 

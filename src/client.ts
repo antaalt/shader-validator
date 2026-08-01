@@ -15,7 +15,6 @@ import {
     CloseHandlerResult,
     ConfigurationParams,
     ConfigurationRequest,
-    DidChangeConfigurationNotification,
     ErrorAction,
     ErrorHandler,
     ErrorHandlerResult,
@@ -49,16 +48,45 @@ export function isRunningOnWeb() : boolean {
     return typeof cp.spawn !== 'function' || typeof process === 'undefined';
 }
 
+// Vscode workspaceConfiguration is relying on proxy object, so we cannot directly modify it.
+function getVsCodeConfigAsPlainObject(config: vscode.WorkspaceConfiguration): any {
+    // Small hack to handle tedious to transform proxy object used by workspaceConfiguration.
+    return JSON.parse(JSON.stringify(config));
+}
+
+function resolveConfigurationVSCodeVariables(config: any): any {
+    console.debug("initial configuration", config);
+    // Only solve them for path variables.
+    let resolvedConfigObject = config;
+    resolvedConfigObject["includes"] = config["includes"].map((include: string) => {
+        return resolveVSCodeVariables(include);
+    });
+    resolvedConfigObject["glsl"] = config["glsl"];
+    Object.entries(config["glsl"]).forEach(([key, value]) => {
+        resolvedConfigObject["glsl"][key] = (key == "preamble") ? resolveVSCodeVariables(value as string) : value;
+    });
+    resolvedConfigObject["configOverride"] = resolveVSCodeVariables(config["configOverride"]);
+    resolvedConfigObject["serverPath"] = resolveVSCodeVariables(config["serverPath"]);
+    resolvedConfigObject["pathRemapping"] = {};
+    Object.entries(config["pathRemapping"]).forEach(([key, value]) => {
+        resolvedConfigObject["pathRemapping"][key] = resolveVSCodeVariables(value as string);
+    });
+    console.debug("resolved configuration", resolvedConfigObject);
+    return resolvedConfigObject;
+}
+
 function getConfigurationAsString(): string {
-    let config = vscode.workspace.getConfiguration("shader-validator");
-    const configObject : { [key: string]: any } = {};
-    for (const [key, value] of Object.entries(config)) {
-        configObject[key] = value;
-    }
-    return JSON.stringify(configObject);
+    const config = vscode.workspace.getConfiguration("shader-validator");
+    const configObject = getVsCodeConfigAsPlainObject(config);
+    let resolvedConfigObject = resolveConfigurationVSCodeVariables(configObject);
+    return JSON.stringify(resolvedConfigObject);
 }
 
 export function resolveVSCodeVariables(content: string) : string {
+    // Check value might be undefined
+    if (!content) {
+        return "";
+    }
     return content.replace(/\$\{(.*?)\}/g, (_match: string, variable: string) : string => {
         // Solve these https://code.visualstudio.com/docs/reference/variables-reference
         if (variable.startsWith("env:")) {
@@ -96,7 +124,7 @@ export class ServerVersion {
         if (userServerPathAndVersion) {
             this.version = userServerPathAndVersion[1];
             this.path = ServerVersion.getPlatformBinaryUri(extensionUri, userServerPathAndVersion[0], this.platform);
-            this.cwd = ServerVersion.getPlatformBinaryDirectoryPath(extensionUri, userServerPathAndVersion[0], this.platform);
+            this.cwd = vscode.workspace.workspaceFolders ? vscode.workspace.workspaceFolders[0].uri : ServerVersion.getPlatformBinaryDirectoryPath(extensionUri, userServerPathAndVersion[0], this.platform);
             if (!this.isValidVersion()) {
                 vscode.window.showWarningMessage(`${this.version} is not compatible with this extension (Expecting ${ServerVersion.getBundledVersion()}). Server may crash or behave weirdly.`);
             }
@@ -105,7 +133,7 @@ export class ServerVersion {
             console.info(`No server path found. Using bundled server.`);
             this.version = ServerVersion.getBundledVersion();
             this.path = ServerVersion.getPlatformBinaryUri(extensionUri, null, this.platform);
-            this.cwd = ServerVersion.getPlatformBinaryDirectoryPath(extensionUri, null, this.platform);
+            this.cwd = vscode.workspace.workspaceFolders ? vscode.workspace.workspaceFolders[0].uri : ServerVersion.getPlatformBinaryDirectoryPath(extensionUri, null, this.platform);
         }
     }
     private static getUserServerPathAndVersion(platform: ServerPlatform) : [string, string] | null {
@@ -159,21 +187,20 @@ export class ServerVersion {
             }
         }
     }
-    private isValidVersion() {
-        const requestedServerVersion = vscode.extensions.getExtension('antaalt.shader-validator')!.packageJSON.server_version;
-        const versionExpected = "shader-language-server v" + requestedServerVersion;
-        return this.version === versionExpected;
+    isValidVersion() {
+        return this.version === ServerVersion.getBundledVersion();
     }
     static getPlatformBinaryDirectoryPath(extensionUri: vscode.Uri, serverPath: string | null, platform: ServerPlatform) : vscode.Uri {
         if (serverPath) {
             return vscode.Uri.file(path.dirname(serverPath));
         } else {
             // CI is handling the copy to bin folder to avoid storage of exe on git.
+            // Should only support arm64 & x64
             switch (platform) {
             case ServerPlatform.windows:
-                return vscode.Uri.joinPath(extensionUri, "bin/windows/");
+                return vscode.Uri.joinPath(extensionUri, `bin/win32-${process.arch}/`);
             case ServerPlatform.linux:
-                return vscode.Uri.joinPath(extensionUri, "bin/linux/");
+                return vscode.Uri.joinPath(extensionUri, `bin/linux-${process.arch}`);
             case ServerPlatform.wasi:
                 return vscode.Uri.joinPath(extensionUri, "bin/wasi/");
             }
@@ -202,13 +229,10 @@ export class ServerVersion {
         if (isRunningOnWeb() || useWasiServer) {
             return ServerPlatform.wasi;
         } else {
-            // Dxc only built for linux x64 & windows x64. Fallback to WASI for every other situations.
-            // TODO: ARM DLL available aswell, need to bundle them, along with correct version of server. 
-            // Should have an extension version per platform.
-            // Could have a setting for user provided DLL path aswell, but useless if server does not match the platform.
+            // Dxc only built for linux x64 & windows x64 & arm. Fallback to WASI for every other situations.
             switch (process.platform) {
                 case "win32":
-                    return (process.arch === 'x64') ? ServerPlatform.windows : ServerPlatform.wasi;
+                    return (process.arch === 'x64' || process.arch === 'arm64') ? ServerPlatform.windows : ServerPlatform.wasi;
                 case "linux":
                     return (process.arch === 'x64') ? ServerPlatform.linux : ServerPlatform.wasi;
                 default:
@@ -233,16 +257,11 @@ function getMiddleware() : Middleware {
             async configuration(params: ConfigurationParams, token: vscode.CancellationToken, next : ConfigurationRequest.HandlerSignature) {
                 // Here we resolve vscode variables ourselves as there is no API for this.
                 // see https://github.com/microsoft/vscode/issues/140056
-                // Only solve them for includes as we are dealing with path.
                 let result = await next(params, token);
-                console.debug("initial configuration", result);
                 let resultArray = result as any[];
                 let config = resultArray[0];
-                config["includes"] = config["includes"].map((include: string) => {
-                    return resolveVSCodeVariables(include);
-                });
-                console.debug("resolved configuration", config);
-                return [config];
+                let resolvedConfig = resolveConfigurationVSCodeVariables(config);
+                return [resolvedConfig];
             }
         }
     };
@@ -292,6 +311,10 @@ export class ShaderLanguageClient {
             case Trace.Compact:
             case Trace.Messages:
                 this.channel = vscode.window.createOutputChannel(getChannelName());
+                // Make logs display conveniently when in debug.
+                if (context.extensionMode === vscode.ExtensionMode.Development) {
+                    this.channel.show();
+                }
                 break;
             case Trace.Off:
                 this.channel = null;
@@ -328,6 +351,9 @@ export class ShaderLanguageClient {
     }
     getServerVersion(): string {
         return this.serverVersion.version;
+    }
+    isServerVersionValid(): boolean {
+        return this.serverVersion.isValidVersion();
     }
     showLogs() {
         if (this.channel) {
@@ -500,7 +526,7 @@ export class ShaderLanguageClient {
             };
             // Memory options required by wasm32-wasip1-threads target
             const memory : WebAssembly.MemoryDescriptor = {
-                initial: 160, 
+                initial: 200, 
                 maximum: 1024, // Big enough to handle glslang heavy RAM usage.
                 shared: true
             };

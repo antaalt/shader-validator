@@ -7,6 +7,84 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [unreleased]
 
+## [1.4.2] - 2026-07-15
+
+### Fixed
+
+- Adding a new file to variant window was not refreshing the tree view, and was requiring a refresh.
+- Same for adding a variant via command line.
+- Some invalid check were avoiding the possibilty to use auto stage as it was considered not valid
+- Small fix in readme.
+
+
+## [1.4.1] - 2026-07-10
+
+### Fixed
+
+- Settings where not resolved at startup, which might end up with invalid config.
+- Preamble path was not resolved.
+- Server current working directory is now setup at first workspace folder, which should solve most relative path issues.
+
+### Changed
+
+- Using [shader-language-server v1.4.1](https://github.com/antaalt/shader-sense/releases/tag/v1.4.1) with some fix for preamble mostly.
+
+## [1.4.0] - 2026-07-04
+
+### Added
+
+- Ability to load variant config file as JSON and use its content as variant.
+
+### Changed
+
+- Rework variant window to be more reactive.
+- Renamed experimental option `dependencyContextDiagnostics` to `automaticVariantDiscovery`. Should be more reliable with new server.
+- Using [shader-language-server v1.4.0](https://github.com/antaalt/shader-sense/releases/tag/v1.4.0) with some fix and improvements on automatic variant discovery aswell as preamble.
+
+## [1.3.3] - 2026-05-24
+
+### Added
+
+- New option for automatically discovery of main file. WIP and experimental.
+
+### Changed
+
+- Using [shader-language-server v1.3.2](https://github.com/antaalt/shader-sense/releases/tag/v1.3.2) with some fix and improvements on macro.
+- serverPath and pathRemapping settings can now use vscode builtin variables such as workspaceFolder.
+
+### 
+
+## [1.3.2] - 2026-04-12
+
+### Added
+
+- Use native server on arm windows instead of wasi.
+
+### Changed
+
+- Using [shader-language-server v1.3.1](https://github.com/antaalt/shader-sense/releases/tag/v1.3.1) with some minor bug fixes.
+
+## [1.3.1] - 2026-02-14
+
+### Fixed
+
+- Deployment issue on previous version 1.3.0 caused the servers to have only the correct version on windows and failing completly on Linux and MacOS, aswell as a wrong version on WASI.
+
+## [1.3.0] - 2026-01-31
+
+### Added
+
+- New setting `shader-validator.glsl.preamble` for adding a preamble file for glsl shaders
+
+### Fixed
+
+- Syntax highlighting with inside quote now render properly.
+- Start button when server stopped was erroring with command not found.
+
+### Changed
+
+- Using [shader-language-server v1.3.0](https://github.com/antaalt/shader-sense/releases/tag/v1.3.0) with some changes.
+
 ## [1.2.2] - 2025-11-24
 
 ### Changed
@@ -339,7 +417,14 @@ Initial release of this extension using [shader-language-server v0.0.1](https://
 
 
 <!-- Below are link for above changelog titles-->
-[unreleased]: https://github.com/antaalt/shader-validator/compare/v1.2.2...HEAD
+[unreleased]: https://github.com/antaalt/shader-validator/compare/v1.4.2...HEAD
+[1.4.2]: https://github.com/antaalt/shader-validator/compare/v1.4.1...v1.4.2
+[1.4.1]: https://github.com/antaalt/shader-validator/compare/v1.4.0...v1.4.1
+[1.4.0]: https://github.com/antaalt/shader-validator/compare/v1.3.3...v1.4.0
+[1.3.3]: https://github.com/antaalt/shader-validator/compare/v1.3.2...v1.3.3
+[1.3.2]: https://github.com/antaalt/shader-validator/compare/v1.3.1...v1.3.2
+[1.3.1]: https://github.com/antaalt/shader-validator/compare/v1.3.0...v1.3.1
+[1.3.0]: https://github.com/antaalt/shader-validator/compare/v1.2.2...v1.3.0
 [1.2.2]: https://github.com/antaalt/shader-validator/compare/v1.2.1...v1.2.2
 [1.2.1]: https://github.com/antaalt/shader-validator/compare/v1.2.0...v1.2.1
 [1.2.0]: https://github.com/antaalt/shader-validator/compare/v1.1.0...v1.2.0
