@@ -30,10 +30,13 @@ suite('Settings Test Suite', () => {
         test('Test symbols with settings', async () => {
             const docUri = await vscode.workspace.findFiles("test.settings.hlsl");
             assert.ok(docUri.length > 0);
-            await activate(docUri[0], true)!;
+            const opened = await activate(docUri[0], true);
+            assert.ok(opened, "Failed to open " + docUri[0].fsPath);
+            const [doc, _editor] = opened;
             // main is guarded by INCLUDED_MACRO (coming from the remapped include) & SETTINGS_MACRO (coming from defines),
             // so it is only visible if the settings made their way to the server.
             await updateSettings();
+            await touchDocument(doc);
             await testDiagnostic(docUri[0]);
             await testDocumentSymbol(docUri[0], "main");
         }).timeout(30000);
@@ -45,8 +48,25 @@ async function updateSettings() {
     for (const [key, value] of settings) {
         await config.update(key, value, vscode.ConfigurationTarget.Global);
     }
-    // Sleeping does not seems to trigger a config update, so restart the server to be sure its valid.
-    await vscode.commands.executeCommand('shader-validator.restartServer');
+}
+
+// vscode caches document symbols (OutlineModel) per text document version & registered provider set.
+// A save does not bump the version, and the server declares documentSymbol statically, so the provider
+// set never changes either: after a configuration change, the outline stays stale until the document
+// is edited. Applying an edit & reverting it bumps the version twice while leaving the content
+// untouched, which invalidates the cache and lets the server answer with the new settings applied.
+async function touchDocument(doc: vscode.TextDocument) {
+    const end = doc.lineAt(doc.lineCount - 1).range.end;
+    const insertion = new vscode.WorkspaceEdit();
+    insertion.insert(doc.uri, end, "\n");
+    assert.ok(await vscode.workspace.applyEdit(insertion), "Failed to edit " + doc.uri.fsPath);
+    const deletion = new vscode.WorkspaceEdit();
+    deletion.delete(doc.uri, new vscode.Range(end, doc.lineAt(doc.lineCount - 1).range.end));
+    assert.ok(await vscode.workspace.applyEdit(deletion), "Failed to revert edit of " + doc.uri.fsPath);
+    // Content is back to its original state, so this writes the exact same bytes & only serves to
+    // leave the editor clean for the next tests.
+    assert.ok(await doc.save(), "Failed to save " + doc.uri.fsPath);
+    await sleep(1000); // Let the server handle the didChange notifications.
 }
 
 async function resetSettings() {
