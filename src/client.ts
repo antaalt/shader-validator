@@ -57,20 +57,23 @@ function getVsCodeConfigAsPlainObject(config: vscode.WorkspaceConfiguration): an
 function resolveConfigurationVSCodeVariables(config: any): any {
     console.debug("initial configuration", config);
     // Only solve them for path variables.
-    let resolvedConfigObject = config;
-    resolvedConfigObject["includes"] = config["includes"].map((include: string) => {
+    // Copy the config instead of aliasing it, else writing a resolved entry clears the one we are still reading from.
+    let resolvedConfigObject = { ...config };
+    resolvedConfigObject["includes"] = (config["includes"] ?? []).map((include: string) => {
         return resolveVSCodeVariables(include);
     });
-    resolvedConfigObject["glsl"] = config["glsl"];
-    Object.entries(config["glsl"]).forEach(([key, value]) => {
-        resolvedConfigObject["glsl"][key] = (key == "preamble") ? resolveVSCodeVariables(value as string) : value;
-    });
+    resolvedConfigObject["glsl"] = Object.fromEntries(
+        Object.entries(config["glsl"] ?? {}).map(([key, value]) => {
+            return [key, (key == "preamble") ? resolveVSCodeVariables(value as string) : value];
+        })
+    );
     resolvedConfigObject["configOverride"] = resolveVSCodeVariables(config["configOverride"]);
     resolvedConfigObject["serverPath"] = resolveVSCodeVariables(config["serverPath"]);
-    resolvedConfigObject["pathRemapping"] = {};
-    Object.entries(config["pathRemapping"]).forEach(([key, value]) => {
-        resolvedConfigObject["pathRemapping"][key] = resolveVSCodeVariables(value as string);
-    });
+    resolvedConfigObject["pathRemapping"] = Object.fromEntries(
+        Object.entries(config["pathRemapping"] ?? {}).map(([key, value]) => {
+            return [key, resolveVSCodeVariables(value as string)];
+        })
+    );
     console.debug("resolved configuration", resolvedConfigObject);
     return resolvedConfigObject;
 }
