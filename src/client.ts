@@ -115,6 +115,63 @@ function getChannelName(): string {
     return 'Shader language Server';
 }
 
+// An output channel content cannot be read back through the vscode API.
+// So mirror it to the console when running tests, where it gets forwarded to the terminal running the suite.
+class ConsoleTeeOutputChannel implements vscode.OutputChannel {
+    private inner: vscode.OutputChannel;
+    private disposed: boolean = false;
+    constructor(inner: vscode.OutputChannel) {
+        this.inner = inner;
+    }
+    get name(): string {
+        return this.inner.name;
+    }
+    append(value: string): void {
+        console.log(value);
+        if (!this.disposed) {
+            this.inner.append(value);
+        }
+    }
+    appendLine(value: string): void {
+        console.log(value);
+        if (!this.disposed) {
+            this.inner.appendLine(value);
+        }
+    }
+    replace(value: string): void {
+        console.log(value);
+        if (!this.disposed) {
+            this.inner.replace(value);
+        }
+    }
+    clear(): void {
+        if (!this.disposed) {
+            this.inner.clear();
+        }
+    }
+    show(column?: vscode.ViewColumn | boolean, preserveFocus?: boolean): void {
+        if (!this.disposed) {
+            this.inner.show(column as vscode.ViewColumn, preserveFocus);
+        }
+    }
+    hide(): void {
+        if (!this.disposed) {
+            this.inner.hide();
+        }
+    }
+    dispose(): void {
+        if (!this.disposed) {
+            this.disposed = true;
+            this.inner.dispose();
+        }
+    }
+}
+
+function createServerOutputChannel(extensionMode: vscode.ExtensionMode) : vscode.OutputChannel {
+    const channel = vscode.window.createOutputChannel(getChannelName());
+    return extensionMode === vscode.ExtensionMode.Test ? new ConsoleTeeOutputChannel(channel) : channel;
+}
+
 export class ServerVersion {
     path: vscode.Uri;
     cwd: vscode.Uri;
@@ -313,7 +370,7 @@ export class ShaderLanguageClient {
             case Trace.Verbose:
             case Trace.Compact:
             case Trace.Messages:
-                this.channel = vscode.window.createOutputChannel(getChannelName());
+                this.channel = createServerOutputChannel(context.extensionMode);
                 // Make logs display conveniently when in debug.
                 if (context.extensionMode === vscode.ExtensionMode.Development) {
                     this.channel.show();

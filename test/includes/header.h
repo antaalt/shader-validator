@@ -1,0 +1,1 @@
+#define CUSTOM_MACRO 1

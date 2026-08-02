@@ -15,6 +15,12 @@ export async function activate(docUri: vscode.Uri, waitServer: boolean) : Promis
 	await vscode.workspace.getConfiguration("shader-validator").update("useWasiServer", useWasiServer, vscode.ConfigurationTarget.Global);
 	console.info(`Activating ${useWasiServer ? "wasi" : "native"} server for test`);
 
+	// Trace is required for the server output channel to exist & for RUST_LOG to be set.
+	// The extension mirrors that channel to the console when running tests, so it lands in the terminal.
+	// /!\ Must be set before the first activation, as changing it later restarts the server. /!\
+	const showServerLogs = process.env.SHOW_SERVER_LOGS === "true";
+	await vscode.workspace.getConfiguration("shader-validator").update("trace.server", showServerLogs ? "messages" : "off", vscode.ConfigurationTarget.Global);
+
 	// Now activate extension with settings
 	await ext.activate();
 	try {
@@ -30,6 +36,6 @@ export async function activate(docUri: vscode.Uri, waitServer: boolean) : Promis
 	}
 }
 
-async function sleep(ms: number) {
+export async function sleep(ms: number) {
 	return new Promise(resolve => setTimeout(resolve, ms));
 }

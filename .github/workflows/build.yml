@@ -110,11 +110,13 @@ jobs:
         run: xvfb-run --auto-servernum npm test
         env:
           USE_WASI_SERVER: ${{ matrix.npm-target == 'wasi' && 'true' || 'false' }}
+          SHOW_SERVER_LOGS: 'true'
       - name: Test extension on Windows
         if: runner.os == 'Windows'
         run: npm test
         env:
           USE_WASI_SERVER: ${{ matrix.npm-target == 'wasi' && 'true' || 'false' }}
+          SHOW_SERVER_LOGS: 'true'
       # The wasi extension only have the wasi server, while the native have both wasi and native (for fallback reason if native does not work)
       - name: Package wasi only extension
         if: ${{ matrix.npm-target == 'wasi' }}
