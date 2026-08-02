@@ -3,7 +3,7 @@ import * as assert from 'assert';
 // You can import and use all API from the 'vscode' module
 // as well as import your extension to test it
 import * as vscode from 'vscode';
-import { activate, testDiagnostic } from './utils';
+import { activate, openAndShowFile, testDiagnostic } from './utils';
 
 suite('Diagnostic Test Suite', () => {
 	vscode.window.showInformationMessage('Start all diagnostics tests.');
@@ -13,21 +13,24 @@ suite('Diagnostic Test Suite', () => {
 	test('Diagnostic GLSL code', async () => {
 		const docUri = await vscode.workspace.findFiles("test.frag.glsl");
 		assert.ok(docUri.length > 0);
-		await activate(docUri[0], true)!;
+		await activate(true)!;
+		await openAndShowFile(docUri[0]);
 		await testDiagnostic(docUri[0]);
 	}).timeout(5000);
 
 	test('Diagnostic HLSL code', async () => {
 		const docUri = await vscode.workspace.findFiles("test.hlsl");
 		assert.ok(docUri.length > 0);
-		await activate(docUri[0], false)!;
+		await activate(false)!;
+		await openAndShowFile(docUri[0]);
 		await testDiagnostic(docUri[0]);
 	}).timeout(5000);
 
 	test('Diagnostic WGSL code', async () => {
 		const docUri = await vscode.workspace.findFiles("test.wgsl");
 		assert.ok(docUri.length > 0);
-		await activate(docUri[0], false)!;
+		await activate(false)!;
+		await openAndShowFile(docUri[0]);
 		await testDiagnostic(docUri[0]);
 	}).timeout(5000);
 });

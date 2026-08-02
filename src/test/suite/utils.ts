@@ -8,7 +8,7 @@ export function getRootFolder() : string {
 	return path.join(process.cwd(), process.platform === 'win32' ? "../../" : "./");
 }
 
-export async function activate(docUri: vscode.Uri, waitServer: boolean) : Promise<[vscode.TextDocument, vscode.TextEditor] | null> {
+export async function activate(waitServer: boolean) : Promise<void> {
 	const ext = vscode.extensions.getExtension('antaalt.shader-validator')!;
 
 	// Here set the settings to get the correct server to test.
@@ -24,17 +24,15 @@ export async function activate(docUri: vscode.Uri, waitServer: boolean) : Promis
 
 	// Now activate extension with settings
 	await ext.activate();
-	try {
-		let doc = await vscode.workspace.openTextDocument(docUri);
-		let editor = await vscode.window.showTextDocument(doc);
-        if (waitServer) {
-		    await sleep(2000); // Wait for server activation
-        }
-		return [doc, editor];
-	} catch (e) {
-		console.error(e);
-		return null;
+	if (waitServer) {
+		await sleep(2000); // Wait for server activation
 	}
+}
+
+export async function openAndShowFile(docUri: vscode.Uri) : Promise<[vscode.TextDocument, vscode.TextEditor]> {
+	let doc = await vscode.workspace.openTextDocument(docUri);
+	let editor = await vscode.window.showTextDocument(doc);
+	return [doc, editor];
 }
 
 export async function sleep(ms: number) {

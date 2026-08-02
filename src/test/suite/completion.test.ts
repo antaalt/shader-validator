@@ -3,7 +3,7 @@ import * as assert from 'assert';
 // You can import and use all API from the 'vscode' module
 // as well as import your extension to test it
 import * as vscode from 'vscode';
-import { activate } from './utils';
+import { activate, openAndShowFile } from './utils';
 
 suite('Completion Test Suite', () => {
 	vscode.window.showInformationMessage('Start all completion tests.');
@@ -47,7 +47,8 @@ async function testCompletion(
 	expectedCompletionList: vscode.CompletionList,
 	waitServer: boolean
   ) {
-	let data = await activate(docUri, waitServer)!;
+	await activate(waitServer)!;
+	await openAndShowFile(docUri);
   
 	// Executing the command `vscode.executeCompletionItemProvider` to simulate triggering completion
 	const actualCompletionList = (await vscode.commands.executeCommand(
