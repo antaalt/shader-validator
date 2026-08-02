@@ -15,7 +15,7 @@ suite('Diagnostic Test Suite', () => {
 		assert.ok(docUri.length > 0);
 		await activate(true)!;
 		await openAndShowFile(docUri[0]);
-		await testDiagnostic(docUri[0]);
+		await testDiagnostic(docUri[0], false);
 	}).timeout(5000);
 
 	test('Diagnostic HLSL code', async () => {
@@ -23,7 +23,7 @@ suite('Diagnostic Test Suite', () => {
 		assert.ok(docUri.length > 0);
 		await activate(false)!;
 		await openAndShowFile(docUri[0]);
-		await testDiagnostic(docUri[0]);
+		await testDiagnostic(docUri[0], false);
 	}).timeout(5000);
 
 	test('Diagnostic WGSL code', async () => {
@@ -31,6 +31,6 @@ suite('Diagnostic Test Suite', () => {
 		assert.ok(docUri.length > 0);
 		await activate(false)!;
 		await openAndShowFile(docUri[0]);
-		await testDiagnostic(docUri[0]);
+		await testDiagnostic(docUri[0], false);
 	}).timeout(5000);
 });

@@ -40,13 +40,26 @@ export async function sleep(ms: number) {
 }
 
 export async function testDiagnostic(
-    docUri: vscode.Uri
+    docUri: vscode.Uri,
+	hasAny: boolean
   ) {
     let diagnostics = vscode.languages.getDiagnostics(docUri);
-    assert.ok(diagnostics.length === 0, "Diagnostic is not empty: " + JSON.stringify(diagnostics));
+    assert.ok((diagnostics.length === 0) && !hasAny, `Diagnostic is ${hasAny ? 'empty' : 'not empty'}: ${JSON.stringify(diagnostics)}`);
 }
 
 export async function testDocumentSymbol(
+    docUri: vscode.Uri,
+    hasAny: boolean,
+  ) {
+    // /!\ Type casting need to match server data sent. /!\
+    const symbols = (await vscode.commands.executeCommand(
+        'vscode.executeDocumentSymbolProvider',
+        docUri
+    )) as vscode.DocumentSymbol[] | undefined;
+    assert.ok(((symbols && symbols.length === 0) || symbols === undefined) && !hasAny, `Symbols are ${hasAny ? 'empty' : 'not empty'}: ${JSON.stringify(symbols)}`);
+}
+
+export async function testHasDocumentSymbol(
     docUri: vscode.Uri,
     expectedSymbol: string
   ) {
