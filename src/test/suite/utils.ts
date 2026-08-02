@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
+import assert from 'assert';
 
 export function getRootFolder() : string {
 	// Depending on platform, we have different cwd...
@@ -38,4 +39,28 @@ export async function activate(docUri: vscode.Uri, waitServer: boolean) : Promis
 
 export async function sleep(ms: number) {
 	return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+export async function testDiagnostic(
+    docUri: vscode.Uri
+  ) {
+    let diagnostics = vscode.languages.getDiagnostics(docUri);
+    assert.ok(diagnostics.length === 0, "Diagnostic is not empty: " + JSON.stringify(diagnostics));
+}
+
+export async function testDocumentSymbol(
+    docUri: vscode.Uri,
+    expectedSymbol: string
+  ) {
+    // /!\ Type casting need to match server data sent. /!\
+    const symbols = (await vscode.commands.executeCommand(
+        'vscode.executeDocumentSymbolProvider',
+        docUri
+    )) as vscode.DocumentSymbol[] | undefined;
+    assert.ok(symbols, "No document symbol returned for " + docUri.fsPath);
+    const symbolNames = symbols.map((symbol) => symbol.name);
+    assert.ok(
+        symbolNames.includes(expectedSymbol),
+        `Failed to find symbol ${expectedSymbol} in ${JSON.stringify(symbolNames)}`
+    );
 }

@@ -3,7 +3,7 @@ import * as assert from 'assert';
 // You can import and use all API from the 'vscode' module
 // as well as import your extension to test it
 import * as vscode from 'vscode';
-import { activate, sleep } from './utils';
+import { activate, sleep, testDiagnostic, testDocumentSymbol } from './utils';
 
 // Settings required by test.settings.hlsl to resolve its include & enter its preprocessor branches.
 // They rely on vscode variables aswell to ensure they are correctly resolved before being sent to the server.
@@ -74,28 +74,4 @@ async function resetSettings() {
     for (const [key, _value] of settings) {
         await config.update(key, undefined, vscode.ConfigurationTarget.Global);
     }
-}
-
-async function testDiagnostic(
-    docUri: vscode.Uri
-  ) {
-    let diagnostics = vscode.languages.getDiagnostics(docUri);
-    assert.ok(diagnostics.length === 0, "Diagnostic is not empty: " + JSON.stringify(diagnostics));
-}
-
-async function testDocumentSymbol(
-    docUri: vscode.Uri,
-    expectedSymbol: string
-  ) {
-    // /!\ Type casting need to match server data sent. /!\
-    const symbols = (await vscode.commands.executeCommand(
-        'vscode.executeDocumentSymbolProvider',
-        docUri
-    )) as vscode.DocumentSymbol[] | undefined;
-    assert.ok(symbols, "No document symbol returned for " + docUri.fsPath);
-    const symbolNames = symbols.map((symbol) => symbol.name);
-    assert.ok(
-        symbolNames.includes(expectedSymbol),
-        `Failed to find symbol ${expectedSymbol} in ${JSON.stringify(symbolNames)}`
-    );
 }
