@@ -7,10 +7,20 @@ import { activate, openAndShowFile, sleep, testDiagnostic, testDocumentSymbol, t
 
 // Settings required by test.settings.hlsl to resolve its include & enter its preprocessor branches.
 // They rely on vscode variables aswell to ensure they are correctly resolved before being sent to the server.
-const SETTINGS_MACRO: [string, any][] = [
+const SETTINGS_GENERIC_HLSL: [string, any][] = [
     ["includes", ["${workspaceFolder}/includes"]],
     ["defines", { "SETTINGS_MACRO": "1" }], // eslint-disable-line @typescript-eslint/naming-convention
     ["pathRemapping", { "/Header": "${workspaceFolder}/includes" }], // eslint-disable-line @typescript-eslint/naming-convention
+    ["hlsl.enable16bitTypes", true],
+    ["hlsl.spirv", true],
+    ["hlsl.shaderModel", "ShaderModel6_8"],
+    ["hlsl.version", "V2021"],
+];
+
+const SETTINGS_GLSL: [string, any][] = [
+    ["glsl.spirvVersion", "SPIRV1_6"],
+    ["glsl.targetClient", "Vulkan1_3"],
+    ["glsl.preamble", "${workspaceFolder}/includes/preamble.glsl"],
 ];
 
 const SETTINGS_VALIDATION: [string, any][] = [
@@ -26,18 +36,19 @@ suite('Settings Test Suite', () => {
         suiteTeardown(async () => {
             // Reset settings here as failure might miss resetting them.
             await resetSettings(SETTINGS_VALIDATION);
-            await resetSettings(SETTINGS_MACRO);
+            await resetSettings(SETTINGS_GENERIC_HLSL);
+            await resetSettings(SETTINGS_GLSL);
             vscode.window.showInformationMessage('All settings tests done!');
         });
-        test('Test symbols with settings', async () => {
+        test('Test HLSL and generic settings', async () => {
             const docUri = await vscode.workspace.findFiles("test.settings.hlsl");
             assert.ok(docUri.length > 0);
             await activate(true);
-            await updateSettings(SETTINGS_MACRO);
+            await updateSettings(SETTINGS_GENERIC_HLSL);
             await openAndShowFile(docUri[0]);
             await testDiagnostic(docUri[0], false);
             await testHasDocumentSymbol(docUri[0], "main");
-            await resetSettings(SETTINGS_MACRO);
+            await resetSettings(SETTINGS_GENERIC_HLSL);
         }).timeout(30000);
 
         test('Test validation settings', async () => {
@@ -45,12 +56,25 @@ suite('Settings Test Suite', () => {
             assert.ok(docUri.length > 0);
             await activate(false);
             await updateSettings(SETTINGS_VALIDATION);
-            let [doc, editor] = await openAndShowFile(docUri[0]);
+            let [doc, _editor] = await openAndShowFile(docUri[0]);
             // Touch document to retrigger cache as we use same file as previous test.
             await touchDocument(doc);
             await testDiagnostic(docUri[0], false);
             await testDocumentSymbol(docUri[0], false);
             await resetSettings(SETTINGS_VALIDATION);
+        }).timeout(30000);
+
+        test('Test GLSL settings', async () => {
+            const docUri = await vscode.workspace.findFiles("test.settings.frag.glsl");
+            assert.ok(docUri.length > 0);
+            await activate(false);
+            await updateSettings(SETTINGS_GLSL);
+            let [doc, _editor] = await openAndShowFile(docUri[0]);
+            // Touch document to retrigger cache as we use same file as previous test.
+            await touchDocument(doc);
+            await testDiagnostic(docUri[0], false);
+            await testHasDocumentSymbol(docUri[0], "main");
+            await resetSettings(SETTINGS_GLSL);
         }).timeout(30000);
     }
 });
