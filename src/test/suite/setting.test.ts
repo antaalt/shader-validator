@@ -14,26 +14,30 @@ const settings: [string, any][] = [
 ];
 
 suite('Settings Test Suite', () => {
-    vscode.window.showInformationMessage('Start all settings tests.');
-    suiteSetup(async () => {
-        // Clear to be sure we update settings correctly
-        await resetSettings();
-    });
-    suiteTeardown(async () => {
-        // Runs even when the test fails, unlike a reset at the end of the test body.
-        await resetSettings();
-        vscode.window.showInformationMessage('All settings tests done!');
-    });
-    test('Test symbols with settings', async () => {
-        const docUri = await vscode.workspace.findFiles("test.settings.hlsl");
-        assert.ok(docUri.length > 0);
-        await activate(docUri[0], true)!;
-        // main is guarded by INCLUDED_MACRO (coming from the remapped include) & SETTINGS_MACRO (coming from defines),
-        // so it is only visible if the settings made their way to the server.
-        await updateSettings();
-        await testDiagnostic(docUri[0]);
-        await testDocumentSymbol(docUri[0], "main");
-    }).timeout(30000);
+	const useWasiServer = process.env.USE_WASI_SERVER === "true";
+    // Skip test on WASI as we use DXC and HLSL.
+    if (!useWasiServer) {
+        vscode.window.showInformationMessage('Start all settings tests.');
+        suiteSetup(async () => {
+            // Clear to be sure we update settings correctly
+            await resetSettings();
+        });
+        suiteTeardown(async () => {
+            // Runs even when the test fails, unlike a reset at the end of the test body.
+            await resetSettings();
+            vscode.window.showInformationMessage('All settings tests done!');
+        });
+        test('Test symbols with settings', async () => {
+            const docUri = await vscode.workspace.findFiles("test.settings.hlsl");
+            assert.ok(docUri.length > 0);
+            await activate(docUri[0], true)!;
+            // main is guarded by INCLUDED_MACRO (coming from the remapped include) & SETTINGS_MACRO (coming from defines),
+            // so it is only visible if the settings made their way to the server.
+            await updateSettings();
+            await testDiagnostic(docUri[0]);
+            await testDocumentSymbol(docUri[0], "main");
+        }).timeout(30000);
+    }
 });
 
 async function updateSettings() {
