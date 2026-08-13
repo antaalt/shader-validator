@@ -6,7 +6,7 @@
 [![vsmarketplace](https://img.shields.io/visual-studio-marketplace/v/antaalt.shader-validator?color=blue&label=vscode%20marketplace)](https://marketplace.visualstudio.com/items?itemName=antaalt.shader-validator)
 [![openVSX registry](https://img.shields.io/open-vsx/v/antaalt/shader-validator?color=purple)](https://open-vsx.org/extension/antaalt/shader-validator)
 
-[shader-validator](https://marketplace.visualstudio.com/items?itemName=antaalt.shader-validator) adds syntax highlighting, validation & symbol providing for **HLSL** / **GLSL** / **WGSL** shaders. It is mostly intended to be used with big shader codebase used in production by providing interesting features such as region selection and a shader variant entry point selection for quickly switching between two entry point context with decent performances. This make it also quite reliable for small shader codebase.
+[shader-validator](https://marketplace.visualstudio.com/items?itemName=antaalt.shader-validator) adds syntax highlighting, validation & symbol providing for **HLSL** / **GLSL** / **WGSL** shaders. It is mostly intended to be used with big shader codebase used in production by providing interesting features such as [region selection](#regions) and a [shader variant](#variants) entry point selection for quickly switching between two entry point context with decent performances. This make it also quite reliable for small shader codebase.
 
 
 ## Features
@@ -92,15 +92,37 @@ Add inlay hints to your function calls.
 
 ### Variants
 
-Swap shader variant on the fly to change entry point & macro definition. This allow you to define and easily change between the one you have set, affecting regions. For example when you have a lot of entry point in a single shader file, splitted using macros, or want to see the content from your dependencies with the context passed from you main entry point.
+Swap shader variant on the fly to change entry point & macro definition. This allow you to define and easily change between the one you have set, affecting [regions](#regions) and [diagnostics](#diagnostics). For example when you have a lot of entry point in a single shader file, splitted using macros, or want to see the content from your dependencies with the context passed from you main entry point.
 
 You can then access these variants directly from the dedicated window and then access them by clicking on them.
 
 A neat feature for big shader codebase with lot of entry point everywhere !
 
-You can add one with the dedicated window or using the command `shader-validator.addCurrentFileVariant`. It will also help dxc and glslang validating your file in a huge codebase where DXC take a lot of time to validate using the lib profile.
+You can add one with the dedicated window or using the command `shader-validator.addCurrentFileVariant`. It will also help dxc and glslang validating your file in a huge codebase where DXC take a lot of time to validate using the lib profile. It is also the only way to specify a shader stage for a specific entry point. The auto stage will try to guess the stage from filename or default to fragment stage.
 
 ![shader-variant](res/doc/variants.png)
+
+It is also possible to create a variant list from a JSON file and load it directly in the editor. It will need to follow the following structure:
+
+```json
+[
+    {
+        "uri":"file.hlsl",
+        "variants": [
+            {
+                "name": "entryPoint",
+                "stage": "vertex",
+                "defines": {
+                    "VARIANT_DEFINE": "1"
+                },
+                "includes": [
+                    "my/include/path"
+                ]
+            }
+        ]
+    }
+]
+```
 
 ### Regions
 
@@ -126,6 +148,11 @@ This extension contributes the following settings:
 *   `shader-validator.stageDefine.[vertex|fragment|compute...]`: All custom macros and their values for custom shader stages.
 *   `shader-validator.serverPath`: Use a custom server instead of the bundled one.
 *   `shader-validator.updateSymbolsOnVariantUpdate`: Update symbol outline when changing variant. Will trigger a save event.
+*   `shader-validator.experimentalMacroExpansion`: Enable the experimental macro expansion system that will try to expand macro and make their expansion available as symbol.
+*   `shader-validator.automaticVariantDiscovery`: Try to pick a variant automatically for the context from opened files.
+*   `shader-validator.configOverride`: Pass a configuration file that will be added to the configuration. This let user easily swap between them.
+*   `shader-validator.useWasiServer`: Force the use of Wasi server instead of native one. Usefull if meeting some issues with native server.
+*   `shader-validator.validateConfig`: Validate configuration to ensure path given to server does exist and there is no mismatching infomation.
 *   `shader-validator.trace.server`: Show debug logs into an output channel. Can be accessed via shader-validator status bar.
 
 ### HLSL specific settings: 
