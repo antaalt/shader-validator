@@ -98,15 +98,15 @@ function deserializeShaderVariant(data: any, uri: vscode.Uri): ShaderVariant {
         throw new SyntaxError(`variant include ${data["includes"]} is not an include`);
     }
     return {
-        'kind': 'variant',
-        'uri': uri,
-        'name': data["name"] as string,
-        'isActive': false,
-        'stage': {
-            'kind': 'stage',
-            'stage': ShaderStage[data["stage"] as keyof typeof ShaderStage] 
-        } as ShaderVariantStage,
-        'defines': {
+        kind: 'variant',
+        uri: uri,
+        name: data["name"] as string,
+        isActive: false,
+        stage: {
+            kind: 'stage',
+            stage: ShaderStage[data["stage"] as keyof typeof ShaderStage] 
+        },
+        defines: {
             kind: 'defineList',
             defines: Object.entries(data["defines"]).map(e => {
                 if (typeof e[0] !== 'string') {
@@ -119,10 +119,10 @@ function deserializeShaderVariant(data: any, uri: vscode.Uri): ShaderVariant {
                     kind: 'define',
                     label: e[0] as string,
                     value: e[1] as string
-                } as ShaderVariantDefine
+                }
             }),
-        } as ShaderVariantDefineList,
-        'includes': {
+        },
+        includes: {
             kind: 'includeList',
             includes: data["includes"].map(e => {
                 if (typeof e !== 'string') {
@@ -131,10 +131,10 @@ function deserializeShaderVariant(data: any, uri: vscode.Uri): ShaderVariant {
                 return {
                     kind: 'include',
                     include: e as string,
-                } as ShaderVariantInclude
+                }
             }),
-        } as ShaderVariantIncludeList,
-    } as ShaderVariant;
+        },
+    };
 }
 function deserializeShaderVariantFile(data: any): ShaderVariantFile {
     if (typeof data !== 'object') {
@@ -145,10 +145,11 @@ function deserializeShaderVariantFile(data: any): ShaderVariantFile {
     }
     let uri = vscode.Uri.file(resolveUserPath(data["uri"]) || data["uri"]);
     return {
-        'kind': 'file',
-        'uri': uri,
-        'variants': data["variants"].map((e: any) => deserializeShaderVariant(e, uri))
-    } as ShaderVariantFile;
+        kind: 'file',
+        uri: uri,
+        database: true,
+        variants: data["variants"].map((e: any) => deserializeShaderVariant(e, uri))
+    };
 }
 /**
  * Converts a JavaScript Object Notation (JSON) string into a ShaderVariantNode.
@@ -225,6 +226,7 @@ export type ShaderVariantFile = {
     kind: 'file',
     // These are currently generated at runtime, so can't get parents easily...
     //parent: ShaderVariantRoot | ShaderVariantDatabase,
+    database: boolean, // Coming from database or not
     uri: vscode.Uri,
     variants: ShaderVariant[],
 };

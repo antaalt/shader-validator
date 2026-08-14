@@ -177,12 +177,22 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
             }
         }));
         context.subscriptions.push(vscode.commands.registerCommand("shader-validator.addMenu", async (node: ShaderVariantNode) => {
-            await this.add(node);
-            this.save();
+            let file = this.getNodeVariantFile(node);
+            if (file && file.database) {
+                vscode.window.showWarningMessage("Trying to add to a database. Edit JSON and refresh instead to avoid losing content.")
+            } else {
+                await this.add(node);
+                this.save();
+            }
         }));
         context.subscriptions.push(vscode.commands.registerCommand("shader-validator.deleteMenu", async (node: ShaderVariantNode) => {
-            await this.delete(node);
-            this.save();
+            let file = this.getNodeVariantFile(node);
+            if (file && file.database) {
+                vscode.window.showWarningMessage("Trying to delete to a database. Edit JSON and refresh instead to avoid losing content.")
+            } else {
+                await this.delete(node);
+                this.save();
+            }
         }));
         context.subscriptions.push(vscode.commands.registerCommand("shader-validator.refreshMenu", (node: ShaderVariantNode) => {
             if (node.kind === 'database') {
@@ -191,8 +201,13 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
             }
         }));
         context.subscriptions.push(vscode.commands.registerCommand("shader-validator.editMenu", async (node: ShaderVariantNode) => {
-            await this.edit(node);
-            this.save();
+            let file = this.getNodeVariantFile(node);
+            if (file && file.database) {
+                vscode.window.showWarningMessage("Trying to edit to a database. Edit JSON and refresh instead to avoid losing content.")
+            } else {
+                await this.edit(node);
+                this.save();
+            }
         }));
         this.onServerStart();
     }
@@ -346,6 +361,13 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
             return item;
         } else if (element.kind === 'file') {
             let item = new vscode.TreeItem(vscode.workspace.asRelativePath(element.uri), vscode.TreeItemCollapsibleState.Expanded);
+            item.command = {
+                title: "Go to file",
+                command: 'vscode.open',
+                arguments: [
+                    element.uri,
+                ]
+            };
             item.description = `${element.variants.length}`;
             item.resourceUri = element.uri;
             item.tooltip = `File ${element.uri.fsPath}`;
@@ -394,6 +416,13 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
             return item;
         } else if (element.kind === 'database') {
             let item = new vscode.TreeItem(element.label, vscode.TreeItemCollapsibleState.Expanded);
+            item.command = {
+                title: "Go to database",
+                command: 'vscode.open',
+                arguments: [
+                    element.uri,
+                ]
+            };
             item.tooltip = `All variants parsed from config file ${element.uri.path} .`;
             item.iconPath = vscode.ThemeIcon.File;
             item.contextValue = element.kind;
@@ -479,6 +508,7 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
             let newFile : ShaderVariantFile = {
                 kind: 'file',
                 uri: uri,
+                database: false,
                 variants: variant ? [variant] : []
             };
             this.files.set(uri, newFile);
