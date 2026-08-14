@@ -14,6 +14,7 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
     private notifier: ShaderVariantNotifier;
     private files: UriMap<ShaderVariantFile>;
     private database: UriMap<UriMap<ShaderVariantFile>>;
+    private databaseWatcher: UriMap<vscode.FileSystemWatcher>;
 
     // Serialization & Editor
     private tree: vscode.TreeView<ShaderVariantNode>;
@@ -45,6 +46,7 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
         this.workspaceState = context.workspaceState;
         this.files = new UriMap;
         this.database = new UriMap;
+        this.databaseWatcher = new UriMap;
         this.notifier = new ShaderVariantNotifier(context, server);
         this.load();
         this.tree = vscode.window.createTreeView<ShaderVariantNode>("shader-validator-variants", {
@@ -225,7 +227,6 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
         // Nothing to do here.
     }
     private async loadDatabase(fileUri: vscode.Uri, isTest?: boolean) {
-        // TODO: Could be neat to hot reload the database with vscode.workspace.createFileSystemWatcher
         try {
             const file = await vscode.workspace.fs.readFile(fileUri);
             const database = deserializeShaderVariantNode(file.toString());
@@ -253,7 +254,34 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
                 });
             }
             this.database.set(fileUri, databaseMap);
-            this.onDidChangeTreeDataEmitter.fire();
+            this.updateTreeView();
+            // Watch file for changes.
+            const folderUri = vscode.Uri.joinPath(fileUri, '..');
+            const fileName = fileUri.path.substring(fileUri.path.lastIndexOf('/') + 1);
+            let watcher = vscode.workspace.createFileSystemWatcher(new vscode.RelativePattern(folderUri, fileName));
+            watcher.onDidChange((uri: vscode.Uri) => {
+                if (uri.fsPath === fileUri.fsPath) {
+                    this.loadDatabase(fileUri);
+                }
+            });
+            // Deleted then recreated (or fixed after a bad write).
+            watcher.onDidCreate((uri: vscode.Uri) => {
+                if (uri.fsPath === fileUri.fsPath) {
+                    this.loadDatabase(fileUri);
+                    this.updateTreeView();
+                }
+            });
+            watcher.onDidDelete((uri: vscode.Uri) => {
+                if (uri.fsPath === fileUri.fsPath) {
+                    this.database.delete(uri);
+                    this.updateTreeView();
+                }
+            });
+            let oldWatcher = this.databaseWatcher.get(fileUri);
+            if (oldWatcher) {
+                oldWatcher.dispose();
+            }
+            this.databaseWatcher.set(fileUri, watcher);
         } catch (e) {
             let error = e as SyntaxError;
             vscode.window.showErrorMessage(`Failed to load variant database ${vscode.workspace.asRelativePath(fileUri)}: ${error.message}`);

@@ -159,6 +159,8 @@ export class ShaderVariantNotifier {
                 });
                 // Symbols might have changed, so request them as we might change context
                 this.requestDocumentSymbol(variantFile.uri);
+            }, reason => {
+                vscode.window.showWarningMessage(`Failed to open file ${vscode.workspace.asRelativePath(activeVariant.uri)} to notify variant change: ${reason}.`);
             });
         } else {
             this.server.sendNotification(didChangeShaderVariantNotification, {
