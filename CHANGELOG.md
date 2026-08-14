@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [unreleased]
 
+## [1.4.4] - 2026-08-14
+
+### Added
+
+- New setting `shader-validator.validateConfig` to control setting validation (enabled by default)
+- Disallow editing shader variant database as it may trigger weird behavior and sync issues.
+- Variant database are now watched for change. This make refresh button deprecated, keeping for solving potential watch issues.
+
+### Changed
+
+- Using [shader-language-server v1.4.3](https://github.com/antaalt/shader-sense/releases/tag/v1.4.3) with some fix concerning configuration.
+
 ## [1.4.3] - 2026-08-03
 
 ### Fixed
@@ -428,7 +440,8 @@ Initial release of this extension using [shader-language-server v0.0.1](https://
 
 
 <!-- Below are link for above changelog titles-->
-[unreleased]: https://github.com/antaalt/shader-validator/compare/v1.4.3...HEAD
+[unreleased]: https://github.com/antaalt/shader-validator/compare/v1.4.4...HEAD
+[1.4.4]: https://github.com/antaalt/shader-validator/compare/v1.4.3...v1.4.4
 [1.4.3]: https://github.com/antaalt/shader-validator/compare/v1.4.2...v1.4.3
 [1.4.2]: https://github.com/antaalt/shader-validator/compare/v1.4.1...v1.4.2
 [1.4.1]: https://github.com/antaalt/shader-validator/compare/v1.4.0...v1.4.1
