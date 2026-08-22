@@ -551,9 +551,15 @@
       },
       {
         "command": "shader-validator.compileShader",
-        "title": "Compile the shader.",
+        "title": "Compile the shader and return the result.",
         "category": "Shader validator",
-        "icon": "$(arrow-right)"
+        "icon": "$(run-view-icon)"
+      },
+      {
+        "command": "shader-validator.compileAndSaveActiveEditor",
+        "title": "Compile the active editor and prompt for save.",
+        "category": "Shader validator",
+        "icon": "$(run-view-icon)"
       }
     ],
     "menus": {

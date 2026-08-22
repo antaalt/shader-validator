@@ -93,40 +93,53 @@ export async function activate(context: vscode.ExtensionContext)
             server.showLogs();
         }
     }));
-    context.subscriptions.push(vscode.commands.registerCommand("shader-validator.compileShader", () => {
+    context.subscriptions.push(vscode.commands.registerCommand("shader-validator.compileShader", async (uri: vscode.Uri) => {
+        if (server.getServerStatus() === ServerStatus.running) {
+            let compilationResult = await server.sendRequest(compileShaderRequest, {
+                uri: server.uriAsString(uri)
+            });
+            if (compilationResult === null || compilationResult.ty == 'None') {
+                return null;
+            } else {
+                return compilationResult;
+            }
+        } else {
+            console.error("Trying to get compilation result but server is not running");
+            return null;
+        }
+    }));
+    context.subscriptions.push(vscode.commands.registerCommand("shader-validator.compileAndSaveActiveEditor", async () => {
         const activeTextEditor = vscode.window.activeTextEditor;
         if (activeTextEditor && activeTextEditor.document.uri.scheme === 'file' && ShaderLanguageClient.isEnabledLangId(activeTextEditor.document.languageId)) {
             if (server.getServerStatus() === ServerStatus.running) {
-                server.sendRequest(compileShaderRequest, {
-                    uri: server.uriAsString(activeTextEditor.document.uri)
-                }).then(async (value: CompileShaderResult | null) => {
-                    console.info(value);
-                    if (value && value.ty != 'None') {
-                        function getExtension(value: string) : string {
-                            switch(value) {
-                                case 'Spirv': return '.spirv';
-                                case 'Dxil': return '.dxil';
-                                default: 
-                                case 'None': return '.bin';
-                            } 
-                        }
-                        let saveLocation = await vscode.window.showSaveDialog({
-                            title: 'Save compilation result',
-                            saveLabel: "Save",
-                            defaultUri: vscode.Uri.file(activeTextEditor.document.fileName + getExtension(value.ty)),
-                        });
-                        if (saveLocation) {
-                            await vscode.workspace.fs.writeFile(saveLocation, decodeCompileShaderData(value.data));
-                            console.info('Save ', value.ty);
-                        } else {
-                            vscode.window.showErrorMessage("Failed to find a valid location to save compilation result.")
-                        }
-                    } else {
-                        vscode.window.showErrorMessage("Compilation returned empty blob. Check diagnostics and ensure there is a valid entry point set via shader variants.")
+                let compilationResult = (await vscode.commands.executeCommand(
+                    'shader-validator.compileShader',
+                    activeTextEditor.document.uri
+                )) as CompileShaderResult | null;
+                if (compilationResult) {
+                    console.info(compilationResult);
+                    function getExtension(value: string) : string {
+                        switch(value) {
+                            case 'Spirv': return '.spirv';
+                            case 'Dxil': return '.dxil';
+                            default: 
+                            case 'None': return '.bin';
+                        } 
                     }
-                }, (reason: any) => {
-                    server.log("Failed to get compilation result: " + reason);
-                });
+                    let saveLocation = await vscode.window.showSaveDialog({
+                        title: 'Save compilation result',
+                        saveLabel: "Save",
+                        defaultUri: vscode.Uri.file(activeTextEditor.document.fileName + getExtension(compilationResult.ty)),
+                    });
+                    if (saveLocation) {
+                        await vscode.workspace.fs.writeFile(saveLocation, decodeCompileShaderData(compilationResult.data));
+                        console.info('Save ', compilationResult.ty);
+                    } else {
+                        vscode.window.showErrorMessage("Failed to find a valid location to save compilation result.")
+                    }
+                } else {
+                    vscode.window.showErrorMessage("Compilation returned empty blob. Check diagnostics and ensure there is a valid entry point set via shader variants.")
+                }
             } else {
                 vscode.window.showWarningMessage("Server is not running");
             }
