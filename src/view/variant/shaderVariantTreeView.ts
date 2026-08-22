@@ -2,6 +2,8 @@ import * as vscode from 'vscode';
 import { resolveVSCodeVariables, ShaderLanguageClient } from '../../client';
 import { deserializeShaderVariantNode, ShaderStage, ShaderVariant, ShaderVariantDatabase, ShaderVariantFile, ShaderVariantNode, ShaderVariantRoot, UriMap } from './variant';
 import { ShaderVariantNotifier } from './shaderVariantNotifier';
+import { CompileShaderResult, decodeCompileShaderData, getCompiledShaderExtension } from '../../request';
+import path from 'path';
 
 const shaderVariantTreeKey : string = 'shader-validator.shader-variant-tree-key';
 const shaderVariantDatabaseKey : string = 'shader-validator.shader-variant-database-key';
@@ -58,41 +60,30 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
             for (let [variant, checkboxState] of e.items) {
                 if (variant.kind === 'variant') {
                     if (checkboxState === vscode.TreeItemCheckboxState.Checked) {
-                        // Need to unset other possibles active ones to keep only one entry point active.
-                        for (let [url, file] of this.files) {
-                            let needRefresh = false;
-                            for (let otherVariant of file.variants) {
-                                if (otherVariant.isActive) {
-                                    needRefresh = true;
-                                    otherVariant.isActive = false;
-                                }
-                            }
-                            if (needRefresh) {
-                                // Notify server & update checkbox
-                                this.updateActiveVariant(file, null);
-                                this.updateTreeView(file);
-                            }
-                        }
-                        for (let [databaseUrl, database] of this.database) {
-                            for (let [url, file] of database) {
-                                let needRefresh = false;
-                                for (let otherVariant of file.variants) {
-                                    if (otherVariant.isActive) {
-                                        needRefresh = true;
-                                        otherVariant.isActive = false;
-                                    }
-                                }
-                                if (needRefresh) {
-                                    // Notify server & update checkbox
-                                    this.updateActiveVariant(file, null);
-                                    this.updateTreeView(file);
-                                }
-                            }
-                        }
-                        variant.isActive = true; // checked
                         let file = this.getNodeVariantFile(variant);
                         if (file) {
+                            // Need to unset other possibles active ones to keep only one entry point active.
+                            for (let [url, file] of this.files) {
+                                for (let otherVariant of file.variants) {
+                                    if (otherVariant.isActive) {
+                                        otherVariant.isActive = false;
+                                            this.updateTreeView(otherVariant);
+                                    }
+                                }
+                            }
+                            for (let [databaseUrl, database] of this.database) {
+                                for (let [url, file] of database) {
+                                    for (let otherVariant of file.variants) {
+                                        if (otherVariant.isActive) {
+                                            otherVariant.isActive = false;
+                                            this.updateTreeView(otherVariant);
+                                        }
+                                    }
+                                }
+                            }
+                            variant.isActive = true; // checked
                             this.updateActiveVariant(file, variant);
+                            this.updateTreeView(file);
                         }
                     } else {
                         variant.isActive = false; // unchecked
@@ -209,6 +200,54 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
             } else {
                 await this.edit(node);
                 this.save();
+            }
+        }));
+        context.subscriptions.push(vscode.commands.registerCommand("shader-validator.compileMenu", async (node: ShaderVariantNode) => {
+            if (node.kind === 'variant') {
+                let file = this.getNodeVariantFile(node);
+                if (file) {
+                    // Need to unset other possibles active ones to keep only one entry point active.
+                    for (let [url, file] of this.files) {
+                        for (let otherVariant of file.variants) {
+                            if (otherVariant.isActive) {
+                                otherVariant.isActive = false;
+                                this.updateTreeView(otherVariant);
+                            }
+                        }
+                    }
+                    for (let [databaseUrl, database] of this.database) {
+                        for (let [url, file] of database) {
+                            for (let otherVariant of file.variants) {
+                                if (otherVariant.isActive) {
+                                    otherVariant.isActive = false;
+                                    this.updateTreeView(otherVariant);
+                                }
+                            }
+                        }
+                    }
+                    node.isActive = true; // checked
+                    this.updateActiveVariant(file, node);
+                    this.updateTreeView(node);
+                    let compilationResult = (await vscode.commands.executeCommand(
+                        'shader-validator.compileShader',
+                        node.uri
+                    )) as CompileShaderResult | null;
+                    if (compilationResult) {
+                        let saveLocation = await vscode.window.showSaveDialog({
+                            title: 'Save compilation result',
+                            saveLabel: "Save",
+                            defaultUri: vscode.Uri.file(path.basename(node.uri.path) + getCompiledShaderExtension(compilationResult)),
+                        });
+                        if (saveLocation) {
+                            await vscode.workspace.fs.writeFile(saveLocation, decodeCompileShaderData(compilationResult.data));
+                            console.info('Save ', compilationResult.ty);
+                        } else {
+                            vscode.window.showErrorMessage("Failed to find a valid location to save compilation result.")
+                        }
+                    } else {
+                        vscode.window.showErrorMessage("Failed to compile shader variant.")
+                    }
+                }
             }
         }));
         this.onServerStart();

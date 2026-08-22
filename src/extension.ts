@@ -3,7 +3,7 @@
 import * as vscode from 'vscode';
 
 import { ServerPlatform, ServerStatus, ShaderLanguageClient, ServerVersion } from './client';
-import { compileShaderRequest, CompileShaderResult, decodeCompileShaderData, dumpAstRequest, dumpDependencyRequest } from './request';
+import { compileShaderRequest, CompileShaderResult, decodeCompileShaderData, dumpAstRequest, dumpDependencyRequest, getCompiledShaderExtension } from './request';
 import { ShaderVariantTreeDataProvider } from './view/variant/shaderVariantTreeView';
 import { DidChangeConfigurationNotification, LanguageClient, Trace } from 'vscode-languageclient';
 import { ShaderStatusBar } from './view/status/shaderStatusBar';
@@ -118,18 +118,10 @@ export async function activate(context: vscode.ExtensionContext)
                 )) as CompileShaderResult | null;
                 if (compilationResult) {
                     console.info(compilationResult);
-                    function getExtension(value: string) : string {
-                        switch(value) {
-                            case 'Spirv': return '.spirv';
-                            case 'Dxil': return '.dxil';
-                            default: 
-                            case 'None': return '.bin';
-                        } 
-                    }
                     let saveLocation = await vscode.window.showSaveDialog({
                         title: 'Save compilation result',
                         saveLabel: "Save",
-                        defaultUri: vscode.Uri.file(activeTextEditor.document.fileName + getExtension(compilationResult.ty)),
+                        defaultUri: vscode.Uri.file(activeTextEditor.document.fileName + getCompiledShaderExtension(compilationResult)),
                     });
                     if (saveLocation) {
                         await vscode.workspace.fs.writeFile(saveLocation, decodeCompileShaderData(compilationResult.data));

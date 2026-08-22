@@ -14,6 +14,15 @@ export interface CompileShaderResult {
     data: string,
 }
 
+export function getCompiledShaderExtension(value: CompileShaderResult) : string {
+    switch(value.ty) {
+        case 'Spirv': return '.spirv';
+        case 'Dxil': return '.dxil';
+        default: 
+        case 'None': return '.bin';
+    } 
+}
+
 /// Decode the base64 payload of a compilation result into raw bytes.
 /// Cannot rely on Buffer here: it does not exist in the web extension host, and webpack
 /// does not polyfill it for the webworker target.

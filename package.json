@@ -537,6 +537,13 @@
         "enablement": "view == shader-validator-variants"
       },
       {
+        "command": "shader-validator.compileMenu",
+        "title": "Compile",
+        "category": "Shader validator",
+        "icon": "$(run-view-icon)",
+        "enablement": "view == shader-validator-variants"
+      },
+      {
         "command": "shader-validator.refreshMenu",
         "title": "Refresh",
         "category": "Shader validator",
@@ -593,13 +600,18 @@
           "when": "view == shader-validator-variants && (viewItem == variant || viewItem == include || viewItem == define || viewItem == stage)"
         },
         {
-          "command": "shader-validator.deleteMenu",
+          "command": "shader-validator.compileMenu",
           "group": "inline@3",
+          "when": "view == shader-validator-variants && (viewItem == variant)"
+        },
+        {
+          "command": "shader-validator.deleteMenu",
+          "group": "inline@4",
           "when": "view == shader-validator-variants && (viewItem == variant || viewItem == include || viewItem == define || viewItem == file || viewItem == database)"
         },
         {
           "command": "shader-validator.refreshMenu",
-          "group": "inline@4",
+          "group": "inline@5",
           "when": "view == shader-validator-variants && (viewItem == database)"
         }
       ]
