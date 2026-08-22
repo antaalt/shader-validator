@@ -14,6 +14,18 @@ export interface CompileShaderResult {
     data: string,
 }
 
+/// Decode the base64 payload of a compilation result into raw bytes.
+/// Cannot rely on Buffer here: it does not exist in the web extension host, and webpack
+/// does not polyfill it for the webworker target.
+export function decodeCompileShaderData(data: string): Uint8Array {
+    const binary = atob(data);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) {
+        bytes[i] = binary.charCodeAt(i);
+    }
+    return bytes;
+}
+
 export const compileShaderRequest = new ProtocolRequestType<CompileShaderParams, CompileShaderResult | null, never, void, CompileShaderRegistrationOptions>('textDocument/compilationResult');
 
 // Request to dump ast to log.

@@ -3,7 +3,7 @@
 import * as vscode from 'vscode';
 
 import { ServerPlatform, ServerStatus, ShaderLanguageClient, ServerVersion } from './client';
-import { compileShaderRequest, CompileShaderResult, dumpAstRequest, dumpDependencyRequest } from './request';
+import { compileShaderRequest, CompileShaderResult, decodeCompileShaderData, dumpAstRequest, dumpDependencyRequest } from './request';
 import { ShaderVariantTreeDataProvider } from './view/variant/shaderVariantTreeView';
 import { DidChangeConfigurationNotification, LanguageClient, Trace } from 'vscode-languageclient';
 import { ShaderStatusBar } from './view/status/shaderStatusBar';
@@ -116,8 +116,7 @@ export async function activate(context: vscode.ExtensionContext)
                             defaultUri: vscode.Uri.file(activeTextEditor.document.fileName + getExtension(value.ty)),
                         });
                         if (saveLocation) {
-                            // Data went through JSON-RPC, so it is a number array, not a Uint8Array.
-                            await vscode.workspace.fs.writeFile(saveLocation, new Uint8Array(Buffer.from(value.data, "base64")));
+                            await vscode.workspace.fs.writeFile(saveLocation, decodeCompileShaderData(value.data));
                             console.info('Save ', value.ty);
                         } else {
                             vscode.window.showErrorMessage("Failed to find a valid location to save compilation result.")
