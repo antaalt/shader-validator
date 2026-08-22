@@ -10,8 +10,8 @@ export interface CompileShaderRegistrationOptions extends TextDocumentRegistrati
 
 export interface CompileShaderResult {
     ty: 'Dxil' | 'Spirv' | 'None',
-    // Server sends a Vec<u8>, which serde serializes as a JSON array of numbers.
-    data: number[],
+    // Server sends a Vec<u8>, which serde serializes as a base64 string.
+    data: string,
 }
 
 export const compileShaderRequest = new ProtocolRequestType<CompileShaderParams, CompileShaderResult | null, never, void, CompileShaderRegistrationOptions>('textDocument/compilationResult');

@@ -117,7 +117,7 @@ export async function activate(context: vscode.ExtensionContext)
                         });
                         if (saveLocation) {
                             // Data went through JSON-RPC, so it is a number array, not a Uint8Array.
-                            await vscode.workspace.fs.writeFile(saveLocation, new Uint8Array(value.data));
+                            await vscode.workspace.fs.writeFile(saveLocation, new Uint8Array(Buffer.from(value.data, "base64")));
                             console.info('Save ', value.ty);
                         } else {
                             vscode.window.showErrorMessage("Failed to find a valid location to save compilation result.")
