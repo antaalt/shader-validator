@@ -548,6 +548,12 @@
         "title": "Go to shader entry point",
         "category": "Shader validator",
         "icon": "$(arrow-right)"
+      },
+      {
+        "command": "shader-validator.compileShader",
+        "title": "Compile the shader.",
+        "category": "Shader validator",
+        "icon": "$(arrow-right)"
       }
     ],
     "menus": {

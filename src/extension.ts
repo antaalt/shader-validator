@@ -3,7 +3,7 @@
 import * as vscode from 'vscode';
 
 import { ServerPlatform, ServerStatus, ShaderLanguageClient, ServerVersion } from './client';
-import { dumpAstRequest, dumpDependencyRequest } from './request';
+import { compileShaderRequest, CompileShaderResult, dumpAstRequest, dumpDependencyRequest } from './request';
 import { ShaderVariantTreeDataProvider } from './view/variant/shaderVariantTreeView';
 import { DidChangeConfigurationNotification, LanguageClient, Trace } from 'vscode-languageclient';
 import { ShaderStatusBar } from './view/status/shaderStatusBar';
@@ -93,8 +93,50 @@ export async function activate(context: vscode.ExtensionContext)
             server.showLogs();
         }
     }));
+    context.subscriptions.push(vscode.commands.registerCommand("shader-validator.compileShader", () => {
+        const activeTextEditor = vscode.window.activeTextEditor;
+        if (activeTextEditor && activeTextEditor.document.uri.scheme === 'file' && ShaderLanguageClient.isEnabledLangId(activeTextEditor.document.languageId)) {
+            if (server.getServerStatus() === ServerStatus.running) {
+                server.sendRequest(compileShaderRequest, {
+                    uri: server.uriAsString(activeTextEditor.document.uri)
+                }).then(async (value: CompileShaderResult | null) => {
+                    console.info(value);
+                    if (value && value.ty != 'None') {
+                        function getExtension(value: string) : string {
+                            switch(value) {
+                                case 'Spirv': return '.spirv';
+                                case 'Dxil': return '.dxil';
+                                default: 
+                                case 'None': return '.bin';
+                            } 
+                        }
+                        let saveLocation = await vscode.window.showSaveDialog({
+                            title: 'Save compilation result',
+                            saveLabel: "Save",
+                            defaultUri: vscode.Uri.file(activeTextEditor.document.fileName + getExtension(value.ty)),
+                        });
+                        if (saveLocation) {
+                            // Data went through JSON-RPC, so it is a number array, not a Uint8Array.
+                            await vscode.workspace.fs.writeFile(saveLocation, new Uint8Array(value.data));
+                            console.info('Save ', value.ty);
+                        } else {
+                            vscode.window.showErrorMessage("Failed to find a valid location to save compilation result.")
+                        }
+                    } else {
+                        vscode.window.showErrorMessage("Compilation returned empty blob. Check diagnostics and ensure there is a valid entry point set via shader variants.")
+                    }
+                }, (reason: any) => {
+                    server.log("Failed to get compilation result: " + reason);
+                });
+            } else {
+                vscode.window.showWarningMessage("Server is not running");
+            }
+        } else {
+            server.log("No active file for getting compilation result.");
+        }
+    }));
     context.subscriptions.push(vscode.commands.registerCommand("shader-validator.dumpAst", () => {
-        let activeTextEditor = vscode.window.activeTextEditor;
+        const activeTextEditor = vscode.window.activeTextEditor;
         if (activeTextEditor && activeTextEditor.document.uri.scheme === 'file' && ShaderLanguageClient.isEnabledLangId(activeTextEditor.document.languageId)) {
             if (server.getServerStatus() === ServerStatus.running) {
                 server.sendRequest(dumpAstRequest, {
@@ -118,7 +160,7 @@ export async function activate(context: vscode.ExtensionContext)
         }
     }));
     context.subscriptions.push(vscode.commands.registerCommand("shader-validator.dumpDependency", () => {
-        let activeTextEditor = vscode.window.activeTextEditor;
+        const activeTextEditor = vscode.window.activeTextEditor;
         if (activeTextEditor && activeTextEditor.document.uri.scheme === 'file' && ShaderLanguageClient.isEnabledLangId(activeTextEditor.document.languageId)) {
             if (server.getServerStatus() === ServerStatus.running) {
                 server.sendRequest(dumpDependencyRequest, {
