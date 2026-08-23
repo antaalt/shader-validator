@@ -98,11 +98,7 @@ export async function activate(context: vscode.ExtensionContext)
             let compilationResult = await server.sendRequest(compileShaderRequest, {
                 uri: server.uriAsString(uri)
             });
-            if (compilationResult === null || compilationResult.ty == 'None') {
-                return null;
-            } else {
-                return compilationResult;
-            }
+            return compilationResult;
         } else {
             console.error("Trying to get compilation result but server is not running");
             return null;

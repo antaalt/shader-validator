@@ -9,7 +9,7 @@ export interface CompileShaderParams extends TextDocumentIdentifier {}
 export interface CompileShaderRegistrationOptions extends TextDocumentRegistrationOptions {}
 
 export interface CompileShaderResult {
-    ty: 'Dxil' | 'Spirv' | 'None',
+    ty: 'Dxil' | 'Spirv',
     // Server sends a Vec<u8>, which serde serializes as a base64 string.
     data: string,
 }
@@ -18,8 +18,7 @@ export function getCompiledShaderExtension(value: CompileShaderResult) : string 
     switch(value.ty) {
         case 'Spirv': return '.spirv';
         case 'Dxil': return '.dxil';
-        default: 
-        case 'None': return '.bin';
+        default: return '.bin';
     } 
 }
 
