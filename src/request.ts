@@ -4,23 +4,29 @@ import {
     TextDocumentRegistrationOptions,
 } from "vscode-languageclient";
 
+export enum CompilationType {
+    Dxil = 'Dxil',
+    Spirv = 'Spirv',
+    Wgsl = 'Wgsl',
+}
+
 // Request to compile the shader
 export interface CompileShaderParams extends TextDocumentIdentifier {
-    compilationType?: 'Dxil' | 'Spirv' | 'Wgsl',
+    compilationType?: CompilationType,
 }
 export interface CompileShaderRegistrationOptions extends TextDocumentRegistrationOptions {}
 
 export interface CompileShaderResult {
-    compilationType: 'Dxil' | 'Spirv' | 'Wgsl',
+    compilationType: CompilationType,
     // Server sends a Vec<u8>, which serde serializes as a base64 string.
     data: string,
 }
 
 export function getCompiledShaderExtension(value: CompileShaderResult) : string {
     switch(value.compilationType) {
-        case 'Spirv': return '.spirv';
-        case 'Dxil': return '.dxil';
-        case 'Wgsl': return '.wgsl';
+        case CompilationType.Spirv: return '.spirv';
+        case CompilationType.Dxil: return '.dxil';
+        case CompilationType.Wgsl: return '.wgsl';
         default: return '.bin';
     } 
 }

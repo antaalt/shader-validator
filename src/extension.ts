@@ -3,7 +3,7 @@
 import * as vscode from 'vscode';
 
 import { ServerPlatform, ServerStatus, ShaderLanguageClient, ServerVersion } from './client';
-import { compileShaderRequest, CompileShaderResult, decodeCompileShaderData, dumpAstRequest, dumpDependencyRequest, getCompiledShaderExtension } from './request';
+import { CompilationType, compileShaderRequest, CompileShaderResult, decodeCompileShaderData, dumpAstRequest, dumpDependencyRequest, getCompiledShaderExtension } from './request';
 import { ShaderVariantTreeDataProvider } from './view/variant/shaderVariantTreeView';
 import { DidChangeConfigurationNotification, LanguageClient, Trace } from 'vscode-languageclient';
 import { ShaderStatusBar } from './view/status/shaderStatusBar';
@@ -93,10 +93,11 @@ export async function activate(context: vscode.ExtensionContext)
             server.showLogs();
         }
     }));
-    context.subscriptions.push(vscode.commands.registerCommand("shader-validator.compileShader", async (uri: vscode.Uri) => {
+    context.subscriptions.push(vscode.commands.registerCommand("shader-validator.compileShader", async (uri: vscode.Uri, compilationType?: CompilationType) => {
         if (server.getServerStatus() === ServerStatus.running) {
             let compilationResult = await server.sendRequest(compileShaderRequest, {
-                uri: server.uriAsString(uri)
+                uri: server.uriAsString(uri),
+                compilationType: compilationType
             });
             return compilationResult;
         } else {

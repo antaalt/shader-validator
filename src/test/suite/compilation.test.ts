@@ -3,7 +3,7 @@ import * as assert from 'assert';
 import * as vscode from 'vscode';
 import { activate, openAndShowFile } from './utils';
 import { ServerPlatform, ServerVersion } from '../../client';
-import { CompileShaderResult } from '../../request';
+import { CompilationType, CompileShaderResult } from '../../request';
 
 suite('Compilation Test Suite', () => {
     vscode.window.showInformationMessage('Start all compilation tests.');
@@ -24,7 +24,7 @@ suite('Compilation Test Suite', () => {
                 docUri
             )) as CompileShaderResult | null;
             assert.ok(compilationResult);
-            assert.notEqual(compilationResult.ty, 'None');
+            assert.equal(compilationResult.compilationType, CompilationType.Spirv);
             assert.equal(compilationResult.data.length, 608);
             // TODO: Could somehow validate that this is a valid SPIRV. 
             // Check with glslang if its available ?
