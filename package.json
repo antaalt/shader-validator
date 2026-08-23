@@ -567,6 +567,12 @@
         "title": "Compile the active editor and prompt for save.",
         "category": "Shader validator",
         "icon": "$(run-view-icon)"
+      },
+      {
+        "command": "shader-validator.showRenderer",
+        "title": "Render the active WGSL shader in a WebGPU preview.",
+        "category": "Shader validator",
+        "icon": "$(preview)"
       }
     ],
     "menus": {
@@ -673,6 +679,7 @@
     "@vscode/test-cli": "^0.0.10",
     "@vscode/test-electron": "^2.4.1",
     "@vscode/test-web": "^0.0.60",
+    "@webgpu/types": "^0.1.72",
     "eslint": "^9.39.2",
     "glob": "^8.0.3",
     "mocha": "^10.1.0",

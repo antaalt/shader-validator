@@ -12,5 +12,8 @@
 		"sourceMap": true,
 		"rootDir": "src",
 		"strict": true   /* enable all strict type-checking options */
-	}
+	},
+	"exclude": [
+		"src/view/renderer/webview" // Browser context, has its own tsconfig.
+	]
 }

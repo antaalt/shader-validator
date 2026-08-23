@@ -7,6 +7,7 @@ import { CompilationType, compileShaderRequest, CompileShaderResult, decodeCompi
 import { ShaderVariantTreeDataProvider } from './view/variant/shaderVariantTreeView';
 import { DidChangeConfigurationNotification, LanguageClient, Trace } from 'vscode-languageclient';
 import { ShaderStatusBar } from './view/status/shaderStatusBar';
+import { ShaderRendererPanel } from './view/renderer/renderer';
 
 export let sidebar: ShaderVariantTreeDataProvider;
 
@@ -135,6 +136,16 @@ export async function activate(context: vscode.ExtensionContext)
         } else {
             server.log("No active file for getting compilation result.");
         }
+    }));
+    context.subscriptions.push(vscode.commands.registerCommand("shader-validator.showRenderer", () => {
+        // Only WGSL can be handed to WebGPU as is. HLSL & GLSL will require the compilation
+        // request to go through a cross compiler first.
+        const document = vscode.window.activeTextEditor?.document;
+        const shader = (document && document.languageId === 'wgsl') ? {
+            code: document.getText(),
+            label: vscode.workspace.asRelativePath(document.uri),
+        } : undefined;
+        ShaderRendererPanel.show(context, shader);
     }));
     context.subscriptions.push(vscode.commands.registerCommand("shader-validator.dumpAst", () => {
         const activeTextEditor = vscode.window.activeTextEditor;

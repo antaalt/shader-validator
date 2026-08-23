@@ -85,4 +85,36 @@ const nodeConfig = {
     ]
   }
 };
-module.exports = [webConfig, nodeConfig];
+/**@type {import('webpack').Configuration}*/
+const webviewConfig = {
+  target: 'web', // the renderer webview is a plain iframe, not an extension host
+
+  entry: './src/view/renderer/webview/main.ts', // the entry point of the renderer webview
+  output: {
+    // loaded through Webview.asWebviewUri (check src/view/renderer/renderer.ts)
+    path: path.resolve(__dirname, 'dist/webview'),
+    filename: 'renderer.js',
+    devtoolModuleFilenameTemplate: '../[resource-path]'
+  },
+  devtool: 'source-map',
+  resolve: {
+    mainFields: ['browser', 'module', 'main'],
+    extensions: ['.ts', '.js']
+  },
+  module: {
+    rules: [
+      {
+        test: /\.ts$/,
+        exclude: /node_modules/,
+        use: [{
+          loader: 'ts-loader',
+          options: {
+            // Compiles against the DOM & WebGPU types instead of the node & vscode ones.
+            configFile: path.resolve(__dirname, 'src/view/renderer/webview/tsconfig.json')
+          }
+        }]
+      }
+    ]
+  }
+};
+module.exports = [webConfig, nodeConfig, webviewConfig];

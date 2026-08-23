@@ -1,0 +1,21 @@
+{
+	// The renderer webview runs in a browser context, unlike the extension host: it needs
+	// the DOM and WebGPU types instead of the node / vscode ones. Used by webpack only.
+	"compilerOptions": {
+		"module": "Node16",
+		"target": "es2022",
+		"lib": [
+			"es2022",
+			"DOM",
+			"DOM.Iterable"
+		],
+		"types": ["@webgpu/types"],
+		"skipLibCheck": true,
+		"sourceMap": true,
+		"strict": true
+	},
+	"include": [
+		"./**/*.ts",
+		"../protocol.ts"
+	]
+}
