@@ -121,7 +121,7 @@ export async function activate(context: vscode.ExtensionContext)
                     });
                     if (saveLocation) {
                         await vscode.workspace.fs.writeFile(saveLocation, decodeCompileShaderData(compilationResult.data));
-                        console.info('Save ', compilationResult.ty);
+                        console.info('Save ', compilationResult.compilationType);
                     } else {
                         vscode.window.showErrorMessage("Failed to find a valid location to save compilation result.")
                     }

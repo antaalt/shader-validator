@@ -5,19 +5,22 @@ import {
 } from "vscode-languageclient";
 
 // Request to compile the shader
-export interface CompileShaderParams extends TextDocumentIdentifier {}
+export interface CompileShaderParams extends TextDocumentIdentifier {
+    compilationType?: 'Dxil' | 'Spirv' | 'Wgsl',
+}
 export interface CompileShaderRegistrationOptions extends TextDocumentRegistrationOptions {}
 
 export interface CompileShaderResult {
-    ty: 'Dxil' | 'Spirv',
+    compilationType: 'Dxil' | 'Spirv' | 'Wgsl',
     // Server sends a Vec<u8>, which serde serializes as a base64 string.
     data: string,
 }
 
 export function getCompiledShaderExtension(value: CompileShaderResult) : string {
-    switch(value.ty) {
+    switch(value.compilationType) {
         case 'Spirv': return '.spirv';
         case 'Dxil': return '.dxil';
+        case 'Wgsl': return '.wgsl';
         default: return '.bin';
     } 
 }
