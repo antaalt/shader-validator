@@ -268,9 +268,13 @@
             }
           },
           "shader-validator.serverPath": {
-            "description": "Use an external server instead of the bundled ones.",
+            "description": "Use an external server instead of the bundled one.",
             "type": "string",
             "default": ""
+          },
+          "shader-validator.rendererPath": {
+            "description": "Use an external renderer instead of the bundled one.",
+            "type": "string"
           },
           "shader-validator.configOverride": {
             "description": "Override configuration with a path to a specific configuration file.",
@@ -567,6 +571,24 @@
         "title": "Compile the active editor and prompt for save.",
         "category": "Shader validator",
         "icon": "$(run-view-icon)"
+      },
+      {
+        "command": "shader-validator.showRenderer",
+        "title": "Show renderer",
+        "category": "Shader validator",
+        "icon": "$(device-camera)"
+      },
+      {
+        "command": "shader-validator.renderShader",
+        "title": "Render the active shader variant",
+        "category": "Shader validator",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "shader-validator.restartRenderer",
+        "title": "Restart renderer",
+        "category": "Shader validator",
+        "icon": "$(debug-restart)"
       }
     ],
     "menus": {
@@ -685,6 +707,7 @@
     "@vscode/wasm-wasi": "^1.0.1",
     "os-browserify": "^0.3.0",
     "path-browserify": "^1.0.1",
+    "vscode-jsonrpc": "^9.0.0-next.3",
     "vscode-languageclient": "^10.0.0-next.3"
   }
 }

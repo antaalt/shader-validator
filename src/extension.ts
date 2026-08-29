@@ -7,6 +7,8 @@ import { CompilationType, compileShaderRequest, CompileShaderResult, decodeCompi
 import { ShaderVariantTreeDataProvider } from './view/variant/shaderVariantTreeView';
 import { DidChangeConfigurationNotification, LanguageClient, Trace } from 'vscode-languageclient';
 import { ShaderStatusBar } from './view/status/shaderStatusBar';
+import { ShaderRenderer } from './view/renderer/renderer';
+import { ShaderRendererView } from './view/renderer/rendererView';
 
 export let sidebar: ShaderVariantTreeDataProvider;
 
@@ -61,6 +63,12 @@ export async function activate(context: vscode.ExtensionContext)
     // Create status bar
     let statusBar = new ShaderStatusBar(context, server);
     context.subscriptions.push(statusBar);
+
+    // Create renderer. Its process is only spawned when the renderer view is opened.
+    const renderer = new ShaderRenderer(context);
+    context.subscriptions.push(renderer);
+    const rendererView = new ShaderRendererView(context, server, renderer);
+    context.subscriptions.push(rendererView);
 
     // Subscribe commands
     context.subscriptions.push(vscode.commands.registerCommand("shader-validator.validateFile", (uri: vscode.Uri) => {
@@ -135,6 +143,16 @@ export async function activate(context: vscode.ExtensionContext)
         } else {
             server.log("No active file for getting compilation result.");
         }
+    }));
+    context.subscriptions.push(vscode.commands.registerCommand("shader-validator.showRenderer", async () => {
+        await rendererView.show();
+    }));
+    context.subscriptions.push(vscode.commands.registerCommand("shader-validator.renderShader", async () => {
+        await rendererView.render();
+    }));
+    context.subscriptions.push(vscode.commands.registerCommand("shader-validator.restartRenderer", async () => {
+        await renderer.restart();
+        await rendererView.render();
     }));
     context.subscriptions.push(vscode.commands.registerCommand("shader-validator.dumpAst", () => {
         const activeTextEditor = vscode.window.activeTextEditor;
