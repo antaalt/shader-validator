@@ -660,7 +660,6 @@
     "open-in-browser": "vscode-test-web --extensionDevelopmentPath=. .",
     "pretest": "webpack --mode development && tsc -p . --outDir out",
     "test": "node ./out/test/runTest.js",
-    "test-wasi": "node ./out/test/runTest.js -- --useWasiServer",
     "lint": "eslint src --ext ts"
   },
   "devDependencies": {
@@ -672,7 +671,7 @@
     "@typescript-eslint/parser": "^8.54.0",
     "@vscode/test-cli": "^0.0.10",
     "@vscode/test-electron": "^2.4.1",
-    "@vscode/test-web": "^0.0.60",
+    "@vscode/test-web": "^0.0.80",
     "eslint": "^9.39.2",
     "glob": "^8.0.3",
     "mocha": "^10.1.0",
