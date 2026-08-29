@@ -102,9 +102,10 @@ export function resolveVSCodeVariables(content: string) : string {
             return os.homedir();
         }
         if (variable === "workspaceFolder") {
-            if (vscode.workspace.workspaceFolders) {
+            let folders = vscode.workspace.workspaceFolders;
+            if (folders !== undefined && folders.length > 0) {
                 // Pick first workspace and ignores others.
-                return vscode.workspace.workspaceFolders[0].uri.fsPath;
+                return folders[0].uri.fsPath;
             }
         }
         // All others variable are relative to currently opened file and will be a pain to implement so ignoring them for now.
@@ -181,10 +182,11 @@ export class ServerVersion {
     constructor(extensionUri: vscode.Uri) {
         this.platform = ServerVersion.getServerPlatform();
         let userServerPathAndVersion = ServerVersion.getUserServerPathAndVersion(this.platform);
+        let folders = vscode.workspace.workspaceFolders;
         if (userServerPathAndVersion) {
             this.version = userServerPathAndVersion[1];
             this.path = ServerVersion.getPlatformBinaryUri(extensionUri, userServerPathAndVersion[0], this.platform);
-            this.cwd = vscode.workspace.workspaceFolders ? vscode.workspace.workspaceFolders[0].uri : ServerVersion.getPlatformBinaryDirectoryPath(extensionUri, userServerPathAndVersion[0], this.platform);
+            this.cwd = (folders !== undefined && folders.length > 0) ? folders[0].uri : ServerVersion.getPlatformBinaryDirectoryPath(extensionUri, userServerPathAndVersion[0], this.platform);
             if (!this.isValidVersion()) {
                 vscode.window.showWarningMessage(`${this.version} is not compatible with this extension (Expecting ${ServerVersion.getBundledVersion()}). Server may crash or behave weirdly.`);
             }
@@ -193,7 +195,7 @@ export class ServerVersion {
             console.info(`No server path found. Using bundled server.`);
             this.version = ServerVersion.getBundledVersion();
             this.path = ServerVersion.getPlatformBinaryUri(extensionUri, null, this.platform);
-            this.cwd = vscode.workspace.workspaceFolders ? vscode.workspace.workspaceFolders[0].uri : ServerVersion.getPlatformBinaryDirectoryPath(extensionUri, null, this.platform);
+            this.cwd = (folders !== undefined && folders.length > 0) ? folders[0].uri : ServerVersion.getPlatformBinaryDirectoryPath(extensionUri, null, this.platform);
         }
     }
     private static getUserServerPathAndVersion(platform: ServerPlatform) : [string, string] | null {
