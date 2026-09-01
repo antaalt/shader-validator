@@ -181,7 +181,7 @@ This extension contributes the following settings:
 *   `shader-validator.restartServer`: Restart the server if you have any issue.
 *   `shader-validator.addCurrentFileVariant`: Add a variant to the current file.
 *   `shader-validator.addShaderVariant`: Add a variant to the current file.
-*   `shader-validator.disableShaderVariant`: Disable active variant.
+*   `shader-validator.disableActiveShaderVariant`: Disable active variant.
 *   `shader-validator.showLogs`: Open the extension log window.
 *   `shader-validator.dumpDependency`: Print dependency tree in logs. mostly for debug.
 *   `shader-validator.dumpAst`: Print internal ast in logs. mostly for debug.

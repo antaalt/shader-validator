@@ -503,7 +503,7 @@
         "icon": "$(add)"
       },
       {
-        "command": "shader-validator.disableShaderVariant",
+        "command": "shader-validator.disableActiveShaderVariant",
         "title": "Disable active shader variant",
         "category": "Shader validator",
         "icon": "$(trash)"

@@ -3,6 +3,14 @@ import * as vscode from 'vscode';
 import { activate, openAndShowFile, testDiagnostic, testHasDocumentSymbol } from './utils';
 
 suite('Server variant Test Suite', () => {
+    vscode.window.showInformationMessage('Start all variant tests.');
+    suiteTeardown(async () => {
+        // Remove variant for next test.
+        await vscode.commands.executeCommand(
+            'shader-validator.disableActiveShaderVariant'
+        );
+        vscode.window.showInformationMessage('All variant tests done!');
+    });
     test('Check variant config', async () => {
         const docUri = await vscode.workspace.findFiles("test.variant.hlsl");
         assert.ok(docUri.length > 0);

@@ -123,14 +123,16 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
             }
             this.save();
         }));
-        context.subscriptions.push(vscode.commands.registerCommand("shader-validator.disableShaderVariant", () => {
+        context.subscriptions.push(vscode.commands.registerCommand("shader-validator.disableActiveShaderVariant", (): boolean => {
             let variant = this.getActiveVariant();
             if (variant) {
                 let file = this.getNodeVariantFile(variant);
                 if (file) {
                     this.updateActiveVariant(file, null);
+                    return true;
                 }
             }
+            return false;
         }));
         context.subscriptions.push(vscode.commands.registerCommand("shader-validator.addShaderVariant", async (uri: vscode.Uri, entryPoint: string, stage: ShaderStage) => {
             this.openOrAddVariant(uri, {

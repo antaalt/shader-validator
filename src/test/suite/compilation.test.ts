@@ -8,8 +8,9 @@ import { ShaderStage } from '../../view/variant/variant';
 suite('Compilation Test Suite', () => {
     vscode.window.showInformationMessage('Start all compilation tests.');
     suiteTeardown(async () => {
+        // Remove variant for next test.
         await vscode.commands.executeCommand(
-            'shader-validator.disableShaderVariant'
+            'shader-validator.disableActiveShaderVariant'
         );
         vscode.window.showInformationMessage('All compilation tests done!');
     });
