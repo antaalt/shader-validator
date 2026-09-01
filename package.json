@@ -497,6 +497,18 @@
         "enablement": "view == shader-validator-variants"
       },
       {
+        "command": "shader-validator.addShaderVariant",
+        "title": "Add a shader variant",
+        "category": "Shader validator",
+        "icon": "$(add)"
+      },
+      {
+        "command": "shader-validator.disableShaderVariant",
+        "title": "Disable active shader variant",
+        "category": "Shader validator",
+        "icon": "$(trash)"
+      },
+      {
         "command": "shader-validator.loadVariantDatabase",
         "title": "Load variant database",
         "category": "Shader validator",

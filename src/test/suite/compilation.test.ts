@@ -3,10 +3,14 @@ import * as assert from 'assert';
 import * as vscode from 'vscode';
 import { activate, isUsingWasiServer, openAndShowFile } from './utils';
 import { CompilationType, CompileShaderResult } from '../../request';
+import { ShaderStage } from '../../view/variant/variant';
 
 suite('Compilation Test Suite', () => {
     vscode.window.showInformationMessage('Start all compilation tests.');
-    suiteTeardown(() => {
+    suiteTeardown(async () => {
+        await vscode.commands.executeCommand(
+            'shader-validator.disableShaderVariant'
+        );
         vscode.window.showInformationMessage('All compilation tests done!');
     });
     // Wasm target should always be here.
@@ -16,6 +20,14 @@ suite('Compilation Test Suite', () => {
             assert.ok(docUri.length > 0);
             await activate(true)!;
             await openAndShowFile(docUri[0]);
+            // Register variant in order to allow compilation.
+            await vscode.commands.executeCommand(
+                'shader-validator.addShaderVariant',
+                docUri[0],
+                "main",
+                ShaderStage.fragment
+            );
+            // Request compilation
             const compilationResult = (await vscode.commands.executeCommand(
                 'shader-validator.compileShader',
                 docUri[0]
@@ -25,7 +37,7 @@ suite('Compilation Test Suite', () => {
             assert.equal(compilationResult.data.length, 608);
             // TODO: Could somehow validate that this is a valid SPIRV. 
             // Check with glslang if its available ?
-        }).timeout(5000);
+        }).timeout(10000); // First test to run on non WASI target
 
     }
 });
