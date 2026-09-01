@@ -70,7 +70,7 @@ function resolveUserPath(inputPath: string): string | undefined {
     if (vscode.workspace.workspaceFolders) {
         for (let workspaceRoot of vscode.workspace.workspaceFolders) {
             // TODO: What if not found ? Check other workspaces ?
-            return path.resolve(workspaceRoot.uri.fsPath, inputPath).replace("\\", "/");
+            return path.join(workspaceRoot.uri.fsPath, inputPath).replace("\\", "/");
         }
     } else {
         return undefined;
