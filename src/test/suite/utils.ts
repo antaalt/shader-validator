@@ -25,7 +25,7 @@ export async function activate(waitServer: boolean) : Promise<void> {
         // Trace is required for the server output channel to exist & for RUST_LOG to be set.
         // The extension mirrors that channel to the console when running tests, so it lands in the terminal.
         // /!\ Must be set before the first activation, as changing it later restarts the server. /!\
-        const showServerLogs = true;//process.env.SHOW_SERVER_LOGS === "true";
+        const showServerLogs = process.env.SHOW_SERVER_LOGS === "true";
         await vscode.workspace.getConfiguration("shader-validator").update("trace.server", showServerLogs ? "messages" : "off", vscode.ConfigurationTarget.Global);
 
         // Now activate extension with settings
