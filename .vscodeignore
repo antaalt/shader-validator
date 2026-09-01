@@ -1,6 +1,7 @@
 .vscode/**
 .vscode-test/**
 .vscode-test-web/**
+dist/web-test/**
 .vscode-test.js
 .github/**
 src/**
