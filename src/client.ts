@@ -476,7 +476,7 @@ export class ShaderLanguageClient {
         let documentSelector = [];
         for (var langId of ShaderLanguageClient.getSupportedLangId()) {
             if (ShaderLanguageClient.isEnabledLangId(langId)) {
-                documentSelector.push({ scheme: 'file', language: langId });
+                documentSelector.push({ language: langId });
             }
         }
         const clientOptions: LanguageClientOptions = {

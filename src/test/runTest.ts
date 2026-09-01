@@ -35,23 +35,30 @@ async function native(extensionDevelopmentPath: string, extensionTestsPath: stri
 			]
 		});
 	} catch (err) {
-		console.error('Failed to run tests');
+		console.error('Failed to run tests', err);
 		process.exit(1);
 	}
 }
 
-async function web(extensionDevelopmentPath: string, extensionTestsPath: string) {
+async function web(extensionDevelopmentPath: string) {
 	try {
+		// The webworker extension host can only resolve the `vscode` module, so the suite
+		// is loaded from its webpack bundle instead of the raw tsc output used by node.
+		const extensionTestsPath = path.resolve(extensionDevelopmentPath, './dist/web-test/suite/index');
+
 		// Run integration test in a web version of vscode.
 		await runTestsWeb({
 			browserType: 'chromium',
 			extensionDevelopmentPath,
 			extensionTestsPath,
 			folderPath: path.resolve(__dirname, '../../test/'),
-			extensionIds: [{ id: "ms-vscode.wasm-wasi-core" }]
+			extensionIds: [{ id: "ms-vscode.wasm-wasi-core" }],
+			// The wasi runtime relies on SharedArrayBuffer, which requires the page
+			// to be cross origin isolated (COOP: same-origin & COEP: require-corp).
+			coi: true
 		});
 	} catch (err) {
-		console.error('Failed to run tests');
+		console.error('Failed to run tests', err);
 		process.exit(1);
 	}
 }
@@ -66,7 +73,7 @@ async function main() {
 	const extensionTestsPath = path.resolve(__dirname, './suite/index');
 	
 	if (process.env.TEST_IN_BROWSER === "true") {
-		return web(extensionDevelopmentPath, extensionTestsPath);
+		return web(extensionDevelopmentPath);
 	} else {
 		return native(extensionDevelopmentPath, extensionTestsPath);
 	}

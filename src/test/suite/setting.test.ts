@@ -3,7 +3,7 @@ import * as assert from 'assert';
 // You can import and use all API from the 'vscode' module
 // as well as import your extension to test it
 import * as vscode from 'vscode';
-import { activate, openAndShowFile, sleep, testDiagnostic, testDocumentSymbol, testHasDocumentSymbol } from './utils';
+import { activate, isUsingWasiServer, openAndShowFile, sleep, testDiagnostic, testDocumentSymbol, testHasDocumentSymbol } from './utils';
 
 // Settings required by test.settings.hlsl to resolve its include & enter its preprocessor branches.
 // They rely on vscode variables aswell to ensure they are correctly resolved before being sent to the server.
@@ -29,7 +29,7 @@ const SETTINGS_VALIDATION: [string, any][] = [
 ];
 
 suite('Settings Test Suite', () => {
-	const useWasiServer = process.env.USE_WASI_SERVER === "true";
+	const useWasiServer = isUsingWasiServer();
     // Skip test on WASI as we use DXC and HLSL.
     if (!useWasiServer) {
         vscode.window.showInformationMessage('Start all settings tests.');

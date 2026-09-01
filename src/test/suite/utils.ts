@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import assert from 'assert';
+import { isRunningOnWeb } from '../../client';
 
 export function getRootFolder() : string {
 	// Depending on platform, we have different cwd...
@@ -8,18 +9,23 @@ export function getRootFolder() : string {
 	return path.join(process.cwd(), process.platform === 'win32' ? "../../" : "./");
 }
 
+// On the web there is no native server, so wasi is always used whatever the setting.
+export function isUsingWasiServer() : boolean {
+	return isRunningOnWeb() || process.env.USE_WASI_SERVER === "true";
+}
+
 export async function activate(waitServer: boolean) : Promise<void> {
 	const ext = vscode.extensions.getExtension('antaalt.shader-validator')!;
 
 	// Here set the settings to get the correct server to test.
-	const useWasiServer = process.env.USE_WASI_SERVER === "true";
+	const useWasiServer = isUsingWasiServer();
 	await vscode.workspace.getConfiguration("shader-validator").update("useWasiServer", useWasiServer, vscode.ConfigurationTarget.Global);
 	console.info(`Activating ${useWasiServer ? "wasi" : "native"} server for test`);
 
 	// Trace is required for the server output channel to exist & for RUST_LOG to be set.
 	// The extension mirrors that channel to the console when running tests, so it lands in the terminal.
 	// /!\ Must be set before the first activation, as changing it later restarts the server. /!\
-	const showServerLogs = process.env.SHOW_SERVER_LOGS === "true";
+	const showServerLogs = true;//process.env.SHOW_SERVER_LOGS === "true";
 	await vscode.workspace.getConfiguration("shader-validator").update("trace.server", showServerLogs ? "messages" : "off", vscode.ConfigurationTarget.Global);
 
 	// Now activate extension with settings
