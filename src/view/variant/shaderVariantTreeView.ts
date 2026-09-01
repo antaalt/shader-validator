@@ -268,7 +268,7 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
     private async loadDatabase(fileUri: vscode.Uri, isTest?: boolean) {
         try {
             const file = await vscode.workspace.fs.readFile(fileUri);
-            const database = deserializeShaderVariantNode(file.toString());
+            const database = deserializeShaderVariantNode(new TextDecoder().decode(file));
             let databaseMap = new UriMap(database.map((e : ShaderVariantFile) => {
                 return [e.uri, e];
             }));
@@ -288,6 +288,7 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
                 // Set first variant as active for testing purpose
                 databaseMap.forEach((file, _key, _map) => {
                     // Hardcoded value for now.
+                    console.info(`Activating variant ${file.variants[0].name} for test.`)
                     file.variants[0].isActive = true;
                     this.updateActiveVariant(file, file.variants[0]);
                 });
@@ -323,6 +324,7 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
             this.databaseWatcher.set(fileUri, watcher);
         } catch (e) {
             let error = e as SyntaxError;
+            console.error("Failed to load variant database", error);
             vscode.window.showErrorMessage(`Failed to load variant database ${vscode.workspace.asRelativePath(fileUri)}: ${error.message}`);
         }
     }
