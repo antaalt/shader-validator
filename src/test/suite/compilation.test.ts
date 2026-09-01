@@ -1,8 +1,7 @@
 import * as assert from 'assert';
 
 import * as vscode from 'vscode';
-import { activate, openAndShowFile } from './utils';
-import { ServerPlatform, ServerVersion } from '../../client';
+import { activate, isUsingWasiServer, openAndShowFile } from './utils';
 import { CompilationType, CompileShaderResult } from '../../request';
 
 suite('Compilation Test Suite', () => {
@@ -11,9 +10,7 @@ suite('Compilation Test Suite', () => {
         vscode.window.showInformationMessage('All compilation tests done!');
     });
     // Wasm target should always be here.
-    const useWasiServer = process.env.USE_WASI_SERVER === "true";
-    const platform = ServerVersion.getServerPlatform();
-    if (platform === ServerPlatform.windows && !useWasiServer) {
+    if (!isUsingWasiServer()) {
         test('Check GLSL compilation', async () => {
             const docUri = await vscode.workspace.findFiles("test.frag.glsl");
             assert.ok(docUri.length > 0);
@@ -21,7 +18,7 @@ suite('Compilation Test Suite', () => {
             await openAndShowFile(docUri[0]);
             const compilationResult = (await vscode.commands.executeCommand(
                 'shader-validator.compileShader',
-                docUri
+                docUri[0]
             )) as CompileShaderResult | null;
             assert.ok(compilationResult);
             assert.equal(compilationResult.compilationType, CompilationType.Spirv);
