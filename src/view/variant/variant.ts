@@ -63,17 +63,20 @@ export class UriMap<V> implements Iterable<[vscode.Uri, V]> {
     }
 }
 
-function resolveUserPath(inputPath: string): string | undefined {
+function resolveUserUri(inputPath: string): vscode.Uri | undefined {
+    // An absolute path can only ever refer to the local file system.
     if (path.isAbsolute(inputPath)) {
-        return path.normalize(inputPath).replace("\\", "/");
+        return vscode.Uri.file(inputPath);
     }
+    // Resolve relatively to the workspace folder uri instead of its fsPath, so that its scheme
+    // is preserved. On the web there is no file system behind the workspace (vscode.dev,
+    // github.dev...), its fsPath is meaningless & path.resolve would fall back on process.cwd(),
+    // which does not exist there.
     if (vscode.workspace.workspaceFolders) {
         for (let workspaceRoot of vscode.workspace.workspaceFolders) {
             // TODO: What if not found ? Check other workspaces ?
-            return path.join(workspaceRoot.uri.fsPath, inputPath).replace("\\", "/");
+            return vscode.Uri.joinPath(workspaceRoot.uri, inputPath);
         }
-    } else {
-        return undefined;
     }
     return undefined;
 }
@@ -143,7 +146,7 @@ function deserializeShaderVariantFile(data: any): ShaderVariantFile {
     if (typeof data["uri"] !== 'string') {
         throw new SyntaxError(`variant uri ${data["uri"]} is not a string`);
     }
-    let uri = vscode.Uri.file(resolveUserPath(data["uri"]) || data["uri"]);
+    let uri = resolveUserUri(data["uri"]) || vscode.Uri.file(data["uri"]);
     return {
         kind: 'file',
         uri: uri,

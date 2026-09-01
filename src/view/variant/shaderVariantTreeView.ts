@@ -288,7 +288,7 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
                 // Set first variant as active for testing purpose
                 databaseMap.forEach((file, _key, _map) => {
                     // Hardcoded value for now.
-                    console.info(`Activating variant ${file.variants[0].name} for test.`)
+                    console.info(`Activating variant ${file.variants[0].uri} for test.`)
                     file.variants[0].isActive = true;
                     this.updateActiveVariant(file, file.variants[0]);
                 });
