@@ -14,7 +14,7 @@ export function isUsingWasiServer() : boolean {
 	return isRunningOnWeb() || process.env.USE_WASI_SERVER === "true";
 }
 
-export async function activate(waitServer: boolean) : Promise<void> {
+export async function activate() {
 	const ext = vscode.extensions.getExtension('antaalt.shader-validator')!;
     if (!ext.isActive) {
         // Here set the settings to get the correct server to test.
@@ -26,13 +26,11 @@ export async function activate(waitServer: boolean) : Promise<void> {
         // The extension mirrors that channel to the console when running tests, so it lands in the terminal.
         // /!\ Must be set before the first activation, as changing it later restarts the server. /!\
         const showServerLogs = process.env.SHOW_SERVER_LOGS === "true";
-        await vscode.workspace.getConfiguration("shader-validator").update("trace.server", showServerLogs ? "messages" : "off", vscode.ConfigurationTarget.Global);
+        await vscode.workspace.getConfiguration("shader-validator").update("trace.server", showServerLogs ? "verbose" : "off", vscode.ConfigurationTarget.Global);
 
         // Now activate extension with settings
         await ext.activate();
-        if (waitServer) {
-            await sleep(2000); // Wait for server activation
-        }
+        await sleep(2000); // Wait for server activation
     }
 }
 

@@ -13,7 +13,7 @@ suite('Diagnostic Test Suite', () => {
 	test('Diagnostic GLSL code', async () => {
 		const docUri = await vscode.workspace.findFiles("test.frag.glsl");
 		assert.ok(docUri.length > 0);
-		await activate(true)!;
+		await activate()!;
 		await openAndShowFile(docUri[0]);
 		await testDiagnostic(docUri[0], false);
 	}).timeout(5000);
@@ -21,7 +21,7 @@ suite('Diagnostic Test Suite', () => {
 	test('Diagnostic HLSL code', async () => {
 		const docUri = await vscode.workspace.findFiles("test.hlsl");
 		assert.ok(docUri.length > 0);
-		await activate(false)!;
+		await activate()!;
 		await openAndShowFile(docUri[0]);
 		await testDiagnostic(docUri[0], false);
 	}).timeout(5000);
@@ -29,7 +29,7 @@ suite('Diagnostic Test Suite', () => {
 	test('Diagnostic WGSL code', async () => {
 		const docUri = await vscode.workspace.findFiles("test.wgsl");
 		assert.ok(docUri.length > 0);
-		await activate(false)!;
+		await activate()!;
 		await openAndShowFile(docUri[0]);
 		await testDiagnostic(docUri[0], false);
 	}).timeout(5000);

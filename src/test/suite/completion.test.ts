@@ -21,7 +21,7 @@ suite('Completion Test Suite', () => {
 				{ label: 'test', kind: vscode.CompletionItemKind.Function },
 				{ label: 'res', kind: vscode.CompletionItemKind.Variable },
 			]
-		}, true);
+		});
 	}).timeout(10000); // First test to run that start the server. Increase timeout to be sure its not timed out.
 
 	test('Complete HLSL code', async () => {
@@ -29,7 +29,7 @@ suite('Completion Test Suite', () => {
 		assert.ok(docUri.length > 0);
 		await testCompletion(docUri[0], new vscode.Position(0, 0), {
 			items: []
-		}, false);
+		});
 	}).timeout(5000);
 
 	test('Complete WGSL code', async () => {
@@ -37,17 +37,16 @@ suite('Completion Test Suite', () => {
 		assert.ok(docUri.length > 0);
 		await testCompletion(docUri[0], new vscode.Position(0, 0), {
 			items: []
-		}, false);
+		});
 	}).timeout(5000);
 });
 
 async function testCompletion(
 	docUri: vscode.Uri,
 	position: vscode.Position,
-	expectedCompletionList: vscode.CompletionList,
-	waitServer: boolean
+	expectedCompletionList: vscode.CompletionList
   ) {
-	await activate(waitServer)!;
+	await activate()!;
 	await openAndShowFile(docUri);
   
 	// Executing the command `vscode.executeCompletionItemProvider` to simulate triggering completion

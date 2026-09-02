@@ -14,7 +14,7 @@ suite('Server variant Test Suite', () => {
     test('Check variant config', async () => {
         const docUri = await vscode.workspace.findFiles("test.variant.hlsl");
         assert.ok(docUri.length > 0);
-        await activate(true)!;
+        await activate()!;
         // Load database
         const configUri = await vscode.workspace.findFiles("variant.config.json");
         await vscode.commands.executeCommand("shader-validator.loadVariantDatabaseFromUri", configUri[0]);

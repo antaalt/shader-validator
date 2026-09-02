@@ -138,7 +138,7 @@ export class ShaderVariantNotifier {
             this.goToShaderEntryPoint(uri, entryPointName, true);
         }));
     }
-    notifyVariantChanged(variantFile: ShaderVariantFile, activeVariant: ShaderVariant | null) {
+    async notifyVariantChanged(variantFile: ShaderVariantFile, activeVariant: ShaderVariant | null) {
         function capitalizeFirstLetter(str: string): string {
             return str.charAt(0).toUpperCase() + str.slice(1);
         }
@@ -148,7 +148,7 @@ export class ShaderVariantNotifier {
             console.assert(activeVariant.isActive);
             // Open document to get language ID.
             // This does not open the document in the editor, only internally.
-            vscode.workspace.openTextDocument(activeVariant.uri).then(doc => {
+            let _document = await vscode.workspace.openTextDocument(activeVariant.uri).then(async doc => {
                 this.server.sendNotification(didChangeShaderVariantNotification, {
                     // Need this check again here because its async
                     shaderVariant: activeVariant ? shaderVariantToSerialized(
@@ -158,7 +158,7 @@ export class ShaderVariantNotifier {
                     ) : null,
                 });
                 // Symbols might have changed, so request them as we might change context
-                this.requestDocumentSymbol(variantFile.uri);
+                await this.requestDocumentSymbol(variantFile.uri);
             }, reason => {
                 console.error(`Failed to open file ${vscode.workspace.asRelativePath(activeVariant.uri)} to notify variant change: ${reason}.`);
                 vscode.window.showWarningMessage(`Failed to open file ${vscode.workspace.asRelativePath(activeVariant.uri)} to notify variant change: ${reason}.`);
@@ -167,10 +167,10 @@ export class ShaderVariantNotifier {
             this.server.sendNotification(didChangeShaderVariantNotification, {
                 shaderVariant: null,
             });
-            this.requestDocumentSymbol(variantFile.uri);
+            await this.requestDocumentSymbol(variantFile.uri);
         }
     }
-    private requestDocumentSymbol(uri: vscode.Uri) {
+    private async requestDocumentSymbol(uri: vscode.Uri) {
         // TODO: should request inlay hint aswell.
         // This one seems to get symbol from cache without requesting the server...
         //vscode.commands.executeCommand("vscode.executeDocumentSymbolProvider", file.uri);
@@ -185,14 +185,14 @@ export class ShaderVariantNotifier {
         // Dirty hack to trigger document symbol update
         // Ideally, it should retrigger dependencies aswell.
         // See https://github.com/microsoft/vscode/issues/108722 (Old one https://github.com/microsoft/vscode/issues/71454)
-
+        
         // Only trigger it if requested by user as it may be a bit invasive.
         let updateSymbolsOnVariantUpdate = vscode.workspace.getConfiguration("shader-validator").get<boolean>("updateSymbolsOnVariantUpdate");
         if (updateSymbolsOnVariantUpdate) {
             let visibleEditor = vscode.window.visibleTextEditors.find(e => e.document.uri.path === uri.path);
             if (visibleEditor) {
                 let editor = visibleEditor;
-                editor.edit(editBuilder => {
+                await editor.edit(editBuilder => {
                     for (let iLine = 0; iLine < editor.document.lineCount; iLine++) {
                         // Find first non-empty line to avoid crashing on empty line with negative position.
                         let line = editor.document.lineAt(iLine);

@@ -43,7 +43,7 @@ suite('Settings Test Suite', () => {
         test('Test HLSL and generic settings', async () => {
             const docUri = await vscode.workspace.findFiles("test.settings.hlsl");
             assert.ok(docUri.length > 0);
-            await activate(true);
+            await activate();
             await updateSettings(SETTINGS_GENERIC_HLSL);
             await openAndShowFile(docUri[0]);
             await testDiagnostic(docUri[0], false);
@@ -54,7 +54,7 @@ suite('Settings Test Suite', () => {
         test('Test validation settings', async () => {
             const docUri = await vscode.workspace.findFiles("test.settings.hlsl");
             assert.ok(docUri.length > 0);
-            await activate(false);
+            await activate();
             await updateSettings(SETTINGS_VALIDATION);
             let [doc, _editor] = await openAndShowFile(docUri[0]);
             // Touch document to retrigger cache as we use same file as previous test.
@@ -67,7 +67,7 @@ suite('Settings Test Suite', () => {
         test('Test GLSL settings', async () => {
             const docUri = await vscode.workspace.findFiles("test.settings.frag.glsl");
             assert.ok(docUri.length > 0);
-            await activate(false);
+            await activate();
             await updateSettings(SETTINGS_GLSL);
             let [doc, _editor] = await openAndShowFile(docUri[0]);
             // Touch document to retrigger cache as we use same file as previous test.
