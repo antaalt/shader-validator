@@ -5,12 +5,12 @@ import * as assert from 'assert';
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as cp from 'child_process';
-import { getRootFolder } from './utils';
+import { getRootFolder, isUsingWasiServer } from './utils';
 import { ServerVersion } from '../../client';
 
 suite('Server version Test Suite', () => {
     // Cant spawn wasi server.
-    if (process.env.USE_WASI_SERVER !== "true") {
+    if (!isUsingWasiServer()) {
         test('Check server version', () => {
             let serverVersion = new ServerVersion(vscode.Uri.parse(getRootFolder()));
             assert.ok(fs.existsSync(serverVersion.path.fsPath), `Failed to find ${serverVersion.path}`);
