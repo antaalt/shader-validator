@@ -9,9 +9,9 @@ import { getRootFolder, isUsingWasiServer } from './utils';
 import { ServerVersion } from '../../client';
 
 suite('Server version Test Suite', () => {
-    // Cant spawn wasi server.
-    if (!isUsingWasiServer()) {
-        test('Check server version', () => {
+    test('Check server version', () => {
+        // Cant spawn wasi server.
+        if (!isUsingWasiServer()) {
             let serverVersion = new ServerVersion(vscode.Uri.parse(getRootFolder()));
             assert.ok(fs.existsSync(serverVersion.path.fsPath), `Failed to find ${serverVersion.path}`);
             let server = cp.spawnSync(serverVersion.path.fsPath, [
@@ -23,6 +23,6 @@ suite('Server version Test Suite', () => {
             assert.equal(server.stdout.trim(), expectedVersion.trim(), `Incompatible version, got ${server.stdout}, expected: ${expectedVersion}`);
             assert.ok(server.stderr.length === 0);
             assert.ok(server.status === 0);
-        });
-    }
+        }
+    });
 });

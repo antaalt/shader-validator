@@ -30,17 +30,17 @@ const SETTINGS_VALIDATION: [string, any][] = [
 
 suite('Settings Test Suite', () => {
 	const useWasiServer = isUsingWasiServer();
-    // Skip test on WASI as we use DXC and HLSL.
-    if (!useWasiServer) {
-        vscode.window.showInformationMessage('Start all settings tests.');
-        suiteTeardown(async () => {
-            // Reset settings here as failure might miss resetting them.
-            await resetSettings(SETTINGS_VALIDATION);
-            await resetSettings(SETTINGS_GENERIC_HLSL);
-            await resetSettings(SETTINGS_GLSL);
-            vscode.window.showInformationMessage('All settings tests done!');
-        });
-        test('Test HLSL and generic settings', async () => {
+    vscode.window.showInformationMessage('Start all settings tests.');
+    suiteTeardown(async () => {
+        // Reset settings here as failure might miss resetting them.
+        await resetSettings(SETTINGS_VALIDATION);
+        await resetSettings(SETTINGS_GENERIC_HLSL);
+        await resetSettings(SETTINGS_GLSL);
+        vscode.window.showInformationMessage('All settings tests done!');
+    });
+    test('Test HLSL and generic settings', async () => {
+        // Skip test on WASI as we use DXC and HLSL.
+        if (!useWasiServer) {
             const docUri = await vscode.workspace.findFiles("test.settings.hlsl");
             assert.ok(docUri.length > 0);
             await activate();
@@ -49,9 +49,12 @@ suite('Settings Test Suite', () => {
             await testDiagnostic(docUri[0], false);
             await testHasDocumentSymbol(docUri[0], "main");
             await resetSettings(SETTINGS_GENERIC_HLSL);
-        }).timeout(30000);
+        }
+    }).timeout(10000);
 
-        test('Test validation settings', async () => {
+    test('Test validation settings', async () => {
+        // Skip test on WASI as we use DXC and HLSL.
+        if (!useWasiServer) {
             const docUri = await vscode.workspace.findFiles("test.settings.hlsl");
             assert.ok(docUri.length > 0);
             await activate();
@@ -62,9 +65,12 @@ suite('Settings Test Suite', () => {
             await testDiagnostic(docUri[0], false);
             await testDocumentSymbol(docUri[0], false);
             await resetSettings(SETTINGS_VALIDATION);
-        }).timeout(30000);
+        }
+    }).timeout(10000);
 
-        test('Test GLSL settings', async () => {
+    test('Test GLSL settings', async () => {
+        // TODO: This should work on WASI, but for now, preamble path fail to resolve workspaceFolder, so it does not load and compilation generate badalloc on glslang validation
+        if (!useWasiServer) {
             const docUri = await vscode.workspace.findFiles("test.settings.frag.glsl");
             assert.ok(docUri.length > 0);
             await activate();
@@ -75,8 +81,8 @@ suite('Settings Test Suite', () => {
             await testDiagnostic(docUri[0], false);
             await testHasDocumentSymbol(docUri[0], "main");
             await resetSettings(SETTINGS_GLSL);
-        }).timeout(30000);
-    }
+        }
+    }).timeout(10000);
 });
 
 // vscode caches document symbols (OutlineModel) per text document version & registered provider set.

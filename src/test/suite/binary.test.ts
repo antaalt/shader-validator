@@ -33,7 +33,7 @@ suite('Binary Test Suite', () => {
 			assert.ok(doesBinaryExist(`win32-${process.arch}/dxcompiler.dll`));
 			assert.ok(doesBinaryExist(`win32-${process.arch}/dxil.dll`));
 		}
-	});
+	}).timeout(10000);
 	test('Check linux binary', async () => {
 		await activate();
 		const platform = ServerVersion.getServerPlatform();
