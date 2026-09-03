@@ -517,7 +517,7 @@ export class ShaderLanguageClient {
         };
         const env = (trace === "verbose") ? {
             ...defaultEnv,
-            "RUST_BACKTRACE": "1", // eslint-disable-line 
+            "RUST_BACKTRACE": "full", // eslint-disable-line 
             "RUST_LOG": "shader_language_server=trace,shader_sense=trace", // eslint-disable-line @typescript-eslint/naming-convention
         } : (trace === "messages") ? {
             ...defaultEnv,
