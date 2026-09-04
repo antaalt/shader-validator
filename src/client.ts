@@ -97,16 +97,17 @@ export function resolveVSCodeVariables(content: string) : string {
             if (typeof substitution === "string") {
                 return substitution;
             }
-        }
-        if (variable === "userHome") {
+        } else if (variable === "userHome") {
             return os.homedir();
-        }
-        if (variable === "workspaceFolder") {
+        } else if (variable === "workspaceFolder") {
+            // TODO: This fail on wasi somehow (return /\\/myfile.glsl, workspace not part of workspaceFolders somehow...)
             let folders = vscode.workspace.workspaceFolders;
             if (folders !== undefined && folders.length > 0) {
                 // Pick first workspace and ignores others.
                 return folders[0].uri.fsPath;
             }
+        } else {
+            console.warn(`Cannot resolve vs code variable ${variable} in ${content}.`);
         }
         // All others variable are relative to currently opened file and will be a pain to implement so ignoring them for now.
         return "";
