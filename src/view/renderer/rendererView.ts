@@ -37,6 +37,7 @@ export class ShaderRendererView {
     async show() {
         if (this.panel) {
             this.panel.reveal();
+            await this.render();
         } else {
             this.panel = vscode.window.createWebviewPanel(
                 'shader-validator.renderer',
@@ -52,6 +53,9 @@ export class ShaderRendererView {
             this.panel.webview.html = this.getHtml(this.panel.webview);
             this.panel.webview.onDidReceiveMessage(async message => {
                 switch (message.kind) {
+                    case 'resize':
+                        await this.resizeRenderer(message.width, message.height);
+                        break;
                     case 'render':
                         await this.render();
                         break;
@@ -68,8 +72,9 @@ export class ShaderRendererView {
                 // Keep no renderer process alive for a panel the user closed.
                 this.renderer.stop();
             }, undefined, this.context.subscriptions);
+            // No render here: the webview posts its viewport size once laid out, which renders a
+            // first frame at the size the panel can actually display.
         }
-        await this.render();
     }
 
     /// Bind the active shader variant & render a frame into the panel. Does nothing if no panel is opened.
@@ -92,6 +97,17 @@ export class ShaderRendererView {
             this.renderer.log(`Failed to render: ${message}`);
             this.postStatus(message, true);
         }
+    }
+    
+    /// Resize the render target to the size the webview viewport can display & render a frame at it.
+    ///
+    /// The webview debounces its reports, so a render per resize is not a render per layout pass.
+    async resizeRenderer(width: number, height: number) {
+        if (this.panel === null) {
+            return;
+        }
+        await this.renderer.resize(width, height);
+        await this.render();
     }
 
     /// @throws {Error} If the renderer could not be started, fed a shader or render a frame.
@@ -193,10 +209,9 @@ export class ShaderRendererView {
             background-size: 16px 16px;
             background-position: 0 0, 8px 8px;
         }
-        /* Render target size is fixed by settings, so scale it down to fit the panel. */
         #target {
-            max-width: 100%;
-            max-height: 100%;
+            width: 100%;
+            height: 100%;
             object-fit: contain;
             image-rendering: pixelated;
         }
@@ -214,9 +229,43 @@ export class ShaderRendererView {
     <script nonce="${nonce}">
         const vscode = acquireVsCodeApi();
         const canvas = document.getElementById('target');
+        const viewport = document.getElementById('viewport');
         const context = canvas.getContext('2d');
         const status = document.getElementById('status');
         let lastFrame = null;
+        let reportedWidth = 0;
+        let reportedHeight = 0;
+        let resizeTimeout = null;
+
+        // The render target follows the viewport, so that a frame is rendered at the resolution it
+        // is displayed at instead of a fixed one being scaled up or down.
+        function reportViewportSize() {
+            resizeTimeout = null;
+            // A hidden panel lays its viewport out at zero, which is no size to render at.
+            const width = Math.floor(viewport.clientWidth);
+            const height = Math.floor(viewport.clientHeight);
+            if (width <= 0 || height <= 0) {
+                return;
+            }
+            if (width === reportedWidth && height === reportedHeight) {
+                return;
+            }
+            reportedWidth = width;
+            reportedHeight = height;
+            vscode.postMessage({ kind: 'resize', width: width, height: height });
+        }
+
+        // Dragging a panel border lays out on every frame, but each report costs a compile & a
+        // render, so only the size the layout settled on is reported.
+        const resizeObserver = new ResizeObserver(() => {
+            if (resizeTimeout !== null) {
+                clearTimeout(resizeTimeout);
+            }
+            resizeTimeout = setTimeout(reportViewportSize, 200);
+        });
+        resizeObserver.observe(viewport);
+        // Report the initial layout right away, so that the first frame does not wait for the debounce.
+        reportViewportSize();
 
         document.getElementById('render').addEventListener('click', () => {
             vscode.postMessage({ kind: 'render' });

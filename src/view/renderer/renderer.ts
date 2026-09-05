@@ -49,6 +49,17 @@ export interface RenderedFrame {
 
 const exitNotification = new NotificationType0('exit');
 
+/// Size used before the webview reported the one it can display.
+const defaultRendererWidth = 1280;
+const defaultRendererHeight = 720;
+/// A frame is read back & base64 encoded on every render, so cap the target to keep the payload sane.
+const maxRendererSize = 4096;
+
+/// Keep a size the renderer can allocate a target for, whatever layout the webview reports.
+function clampRendererSize(size: number): number {
+    return Math.max(1, Math.min(maxRendererSize, Math.floor(size)));
+}
+
 function getChannelName(): string {
     return 'Shader renderer';
 }
@@ -139,14 +150,17 @@ export class ShaderRenderer {
     private connection: MessageConnection | null = null;
     private status: RendererStatus = RendererStatus.stopped;
     private statusChangedCallback: (status: RendererStatus) => void = _ => {};
+    /// Size of the render target, driven by the webview layout. Kept across restarts so that the
+    /// renderer is spawned with the size the panel is currently displaying.
     private width: number;
     private height: number;
 
     constructor(context: vscode.ExtensionContext) {
         this.extensionUri = context.extensionUri;
         this.channel = vscode.window.createOutputChannel(getChannelName());
-        this.width = 1280;
-        this.height = 720;
+        // Fallback size, only used until the webview reported its own.
+        this.width = defaultRendererWidth;
+        this.height = defaultRendererHeight;
         context.subscriptions.push(this.channel);
     }
 
@@ -204,10 +218,8 @@ export class ShaderRenderer {
         }
         // Drop a previously errored process before starting a new one.
         this.terminate();
-        // Resolve the executable & the target size on every start so that a setting update is picked up.
+        // Resolve the executable on every start so that a setting update is picked up.
         this.version = new RendererVersion(this.extensionUri);
-        this.width = 1280;
-        this.height = 720;
         const rendererPath = this.version.path.fsPath;
         const cwd = this.version.cwd.fsPath;
         if (!fs.existsSync(rendererPath)) {
@@ -313,16 +325,22 @@ export class ShaderRenderer {
     }
 
     /// Resize the render target. Takes effect on the next rendered frame.
-    async resize(width: number, height: number) {
-        if (width <= 0 || height <= 0) {
-            return; // Webview is not laid out yet.
+    ///
+    /// A stopped renderer only records the size, so that it is spawned with it once started.
+    /// @returns Whether the size changed.
+    async resize(width: number, height: number): Promise<boolean> {
+        const clampedWidth = clampRendererSize(width);
+        const clampedHeight = clampRendererSize(height);
+        if (this.width === clampedWidth && this.height === clampedHeight) {
+            return false;
         }
-        if (this.width === width && this.height === height) {
-            return;
-        }
-        this.width = width;
-        this.height = height;
-        await this.connection?.sendNotification(resizeTargetNotification, { width, height });
+        this.width = clampedWidth;
+        this.height = clampedHeight;
+        await this.connection?.sendNotification(resizeTargetNotification, {
+            width: this.width,
+            height: this.height,
+        });
+        return true;
     }
 
     /// Bind a shader to a stage of the renderer pipeline.
