@@ -1,4 +1,4 @@
-import { NotificationType, RequestType0 } from 'vscode-jsonrpc';
+import { NotificationType, RequestType, RequestType0 } from 'vscode-jsonrpc';
 
 import { CompilationType, CompileShaderResult, decodeCompileShaderData } from '../../request';
 import { ShaderStage } from '../variant/variant';
@@ -38,11 +38,11 @@ export interface ErrorParams {
 }
 
 export const resizeTargetNotification = new NotificationType<ResizeTargetParams>('renderer/resize');
-export const updateShaderNotification = new NotificationType<UpdateShaderParams>('renderer/updateShader');
 export const errorNotification = new NotificationType<ErrorParams>('server/error');
 
 // Both requests take a unit as params on the renderer side, so send them without any.
 export const renderRequest = new RequestType0<RenderResult, void>('renderer/render');
+export const updateShaderRequest = new RequestType<UpdateShaderParams, void, void>('renderer/updateShader');
 export const shutdownRequest = new RequestType0<null, void>('shutdown');
 
 /// Format of the texture read back by the renderer. Must match Renderer::SURFACE_FORMAT.

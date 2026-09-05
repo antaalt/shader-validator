@@ -23,7 +23,7 @@ import {
     rendererSurfaceBytesPerTexel,
     resizeTargetNotification,
     shutdownRequest,
-    updateShaderNotification,
+    updateShaderRequest,
 } from "./rendererProtocol";
 
 export enum RendererStatus {
@@ -340,7 +340,7 @@ export class ShaderRenderer {
 
     /// Bind a shader to a stage of the renderer pipeline.
     async updateShader(stage: ShaderStage, shader: RendererShader | null) {
-        await this.requireConnection().sendNotification(updateShaderNotification, {
+        let _result = await this.requireConnection().sendRequest(updateShaderRequest, {
             shaderStage: ShaderStage[stage],
             shader: shader,
         });
