@@ -56,10 +56,6 @@ export async function activate(context: vscode.ExtensionContext)
     context.subscriptions.push(server);
     const serverStatus = await server.start(context, false);
 
-    // Create sidebar
-    sidebar = new ShaderVariantTreeDataProvider(context, server);
-    context.subscriptions.push(sidebar);
-
     // Create status bar
     let statusBar = new ShaderStatusBar(context, server);
     context.subscriptions.push(statusBar);
@@ -67,8 +63,12 @@ export async function activate(context: vscode.ExtensionContext)
     // Create renderer. Its process is only spawned when the renderer view is opened.
     const renderer = new ShaderRenderer(context);
     context.subscriptions.push(renderer);
-    const rendererView = new ShaderRendererView(context, server, renderer);
+    const rendererView = new ShaderRendererView(context, renderer);
     context.subscriptions.push(rendererView);
+
+    // Create sidebar
+    sidebar = new ShaderVariantTreeDataProvider(context, server, rendererView);
+    context.subscriptions.push(sidebar);
 
     // Subscribe commands
     context.subscriptions.push(vscode.commands.registerCommand("shader-validator.validateFile", (uri: vscode.Uri) => {

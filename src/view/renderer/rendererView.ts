@@ -5,7 +5,7 @@ import { CompileShaderResult } from "../../request";
 import { sidebar } from "../../extension";
 import { RenderedFrame, RendererStatus, ShaderRenderer } from "./renderer";
 import { rendererSurfaceBytesPerTexel } from "./rendererProtocol";
-import { getDefaultStage, ShaderStage } from "../variant/variant";
+import { getDefaultStage, ShaderStage, ShaderVariant, ShaderVariantInclude, UriMap } from "../variant/variant";
 
 /// Messages sent to the webview.
 type RendererViewMessage =
@@ -19,19 +19,54 @@ type RendererViewMessage =
 /// assembled by activating & rendering each of its stages one after the other.
 export class ShaderRendererView {
     private context: vscode.ExtensionContext;
-    private server: ShaderLanguageClient;
     private renderer: ShaderRenderer;
     private panel: vscode.WebviewPanel | null = null;
+    private shaderList: UriMap<ShaderVariant>;
 
-    constructor(context: vscode.ExtensionContext, server: ShaderLanguageClient, renderer: ShaderRenderer) {
+    constructor(context: vscode.ExtensionContext, renderer: ShaderRenderer) {
         this.context = context;
-        this.server = server;
         this.renderer = renderer;
         this.renderer.onStatusChanged(status => {
             if (status === RendererStatus.error) {
                 this.postStatus("Renderer stopped. Check the shader renderer logs.", true);
             }
         });
+        this.shaderList = new UriMap;
+        vscode.workspace.onDidSaveTextDocument(async document => {
+            // If we save one of the watched files, update renderer.
+            let variant = this.shaderList.get(document.uri);
+            if (variant !== undefined) {
+                this.updateShaderAndRender(variant.stage.stage);
+            }
+        });
+    }
+
+    setShaderVariant(uri: vscode.Uri, variant?: ShaderVariant) {
+        console.info(`Set shader ${uri} for stage ${variant?.stage} in renderer`);
+        if (variant !== undefined) {
+            console.assert(uri === variant.uri, `Uri ${uri} different from ${variant.uri}]`);
+            // Remove previously set shader for stage
+            let oldStageVariant = this.findShaderVariantPerStage(variant.stage.stage);
+            if (oldStageVariant) {
+                this.shaderList.delete(oldStageVariant.uri);
+            }
+            this.shaderList.set(uri, variant);
+            this.updateShaderAndRender(variant.stage.stage);
+        } else {
+            let oldVariant = this.shaderList.get(uri);
+            if (oldVariant) {
+                this.updateShaderAndRender(oldVariant.stage.stage);
+            }
+            this.shaderList.delete(uri);
+        }
+    }
+    findShaderVariantPerStage(stage: ShaderStage): ShaderVariant | null {
+        for (let [_uri, variant] of this.shaderList) {
+            if (variant.stage.stage === stage) {
+                return variant;
+            }
+        }
+        return null;
     }
 
     /// Open the renderer panel, or reveal it if it is already opened.
@@ -75,24 +110,45 @@ export class ShaderRendererView {
             }, undefined, this.context.subscriptions);
             // No render here: the webview posts its viewport size once laid out, which renders a
             // first frame at the size the panel can actually display.
+
+            // Start renderer as soon as we open the view to correctly update shaders.
+            if (this.renderer.getStatus() !== RendererStatus.running) {
+                if (await this.renderer.start() !== RendererStatus.running) {
+                    console.error("Failed to start the renderer. Check the shader renderer logs.");
+                } else {
+                    // Pass all shaders stored to the server.
+                    for (let [uri, variant] of this.shaderList) {
+                        this.updateShader(variant.stage.stage);
+                    }
+                }
+            }
         }
     }
 
     /// Bind the active shader variant & render a frame into the panel. Does nothing if no panel is opened.
-    async render() {
+    // @throw Error if failed to render shaders
+    async renderAndThrow() {
         if (this.panel === null) {
             return;
         }
+        if (this.renderer.getStatus() !== RendererStatus.running) {
+            this.postStatus("Renderer is not running, cannot render a shader.", true);
+            return null;
+        }
+        this.postStatus(`Rendering...`, false);
+        const frame = await this.renderer.render();
+        if (frame) {
+            this.post({
+                kind: 'frame',
+                frame: frame,
+                bytesPerTexel: rendererSurfaceBytesPerTexel,
+                description: `Resolution: ${frame.width}x${frame.height}`,
+            });
+        }
+    }
+    async render() {
         try {
-            const frame = await this.renderActiveVariant();
-            if (frame) {
-                this.post({
-                    kind: 'frame',
-                    frame: frame.frame,
-                    bytesPerTexel: rendererSurfaceBytesPerTexel,
-                    description: frame.description,
-                });
-            }
+            this.renderAndThrow();
         } catch (error: any) {
             const message = error instanceof Error ? error.message : `${error}`;
             this.renderer.log(`Failed to render: ${message}`);
@@ -100,37 +156,22 @@ export class ShaderRendererView {
         }
     }
     
-    /// Resize the render target to the size the webview viewport can display & render a frame at it.
-    ///
-    /// The webview debounces its reports, so a render per resize is not a render per layout pass.
-    async resizeRenderer(width: number, height: number) {
-        if (this.panel === null) {
-            return;
+    // Update the shader for given stage and notify renderer
+    // @throw Error if failed to update shader
+    private async updateShader(stage: ShaderStage) {
+        if (this.renderer.getStatus() !== RendererStatus.running) {
+            throw Error("Renderer is not running, cannot update a shader to render.");
         }
-        await this.renderer.resize(width, height);
-        await this.render();
-    }
-
-    /// @throws {Error} If the renderer could not be started, fed a shader or render a frame.
-    private async renderActiveVariant(): Promise<{ frame: RenderedFrame, description: string } | null> {
-        if (this.server.getServerStatus() !== ServerStatus.running) {
-            this.postStatus("Language server is not running, cannot compile a shader to render.", true);
-            return null;
-        }
-        const variant = sidebar.getActiveVariant();
+        console.assert(stage !== ShaderStage.auto, "Shader stage auto is not suppported for renderer");
+        let variant = this.findShaderVariantPerStage(stage);
         if (variant === null) {
-            this.postStatus("No active shader variant. Compile a variant from the shader variant view to render it.", false);
-            return null;
+            throw Error(`No variant set for stage ${stage}`);
         }
-        if (await this.renderer.start() !== RendererStatus.running) {
-            throw new Error("Failed to start the renderer. Check the shader renderer logs.");
-        }
-        this.postStatus(`Compiling ${variant.name}...`, false);
         const document = await vscode.workspace.openTextDocument(variant.uri);
-        const stage = (variant.stage.stage === ShaderStage.auto) ? getDefaultStage() : variant.stage.stage;
         function capitalizeFirstLetter(str: string): string {
             return str.charAt(0).toUpperCase() + str.slice(1);
         }
+        this.postStatus(`Compiling ${variant.name}...`, false);
         await this.renderer.updateShader(stage, {
             shadingLanguage: capitalizeFirstLetter(document.languageId), // Server expect it this way.
             stage: ShaderStage[stage],
@@ -140,12 +181,43 @@ export class ShaderRendererView {
             includes: variant.includes.includes.map(i => i.include),
             defines: Object.fromEntries(variant.defines.defines.map(d => [d.label, d.value] ))
         });
-        this.postStatus(`Rendering ${variant.name}...`, false);
-        const frame = await this.renderer.render();
-        return {
-            frame: frame,
-            description: `${variant.name} (${document.languageId}) ${frame.width}x${frame.height}`,
-        };
+    }
+
+    private async updateAllShadersAndRender() {
+        try {
+            for (let [uri, variant] of this.shaderList) {
+                await this.updateShader(variant.stage.stage);
+            }
+            await this.renderAndThrow();
+        } catch (error: any) {
+            const message = error instanceof Error ? error.message : `${error}`;
+            this.renderer.log(`Failed to render: ${message}`);
+            this.postStatus(message, true);
+        }
+    }
+    
+    private async updateShaderAndRender(stage: ShaderStage) {
+        try {
+            await this.updateShader(stage);
+            await this.renderAndThrow();
+        } catch (error: any) {
+            const message = error instanceof Error ? error.message : `${error}`;
+            this.renderer.log(`Failed to render: ${message}`);
+            this.postStatus(message, true);
+        }
+    }
+
+    /// Resize the render target to the size the webview viewport can display & render a frame at it.
+    ///
+    /// The webview debounces its reports, so a render per resize is not a render per layout pass.
+    async resizeRenderer(width: number, height: number) {
+        if (this.panel === null) {
+            return;
+        }
+        let resized = await this.renderer.resize(width, height);
+        if (resized) {
+            await this.render();
+        }
     }
 
     private post(message: RendererViewMessage) {
