@@ -69,11 +69,23 @@ export class ShaderRendererView {
         return null;
     }
 
+    async tryRendererRequest(callback: () => void) {
+        try {
+            await callback();
+        } catch (error: any) {
+            const message = error instanceof Error ? error.message : `${error}`;
+            this.renderer.log(`Failed to contact renderer: ${message}`);
+            this.postStatus(message, true);
+        }
+    }
+
     /// Open the renderer panel, or reveal it if it is already opened.
     async show() {
         if (this.panel) {
             this.panel.reveal();
-            await this.render();
+            await this.tryRendererRequest(() => {
+                this.render();
+            })
         } else {
             this.panel = vscode.window.createWebviewPanel(
                 'shader-validator.renderer',
@@ -127,7 +139,7 @@ export class ShaderRendererView {
 
     /// Bind the active shader variant & render a frame into the panel. Does nothing if no panel is opened.
     // @throw Error if failed to render shaders
-    async renderAndThrow() {
+    async render() {
         if (this.panel === null) {
             return;
         }
@@ -144,15 +156,6 @@ export class ShaderRendererView {
                 bytesPerTexel: rendererSurfaceBytesPerTexel,
                 description: `Resolution: ${frame.width}x${frame.height}`,
             });
-        }
-    }
-    async render() {
-        try {
-            this.renderAndThrow();
-        } catch (error: any) {
-            const message = error instanceof Error ? error.message : `${error}`;
-            this.renderer.log(`Failed to render: ${message}`);
-            this.postStatus(message, true);
         }
     }
     
@@ -184,27 +187,19 @@ export class ShaderRendererView {
     }
 
     private async updateAllShadersAndRender() {
-        try {
+        this.tryRendererRequest(async () => {
             for (let [uri, variant] of this.shaderList) {
                 await this.updateShader(variant.stage.stage);
             }
-            await this.renderAndThrow();
-        } catch (error: any) {
-            const message = error instanceof Error ? error.message : `${error}`;
-            this.renderer.log(`Failed to render: ${message}`);
-            this.postStatus(message, true);
-        }
+            await this.render();
+        });
     }
     
     private async updateShaderAndRender(stage: ShaderStage) {
-        try {
+        this.tryRendererRequest(async () => {
             await this.updateShader(stage);
-            await this.renderAndThrow();
-        } catch (error: any) {
-            const message = error instanceof Error ? error.message : `${error}`;
-            this.renderer.log(`Failed to render: ${message}`);
-            this.postStatus(message, true);
-        }
+            await this.render();
+        });
     }
 
     /// Resize the render target to the size the webview viewport can display & render a frame at it.
