@@ -162,17 +162,17 @@ export class ShaderRendererView {
     <style nonce="${nonce}">
         body {
             margin: 0;
-            padding: 8px;
+            padding: 0;
             display: flex;
             flex-direction: column;
-            gap: 8px;
-            height: calc(100vh - 16px);
+            height: 100vh;
             box-sizing: border-box;
             font-family: var(--vscode-font-family);
             font-size: var(--vscode-font-size);
             color: var(--vscode-foreground);
         }
         #toolbar {
+            padding: 8px;
             display: flex;
             align-items: center;
             gap: 8px;
