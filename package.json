@@ -589,12 +589,32 @@
         "title": "Restart renderer",
         "category": "Shader validator",
         "icon": "$(debug-restart)"
+      },
+      {
+        "command": "shader-validator.setRendererStage",
+        "title": "Set the shader to render for this stage",
+        "category": "Shader validator",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "shader-validator.clearRendererStage",
+        "title": "Clear the shader rendered for this stage",
+        "category": "Shader validator",
+        "icon": "$(close)"
       }
     ],
     "menus": {
       "commandPalette": [
         {
           "command": "shader-validator.gotoShaderEntryPoint",
+          "when": "false"
+        },
+        {
+          "command": "shader-validator.setRendererStage",
+          "when": "false"
+        },
+        {
+          "command": "shader-validator.clearRendererStage",
           "when": "false"
         }
       ],
@@ -608,6 +628,21 @@
           "command": "shader-validator.loadVariantDatabase",
           "when": "view == shader-validator-variants",
           "group": "navigation"
+        },
+        {
+          "command": "shader-validator.showRenderer",
+          "when": "view == shader-validator-renderer",
+          "group": "navigation@1"
+        },
+        {
+          "command": "shader-validator.renderShader",
+          "when": "view == shader-validator-renderer",
+          "group": "navigation@2"
+        },
+        {
+          "command": "shader-validator.restartRenderer",
+          "when": "view == shader-validator-renderer",
+          "group": "navigation@3"
         }
       ],
       "view/item/context": [
@@ -635,6 +670,16 @@
           "command": "shader-validator.refreshMenu",
           "group": "inline@5",
           "when": "view == shader-validator-variants && (viewItem == database)"
+        },
+        {
+          "command": "shader-validator.setRendererStage",
+          "group": "inline@1",
+          "when": "view == shader-validator-renderer && (viewItem == rendererStage || viewItem == rendererStageBound)"
+        },
+        {
+          "command": "shader-validator.clearRendererStage",
+          "group": "inline@2",
+          "when": "view == shader-validator-renderer && viewItem == rendererStageBound"
         }
       ]
     },
@@ -652,6 +697,11 @@
         {
           "id": "shader-validator-variants",
           "name": "variants",
+          "icon": "res/icons/hlsl-icon.svg"
+        },
+        {
+          "id": "shader-validator-renderer",
+          "name": "renderer",
           "icon": "res/icons/hlsl-icon.svg"
         }
       ]

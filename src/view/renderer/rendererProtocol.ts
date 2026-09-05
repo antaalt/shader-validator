@@ -7,6 +7,16 @@ import { ShaderStage } from '../variant/variant';
 /// Rust enums are externally tagged and structs use their raw snake_case field names,
 /// so any rename on the server side must be mirrored here.
 
+/// Stages of the pipeline the renderer can bind a shader to.
+///
+/// The renderer only assembles a graphic pipeline out of a vertex & a fragment shader, or a compute
+/// pipeline out of a compute shader, so the other stages of ShaderStage cannot be bound to it.
+export const rendererStages: ShaderStage[] = [
+    ShaderStage.vertex,
+    ShaderStage.fragment,
+    ShaderStage.compute,
+];
+
 export interface RendererShader {
     shadingLanguage: string,
     stage: string,

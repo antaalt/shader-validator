@@ -4,7 +4,6 @@ import { deserializeShaderVariantNode, ShaderStage, ShaderVariant, ShaderVariant
 import { ShaderVariantNotifier } from './shaderVariantNotifier';
 import { CompileShaderResult, decodeCompileShaderData, getCompiledShaderExtension } from '../../request';
 import path from 'path';
-import { ShaderRendererView } from '../renderer/rendererView';
 
 const shaderVariantTreeKey : string = 'shader-validator.shader-variant-tree-key';
 const shaderVariantDatabaseKey : string = 'shader-validator.shader-variant-database-key';
@@ -15,7 +14,6 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
     readonly onDidChangeTreeData: vscode.Event<ShaderVariantNode | undefined | void> = this.onDidChangeTreeDataEmitter.event;
 
     private notifier: ShaderVariantNotifier;
-    private rendererView: ShaderRendererView;
     private files: UriMap<ShaderVariantFile>;
     private database: UriMap<UriMap<ShaderVariantFile>>;
     private databaseWatcher: UriMap<vscode.FileSystemWatcher>;
@@ -46,13 +44,12 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
         this.workspaceState.update(shaderVariantDatabaseKey, databaseArray);
     }
 
-    constructor(context: vscode.ExtensionContext, server: ShaderLanguageClient, rendererView: ShaderRendererView) {
+    constructor(context: vscode.ExtensionContext, server: ShaderLanguageClient) {
         this.workspaceState = context.workspaceState;
         this.files = new UriMap;
         this.database = new UriMap;
         this.databaseWatcher = new UriMap;
         this.notifier = new ShaderVariantNotifier(context, server);
-        this.rendererView = rendererView;
         this.load();
         this.tree = vscode.window.createTreeView<ShaderVariantNode>("shader-validator-variants", {
             treeDataProvider: this
@@ -410,7 +407,19 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
     }
     public updateActiveVariant(file: ShaderVariantFile, node: ShaderVariant | null) {
         this.notifier.notifyVariantChanged(file, node);
-        this.rendererView.setShaderVariant(file.uri, node ? node : undefined);
+    }
+    /// Every variant declared, whether it comes from the workspace or from a loaded database.
+    public getAllVariants(): ShaderVariant[] {
+        let variants: ShaderVariant[] = [];
+        for (let [_uri, file] of this.files) {
+            variants.push(...file.variants);
+        }
+        for (let [_databaseUri, database] of this.database) {
+            for (let [_uri, file] of database) {
+                variants.push(...file.variants);
+            }
+        }
+        return variants;
     }
 
     public getTreeItem(element: ShaderVariantNode): vscode.TreeItem {

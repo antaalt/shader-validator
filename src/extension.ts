@@ -9,6 +9,7 @@ import { DidChangeConfigurationNotification, LanguageClient, Trace } from 'vscod
 import { ShaderStatusBar } from './view/status/shaderStatusBar';
 import { ShaderRenderer } from './view/renderer/renderer';
 import { ShaderRendererView } from './view/renderer/rendererView';
+import { RendererSettingsTreeDataProvider } from './view/renderer/rendererSettings';
 
 export let sidebar: ShaderVariantTreeDataProvider;
 
@@ -67,8 +68,12 @@ export async function activate(context: vscode.ExtensionContext)
     context.subscriptions.push(rendererView);
 
     // Create sidebar
-    sidebar = new ShaderVariantTreeDataProvider(context, server, rendererView);
+    sidebar = new ShaderVariantTreeDataProvider(context, server);
     context.subscriptions.push(sidebar);
+
+    // Create renderer settings, which pick the variants the renderer view renders.
+    const rendererSettings = new RendererSettingsTreeDataProvider(context, rendererView, sidebar);
+    context.subscriptions.push(rendererSettings);
 
     // Subscribe commands
     context.subscriptions.push(vscode.commands.registerCommand("shader-validator.validateFile", (uri: vscode.Uri) => {
@@ -152,7 +157,7 @@ export async function activate(context: vscode.ExtensionContext)
     }));
     context.subscriptions.push(vscode.commands.registerCommand("shader-validator.restartRenderer", async () => {
         await renderer.restart();
-        await rendererView.render();
+        await rendererView.updateAllShadersAndRender();
     }));
     context.subscriptions.push(vscode.commands.registerCommand("shader-validator.dumpAst", () => {
         const activeTextEditor = vscode.window.activeTextEditor;

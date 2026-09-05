@@ -2,10 +2,9 @@ import * as vscode from "vscode";
 
 import { ShaderLanguageClient, ServerStatus } from "../../client";
 import { CompileShaderResult } from "../../request";
-import { sidebar } from "../../extension";
 import { RenderedFrame, RendererStatus, ShaderRenderer } from "./renderer";
 import { rendererSurfaceBytesPerTexel } from "./rendererProtocol";
-import { getDefaultStage, ShaderStage, ShaderVariant, ShaderVariantInclude, UriMap } from "../variant/variant";
+import { ShaderStage, ShaderVariant } from "../variant/variant";
 
 /// Messages sent to the webview.
 type RendererViewMessage =
@@ -14,14 +13,19 @@ type RendererViewMessage =
 
 /// Panel displaying the frames read back from the renderer.
 ///
-/// A frame is produced by binding the active shader variant compilation result to its pipeline stage,
-/// then asking the renderer for a render. Bindings are kept across renders, so a graphic pipeline is
-/// assembled by activating & rendering each of its stages one after the other.
+/// A frame is produced by binding the shader variant of each pipeline stage, then asking the
+/// renderer for a render. Bindings are kept across renders and are chosen from the renderer
+/// settings view, which is the only place they are edited from.
 export class ShaderRendererView {
     private context: vscode.ExtensionContext;
     private renderer: ShaderRenderer;
     private panel: vscode.WebviewPanel | null = null;
-    private shaderList: UriMap<ShaderVariant>;
+    private stageBindings: Map<ShaderStage, ShaderVariant>;
+
+    private onDidChangeStageBindingsEmitter: vscode.EventEmitter<void> = new vscode.EventEmitter<void>();
+    /// Fired whenever the variant bound to a stage changed, so views displaying the bindings can
+    /// follow them.
+    readonly onDidChangeStageBindings: vscode.Event<void> = this.onDidChangeStageBindingsEmitter.event;
 
     constructor(context: vscode.ExtensionContext, renderer: ShaderRenderer) {
         this.context = context;
@@ -31,50 +35,59 @@ export class ShaderRendererView {
                 this.postStatus("Renderer stopped. Check the shader renderer logs.", true);
             }
         });
-        this.shaderList = new UriMap;
+        this.stageBindings = new Map;
         vscode.workspace.onDidSaveTextDocument(async document => {
-            // If we save one of the watched files, update renderer.
-            let variant = this.shaderList.get(document.uri);
-            if (variant !== undefined) {
-                this.updateShaderAndRender(variant.stage.stage);
+            // If we save one of the watched files, update renderer. A file can hold the variants of
+            // multiple stages, so refresh every stage it is bound to.
+            let stages = this.getStagesForUri(document.uri);
+            if (stages.length > 0) {
+                this.updateShadersAndRender(stages);
             }
         });
     }
 
-    setShaderVariant(uri: vscode.Uri, variant?: ShaderVariant) {
-        console.info(`Set shader ${uri} for stage ${variant?.stage} in renderer`);
-        if (variant !== undefined) {
-            console.assert(uri === variant.uri, `Uri ${uri} different from ${variant.uri}]`);
-            // Remove previously set shader for stage
-            let oldStageVariant = this.findShaderVariantPerStage(variant.stage.stage);
-            if (oldStageVariant) {
-                this.shaderList.delete(oldStageVariant.uri);
-            }
-            this.shaderList.set(uri, variant);
-            this.updateShaderAndRender(variant.stage.stage);
-        } else {
-            let oldVariant = this.shaderList.get(uri);
-            if (oldVariant) {
-                this.updateShaderAndRender(oldVariant.stage.stage);
-            }
-            this.shaderList.delete(uri);
-        }
+    /// Variant bound to each stage of the renderer pipeline.
+    getShaderVariants(): ReadonlyMap<ShaderStage, ShaderVariant> {
+        return this.stageBindings;
     }
-    findShaderVariantPerStage(stage: ShaderStage): ShaderVariant | null {
-        for (let [_uri, variant] of this.shaderList) {
-            if (variant.stage.stage === stage) {
-                return variant;
+    /// Variant bound to a stage of the renderer pipeline, if any.
+    getShaderVariant(stage: ShaderStage): ShaderVariant | undefined {
+        return this.stageBindings.get(stage);
+    }
+    async setShaderVariant(stage: ShaderStage, variant: ShaderVariant | null) {
+        console.assert(stage !== ShaderStage.auto, "Shader stage auto is not supported for renderer");
+        console.info(`Set shader ${variant?.name} for stage ${ShaderStage[stage]} in renderer`);
+        if (variant === null) {
+            if (!this.stageBindings.delete(stage)) {
+                return; // Nothing was bound to this stage.
+            }
+        } else {
+            this.stageBindings.set(stage, variant);
+        }
+        this.onDidChangeStageBindingsEmitter.fire();
+        await this.updateShadersAndRender([stage]);
+    }
+    /// Stages a file is bound to, as variants of a same file can be bound to more than one of them.
+    private getStagesForUri(uri: vscode.Uri): ShaderStage[] {
+        let stages: ShaderStage[] = [];
+        for (let [stage, variant] of this.stageBindings) {
+            if (variant.uri.toString() === uri.toString()) {
+                stages.push(stage);
             }
         }
-        return null;
+        return stages;
     }
 
     async tryRendererRequest(callback: () => void) {
         try {
+            // A renderer which is not running has nothing to update: bindings are pushed to it on start.
+            if (this.renderer.getStatus() !== RendererStatus.running) {
+                throw Error("Renderer is not running.");
+            }
             await callback();
         } catch (error: any) {
             const message = error instanceof Error ? error.message : `${error}`;
-            this.renderer.log(`Failed to contact renderer: ${message}`);
+            this.renderer.log(`Renderer request failed: ${message}`);
             this.postStatus(message, true);
         }
     }
@@ -129,9 +142,7 @@ export class ShaderRendererView {
                     console.error("Failed to start the renderer. Check the shader renderer logs.");
                 } else {
                     // Pass all shaders stored to the server.
-                    for (let [uri, variant] of this.shaderList) {
-                        this.updateShader(variant.stage.stage);
-                    }
+                    await this.updateAllShadersAndRender();
                 }
             }
         }
@@ -166,9 +177,11 @@ export class ShaderRendererView {
             throw Error("Renderer is not running, cannot update a shader to render.");
         }
         console.assert(stage !== ShaderStage.auto, "Shader stage auto is not suppported for renderer");
-        let variant = this.findShaderVariantPerStage(stage);
-        if (variant === null) {
-            throw Error(`No variant set for stage ${stage}`);
+        let variant = this.stageBindings.get(stage);
+        if (variant === undefined) {
+            // An unbound stage falls back to the default shader of the renderer for it.
+            await this.renderer.removeShader(stage);
+            return;
         }
         const document = await vscode.workspace.openTextDocument(variant.uri);
         function capitalizeFirstLetter(str: string): string {
@@ -186,18 +199,16 @@ export class ShaderRendererView {
         });
     }
 
-    private async updateAllShadersAndRender() {
-        this.tryRendererRequest(async () => {
-            for (let [uri, variant] of this.shaderList) {
-                await this.updateShader(variant.stage.stage);
-            }
-            await this.render();
-        });
+    /// Push the shaders bound to the given stages to the renderer & render a frame out of them.
+    async updateAllShadersAndRender() {
+        this.updateShadersAndRender(Array.from(this.stageBindings.keys()));
     }
-    
-    private async updateShaderAndRender(stage: ShaderStage) {
-        this.tryRendererRequest(async () => {
-            await this.updateShader(stage);
+    /// Push the shaders bound to the given stages to the renderer & render a frame out of them.
+    private async updateShadersAndRender(stages: ShaderStage[]) {
+        await this.tryRendererRequest(async () => {
+            for (let stage of stages) {
+                await this.updateShader(stage);
+            }
             await this.render();
         });
     }
@@ -405,6 +416,7 @@ export class ShaderRendererView {
     }
 
     dispose() {
+        this.onDidChangeStageBindingsEmitter.dispose();
         this.panel?.dispose();
     }
 }
