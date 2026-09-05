@@ -205,6 +205,11 @@ export enum ShaderStage {
     intersect,
 }
 
+// Default stage used when auto fail resolve.
+export function getDefaultStage() {
+    return ShaderStage.fragment;
+}
+
 export type ShaderVariantStage = {
     kind: 'stage',
     stage: ShaderStage,

@@ -14,20 +14,15 @@ import {
 import { Trace } from 'vscode-languageclient';
 
 import { isRunningOnWeb, resolveVSCodeVariables, ShaderLanguageClient } from "../../client";
-import { CompileShaderResult } from "../../request";
 import { ShaderStage } from "../variant/variant";
 import {
     alignBytesPerRow,
     errorNotification,
     RendererShader,
-    RendererShaderStage,
     renderRequest,
     rendererSurfaceBytesPerTexel,
     resizeTargetNotification,
     shutdownRequest,
-    toRendererShaderSource,
-    toRendererShaderStage,
-    toRendererShadingLanguage,
     updateShaderNotification,
 } from "./rendererProtocol";
 
@@ -191,12 +186,12 @@ export class ShaderRenderer {
     static getLogFilter(): string {
         switch (ShaderLanguageClient.getTraceLevel()) {
             case Trace.Verbose:
-                return "shader_renderer=trace,wgpu=debug,wgpu_core=debug,wgpu_hal=debug,naga=debug";
+                return "shader_renderer=trace,wgpu=info,naga=info";
             case Trace.Compact:
             case Trace.Messages:
-                return "shader_renderer=debug,wgpu=info,wgpu_core=info,wgpu_hal=info,naga=info";
+                return "shader_renderer=debug,wgpu=info,naga=info";
             default:
-                return "shader_renderer=info,wgpu=warn,wgpu_core=warn,wgpu_hal=warn,naga=warn";
+                return "shader_renderer=info,wgpu=warn,naga=warn";
         }
     }
 
@@ -344,35 +339,16 @@ export class ShaderRenderer {
     }
 
     /// Bind a shader to a stage of the renderer pipeline.
-    async updateShader(stage: RendererShaderStage, shader: RendererShader | null) {
+    async updateShader(stage: ShaderStage, shader: RendererShader | null) {
         await this.requireConnection().sendNotification(updateShaderNotification, {
-            shader_stage: stage, // eslint-disable-line @typescript-eslint/naming-convention
+            shaderStage: ShaderStage[stage],
             shader: shader,
         });
     }
 
     /// Unbind whatever shader is currently bound to a stage.
-    async removeShader(stage: RendererShaderStage) {
+    async removeShader(stage: ShaderStage) {
         await this.updateShader(stage, null);
-    }
-
-    /// Bind a compilation result coming from the language server to a stage of the renderer pipeline.
-    /// @throws {Error} If the shader cannot be expressed as a renderer shader.
-    async updateCompiledShader(languageId: string, stage: ShaderStage, entryPoint: string, result: CompileShaderResult) {
-        const shadingLanguage = toRendererShadingLanguage(languageId);
-        if (shadingLanguage === null) {
-            throw new Error(`Language ${languageId} is not a shading language the renderer supports.`);
-        }
-        const rendererStage = toRendererShaderStage(stage);
-        if (rendererStage === null) {
-            throw new Error(`Shader stage ${ShaderStage[stage]} cannot be mapped to a renderer pipeline stage. Set an explicit stage on the shader variant.`);
-        }
-        await this.updateShader(rendererStage, {
-            shading_language: shadingLanguage, // eslint-disable-line @typescript-eslint/naming-convention
-            stage: rendererStage,
-            entry_point: entryPoint, // eslint-disable-line @typescript-eslint/naming-convention
-            source: toRendererShaderSource(result),
-        });
     }
 
     /// Render a frame with the currently bound shaders & read it back.

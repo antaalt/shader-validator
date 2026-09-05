@@ -7,40 +7,14 @@ import { ShaderStage } from '../variant/variant';
 /// Rust enums are externally tagged and structs use their raw snake_case field names,
 /// so any rename on the server side must be mirrored here.
 
-export type RendererShadingLanguage = 'Wgsl' | 'Hlsl' | 'Glsl';
-
-/// ShaderStage is serialized as camelCase, unlike ShadingLanguage which keeps its variant names.
-export type RendererShaderStage =
-    'vertex' |
-    'fragment' |
-    'compute' |
-    'tesselationControl' |
-    'tesselationEvaluation' |
-    'mesh' |
-    'task' |
-    'geometry' |
-    'rayGeneration' |
-    'closestHit' |
-    'anyHit' |
-    'callable' |
-    'miss' |
-    'intersect';
-
-/// Externally tagged enum ShaderSource. Spirv is a Vec<u32> & Dxil a Vec<u8>, both
-/// serialized as plain number arrays, while Wgsl & Glsl are sent as source code.
-export type RendererShaderSource =
-    { 'Spirv': number[] } |
-    { 'Dxil': number[] } |
-    { 'Wgsl': string } |
-    { 'Glsl': string };
-
 export interface RendererShader {
-    // eslint-disable-next-line @typescript-eslint/naming-convention
-    shading_language: RendererShadingLanguage,
-    stage: RendererShaderStage,
-    // eslint-disable-next-line @typescript-eslint/naming-convention
-    entry_point: string,
-    source: RendererShaderSource,
+    shadingLanguage: string,
+    stage: string,
+    entryPoint: string,
+    filePath: string,
+    content: string,
+    defines: Object,
+    includes: string[],
 }
 
 export interface ResizeTargetParams {
@@ -49,8 +23,7 @@ export interface ResizeTargetParams {
 }
 
 export interface UpdateShaderParams {
-    // eslint-disable-next-line @typescript-eslint/naming-convention
-    shader_stage: RendererShaderStage,
+    shaderStage: string,
     /// Null unsets the shader currently bound to this stage.
     shader: RendererShader | null,
 }
@@ -81,57 +54,4 @@ const copyBytesPerRowAlignment = 256;
 export function alignBytesPerRow(width: number): number {
     const bytesPerRow = width * rendererSurfaceBytesPerTexel;
     return Math.ceil(bytesPerRow / copyBytesPerRowAlignment) * copyBytesPerRowAlignment;
-}
-
-export function toRendererShadingLanguage(languageId: string): RendererShadingLanguage | null {
-    switch (languageId) {
-        case 'hlsl': return 'Hlsl';
-        case 'glsl': return 'Glsl';
-        case 'wgsl': return 'Wgsl';
-        default: return null;
-    }
-}
-
-/// Convert a variant stage to a renderer stage. Returns null for ShaderStage.auto,
-/// which the renderer cannot map to a pipeline slot.
-export function toRendererShaderStage(stage: ShaderStage): RendererShaderStage | null {
-    switch (stage) {
-        case ShaderStage.vertex: return 'vertex';
-        case ShaderStage.fragment: return 'fragment';
-        case ShaderStage.compute: return 'compute';
-        case ShaderStage.tesselationControl: return 'tesselationControl';
-        case ShaderStage.tesselationEvaluation: return 'tesselationEvaluation';
-        case ShaderStage.mesh: return 'mesh';
-        case ShaderStage.task: return 'task';
-        case ShaderStage.geometry: return 'geometry';
-        case ShaderStage.rayGeneration: return 'rayGeneration';
-        case ShaderStage.closestHit: return 'closestHit';
-        case ShaderStage.anyHit: return 'anyHit';
-        case ShaderStage.callable: return 'callable';
-        case ShaderStage.miss: return 'miss';
-        case ShaderStage.intersect: return 'intersect';
-        case ShaderStage.auto: return null;
-        default: return null;
-    }
-}
-
-/// Convert a compilation result from the language server into a shader source the renderer accepts.
-export function toRendererShaderSource(result: CompileShaderResult): RendererShaderSource {
-    const bytes = decodeCompileShaderData(result.data);
-    switch (result.compilationType) {
-        case CompilationType.Spirv: {
-            if (bytes.length % 4 !== 0) {
-                throw new Error(`SPIRV payload of ${bytes.length} bytes is not a multiple of 4.`);
-            }
-            // SPIRV is consumed as words. Endianness is the host one on both sides.
-            const words = new Uint32Array(bytes.buffer, bytes.byteOffset, bytes.length / 4);
-            return { 'Spirv': Array.from(words) };
-        }
-        case CompilationType.Dxil:
-            return { 'Dxil': Array.from(bytes) };
-        case CompilationType.Wgsl:
-            return { 'Wgsl': new TextDecoder('utf-8').decode(bytes) };
-        default:
-            throw new Error(`Unsupported compilation type for renderer: ${result.compilationType}`);
-    }
 }

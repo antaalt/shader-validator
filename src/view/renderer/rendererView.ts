@@ -5,6 +5,7 @@ import { CompileShaderResult } from "../../request";
 import { sidebar } from "../../extension";
 import { RenderedFrame, RendererStatus, ShaderRenderer } from "./renderer";
 import { rendererSurfaceBytesPerTexel } from "./rendererProtocol";
+import { getDefaultStage, ShaderStage } from "../variant/variant";
 
 /// Messages sent to the webview.
 type RendererViewMessage =
@@ -125,20 +126,25 @@ export class ShaderRendererView {
             throw new Error("Failed to start the renderer. Check the shader renderer logs.");
         }
         this.postStatus(`Compiling ${variant.name}...`, false);
-        const compilation = (await vscode.commands.executeCommand(
-            'shader-validator.compileShader',
-            variant.uri
-        )) as CompileShaderResult | null;
-        if (compilation === null) {
-            throw new Error(`Failed to compile ${variant.name}. Check the diagnostics of the shader.`);
-        }
         const document = await vscode.workspace.openTextDocument(variant.uri);
-        await this.renderer.updateCompiledShader(document.languageId, variant.stage.stage, variant.name, compilation);
+        const stage = (variant.stage.stage === ShaderStage.auto) ? getDefaultStage() : variant.stage.stage;
+        function capitalizeFirstLetter(str: string): string {
+            return str.charAt(0).toUpperCase() + str.slice(1);
+        }
+        await this.renderer.updateShader(stage, {
+            shadingLanguage: capitalizeFirstLetter(document.languageId), // Server expect it this way.
+            stage: ShaderStage[stage],
+            entryPoint: variant.name,
+            filePath: document.uri.path,
+            content: document.getText(),
+            includes: variant.includes.includes.map(i => i.include),
+            defines: Object.fromEntries(variant.defines.defines.map(d => [d.label, d.value] ))
+        });
         this.postStatus(`Rendering ${variant.name}...`, false);
         const frame = await this.renderer.render();
         return {
             frame: frame,
-            description: `${variant.name} (${compilation.compilationType}) ${frame.width}x${frame.height}`,
+            description: `${variant.name} (${document.languageId}) ${frame.width}x${frame.height}`,
         };
     }
 
