@@ -31,15 +31,10 @@ suite('Compilation Test Suite', () => {
             'shader-validator.compileShader',
             docUri[0]
         )) as CompileShaderResult | null;
-        if (!isUsingWasiServer()) {
-            assert.ok(compilationResult);
-            assert.equal(compilationResult.compilationType, CompilationType.Spirv);
-            assert.equal(compilationResult.data.length, 608);
-            // TODO: Could somehow validate that this is a valid SPIRV. 
-            // Check with glslang if its available ?
-        } else {
-            // TODO: No compilation in WASI server. Check why ?
-            assert.equal(compilationResult, null);
-        }
+        assert.ok(compilationResult);
+        assert.equal(compilationResult.compilationType, CompilationType.Spirv);
+        assert.equal(compilationResult.data.length, 608);
+        // TODO: Could somehow validate that this is a valid SPIRV. 
+        // Check with glslang if its available ?
     }).timeout(10000); // First test to run on non WASI target
 });
