@@ -63,6 +63,7 @@ async function testCompletion(
 			const actualLabel = actualItem.label as vscode.CompletionItemLabel;
 			return actualLabel.label === expectedItem.label && actualItem.kind === expectedItem.kind;
 		});
-		assert.notStrictEqual(item, undefined, `Failed to find symbol ${expectedItem.label}`);
+		const itemLabel = actualCompletionList.items.map((item) => item.label);
+		assert.notStrictEqual(item, undefined, `Failed to find symbol ${expectedItem.label} in ${JSON.stringify(itemLabel)}`);
 	});
 }
