@@ -77,7 +77,7 @@ jobs:
         run: echo '${{ steps.package_json.outputs.server_version }}'
       - name: Download native shader language server.
         uses: robinraju/release-downloader@v1.11
-        if: ${{ matrix.npm-target != 'wasi' }}
+        if: ${{ matrix.npm-target != 'wasi' && matrix.npm-target != 'web' }}
         with:
           repository: 'antaalt/shader-sense'
           tag: ${{ format('v{0}', steps.package_json.outputs.server_version) }}
@@ -91,7 +91,7 @@ jobs:
       - name: Create bin folder
         run: mkdir ./bin
       - name: Copy native binary to bin
-        if: ${{ matrix.npm-target != 'wasi' }}
+        if: ${{ matrix.npm-target != 'wasi' && matrix.npm-target != 'web' }}
         run: mkdir ./bin/${{ matrix.npm-target }} && unzip shader-language-server-${{ matrix.rust-target }}.zip -d ./bin/${{ matrix.npm-target }} && rm ./shader-language-server-${{ matrix.rust-target }}.zip
       - name: Copy wasi binary to bin
         run: mkdir ./bin/wasi && unzip shader-language-server-wasm32-wasip1-threads.zip -d ./bin/wasi && rm ./shader-language-server-wasm32-wasip1-threads.zip
@@ -101,7 +101,7 @@ jobs:
         run: chmod +x ./bin/${{ matrix.npm-target }}/shader-language-server
       - name: Get server version
         run: ./bin/${{ matrix.npm-target }}/shader-language-server${{ env.EXTENSION }} --version
-        if: ${{ matrix.npm-target != 'wasi' }}
+        if: ${{ matrix.npm-target != 'wasi' && matrix.npm-target != 'web' }}
         env:
           EXTENSION: ${{ runner.os == 'Windows' && '.exe' || '' }}
       # https://stevefenton.co.uk/blog/2025/09/playwright-insteall-github-actions/
