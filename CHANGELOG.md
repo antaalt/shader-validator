@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [unreleased]
 
+## [1.5.0] - 2026-09-07
+
+### Added
+
+- New UI to request compilation result from server. User can now save. Return spirv or dxil depending on shader type.
+
+# Fixed
+
+- Extension should now work correctly in web browser as it was failing initialization when no workspace are opened.
+- Fix issues on the web with variant database parsing failing.
+
+### Changed
+
+- Using [shader-language-server v1.5.0](https://github.com/antaalt/shader-sense/releases/tag/v1.5.0) with compilation result and few fixes.
+
 ## [1.4.4] - 2026-08-14
 
 ### Added
@@ -440,7 +455,8 @@ Initial release of this extension using [shader-language-server v0.0.1](https://
 
 
 <!-- Below are link for above changelog titles-->
-[unreleased]: https://github.com/antaalt/shader-validator/compare/v1.4.4...HEAD
+[unreleased]: https://github.com/antaalt/shader-validator/compare/v1.5.0...HEAD
+[1.5.0]: https://github.com/antaalt/shader-validator/compare/v1.4.4...v1.5.0
 [1.4.4]: https://github.com/antaalt/shader-validator/compare/v1.4.3...v1.4.4
 [1.4.3]: https://github.com/antaalt/shader-validator/compare/v1.4.2...v1.4.3
 [1.4.2]: https://github.com/antaalt/shader-validator/compare/v1.4.1...v1.4.2
