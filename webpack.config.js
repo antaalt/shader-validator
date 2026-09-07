@@ -132,7 +132,8 @@ const webTestConfig = {
     // pretest builds & runs in the same shell, so setting them before npm run test works.
     new webpack.EnvironmentPlugin({
       USE_WASI_SERVER: '',
-      SHOW_SERVER_LOGS: ''
+      SHOW_SERVER_LOGS: '',
+      TEST_IN_BROWSER: 'true' // Need to access it in few test.
     })
   ]
 };
