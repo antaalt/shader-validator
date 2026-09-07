@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - New UI to request compilation result from server. User can now save. Return spirv or dxil depending on shader type.
 
-# Fixed
+### Fixed
 
 - Extension should now work correctly in web browser as it was failing initialization when no workspace are opened.
 - Fix issues on the web with variant database parsing failing.
