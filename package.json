@@ -411,6 +411,36 @@
               "Spirv 1.5",
               "Spirv 1.6"
             ]
+          },
+          "shader-validator.glsl.version.version": {
+            "description": "Version used when overriding GLSL version. Leave empty to rely on the #version directive of the shader.",
+            "type": [
+              "number",
+              "null"
+            ],
+            "default": null
+          },
+          "shader-validator.glsl.version.profile": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Profile used when overriding GLSL version. Ignored if no version is set.",
+            "default": null,
+            "enum": [
+              null,
+              "None",
+              "Core",
+              "Compatibility",
+              "Es"
+            ],
+            "enumItemLabels": [
+              "Default (Core)",
+              "None",
+              "Core",
+              "Compatibility",
+              "Es"
+            ]
           }
         }
       },
