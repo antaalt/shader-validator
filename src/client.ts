@@ -561,6 +561,37 @@ export class ShaderLanguageClient {
         });
     }
     private async createLanguageClientWASI(context: vscode.ExtensionContext) : Promise<LanguageClient | null> {
+        // Request user to install the WASI runner if not installed.
+        const msWasmWasiCoreName = 'ms-vscode.wasm-wasi-core';
+        const msWasmWasiCore = vscode.extensions.getExtension(msWasmWasiCoreName);
+        if (msWasmWasiCore === undefined) {
+            const message = 'It is required to install Microsoft WASM WASI core extension for running the shader validator server on wasi. Do you want to install it now?';
+            const choice = await vscode.window.showInformationMessage(message, 'Install', 'Not now');
+            if (choice === 'Install') {
+                // Wait for extension to be correctly installed.
+                let installed = await vscode.window.withProgress({ location: vscode.ProgressLocation.Notification },
+                    (progress) => {
+                        progress.report({ message: "Installing Microsoft WASM wasi core extension" });
+                        return vscode.commands.executeCommand("workbench.extensions.installExtension", msWasmWasiCoreName);
+                    },
+                ).then(_success => {
+                    console.assert(vscode.extensions.getExtension(msWasmWasiCoreName) !== undefined, "Failed to load WASM wasi core.");
+                    vscode.window.showInformationMessage("Microsoft WASM wasi core extension installed with success !");
+                    return true;
+                }, failure => {
+                    console.error("Failed to install ms-vscode.wasm-wasi-core: ", failure);
+                    vscode.window.showErrorMessage(`Failed to install Microsoft WASM wasi core. You will have to install ms-vscode.wasm-wasi-core yourself through the extensions tab.`);
+                    return false;
+                });
+                if (!installed) {
+                    return null; // Extension dependency failed to install.
+                }
+            } else {
+                vscode.window.showErrorMessage("Extension shader-validator failed to install dependencies. It will not launch the shader language server.");
+                return null; // Extension failed to launch.
+            }
+        }
+
         // Load the WASM API
         const wasm: Wasm = await Wasm.load();
 
