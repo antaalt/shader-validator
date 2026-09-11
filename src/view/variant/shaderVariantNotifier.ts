@@ -183,10 +183,11 @@ export class ShaderVariantNotifier {
         // We have to rely on a dirty hack instead.
         // Need to check this does not break anything
         // Dirty hack to trigger document symbol update
-        // Ideally, it should retrigger dependencies aswell.
         // See https://github.com/microsoft/vscode/issues/108722 (Old one https://github.com/microsoft/vscode/issues/71454)
         
         // Only trigger it if requested by user as it may be a bit invasive.
+        // TODO: This should also get dependencies of file to retrigger their update aswell.
+        // dumpDependency should return a parsable JSON which is then used here to edit all concerned dependencies.
         let updateSymbolsOnVariantUpdate = vscode.workspace.getConfiguration("shader-validator").get<boolean>("updateSymbolsOnVariantUpdate");
         if (updateSymbolsOnVariantUpdate) {
             let visibleEditor = vscode.window.visibleTextEditors.find(e => e.document.uri.path === uri.path);
@@ -259,10 +260,9 @@ export class ShaderVariantNotifier {
         });
     }
     private updateDecoration(editor: vscode.TextEditor) {
-        let entryPoints = this.shaderEntryPointList.get(editor.document.uri);
-
-        if (entryPoints) {
-            if (this.activeVariant) {
+        if (this.activeVariant && this.activeVariant.uri.toString() === editor.document.uri.toString()) {
+            let entryPoints = this.shaderEntryPointList.get(editor.document.uri);
+            if (entryPoints) {
                 let found = false;
                 for (let entryPoint of entryPoints) {
                     if (entryPoint.entryPoint === this.activeVariant.name) {
@@ -274,11 +274,11 @@ export class ShaderVariantNotifier {
                     }
                 }
                 if (!found) {
-                    console.info("Entry point not found in ", entryPoints);
+                    console.warn(`Variant entry point '${this.activeVariant.name}' not found in list ${JSON.stringify(entryPoints.map(e => e.entryPoint))}`);
                     editor.setDecorations(this.getDecorator(editor.document.languageId), []);
                 }
             } else {
-                console.info("No active variant ", entryPoints);
+                console.warn("No entryPoints found in active variant file.");
                 editor.setDecorations(this.getDecorator(editor.document.languageId), []);
             }
         } else {
