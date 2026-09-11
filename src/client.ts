@@ -25,6 +25,7 @@ import {
     ProtocolNotificationType,
     ProvideDocumentSymbolsSignature,
     RequestType,
+    ResponseError,
     ServerOptions,
     Trace,
     TransportKind
@@ -321,10 +322,13 @@ function getMiddleware() : Middleware {
                 // Here we resolve vscode variables ourselves as there is no API for this.
                 // see https://github.com/microsoft/vscode/issues/140056
                 let result = await next(params, token);
-                let resultArray = result as any[];
-                let config = resultArray[0];
-                let resolvedConfig = resolveConfigurationVSCodeVariables(config);
-                return [resolvedConfig];
+                if (result instanceof ResponseError) {
+                    console.error(`Error when requesting workspace configuration: ${result.message}`);
+                    return result;
+                } else {
+                    let resultArray = result as any[];
+                    return resultArray.map(config => resolveConfigurationVSCodeVariables(config));
+                }
             }
         }
     };
