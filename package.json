@@ -28,7 +28,6 @@
     "wgsl"
   ],
   "activationEvents": [
-    "onCommand:shader-validator.validateFile",
     "onLanguage:glsl",
     "onLanguage:wgsl",
     "onLanguage:hlsl"
@@ -500,12 +499,6 @@
         "title": "Restart server",
         "category": "Shader validator",
         "icon": "$(debug-restart)"
-      },
-      {
-        "command": "shader-validator.validateFile",
-        "title": "Validate file",
-        "category": "Shader validator",
-        "icon": "$(check)"
       },
       {
         "command": "shader-validator.dumpAst",

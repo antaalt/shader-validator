@@ -28,10 +28,6 @@ export async function activate(context: vscode.ExtensionContext)
     context.subscriptions.push(statusBar);
 
     // Subscribe commands
-    context.subscriptions.push(vscode.commands.registerCommand("shader-validator.validateFile", (uri: vscode.Uri) => {
-        //client.sendRequest()
-        vscode.window.showInformationMessage("Cannot validate file manually for now");
-    }));
     context.subscriptions.push(vscode.commands.registerCommand("shader-validator.startServer", async (updateServerUsed: boolean) => {
         await server.start(context, updateServerUsed);
         statusBar.updateStatusBar();
@@ -168,11 +164,9 @@ export async function activate(context: vscode.ExtensionContext)
                     }
                 }
                 if (requiresRestart) {
-                    server.restart(context);
+                    await server.restart(context);
                 } else {
-                    await server.sendNotification(DidChangeConfigurationNotification.type, {
-                        settings: "",
-                    });
+                    await server.sendNotification(DidChangeConfigurationNotification.type, undefined);
                 }
             }
         })
