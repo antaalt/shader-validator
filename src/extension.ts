@@ -68,7 +68,7 @@ export async function activate(context: vscode.ExtensionContext)
     }));
     context.subscriptions.push(vscode.commands.registerCommand("shader-validator.compileAndSaveActiveEditor", async () => {
         const activeTextEditor = vscode.window.activeTextEditor;
-        if (activeTextEditor && activeTextEditor.document.uri.scheme === 'file' && ShaderLanguageClient.isEnabledLangId(activeTextEditor.document.languageId)) {
+        if (activeTextEditor && ShaderLanguageClient.isEnabledLangId(activeTextEditor.document.languageId)) {
             if (server.getServerStatus() === ServerStatus.running) {
                 let compilationResult = (await vscode.commands.executeCommand(
                     'shader-validator.compileShader',
@@ -99,7 +99,7 @@ export async function activate(context: vscode.ExtensionContext)
     }));
     context.subscriptions.push(vscode.commands.registerCommand("shader-validator.dumpAst", () => {
         const activeTextEditor = vscode.window.activeTextEditor;
-        if (activeTextEditor && activeTextEditor.document.uri.scheme === 'file' && ShaderLanguageClient.isEnabledLangId(activeTextEditor.document.languageId)) {
+        if (activeTextEditor && ShaderLanguageClient.isEnabledLangId(activeTextEditor.document.languageId)) {
             if (server.getServerStatus() === ServerStatus.running) {
                 server.sendRequest(dumpAstRequest, {
                     uri: server.uriAsString(activeTextEditor.document.uri)
@@ -123,7 +123,7 @@ export async function activate(context: vscode.ExtensionContext)
     }));
     context.subscriptions.push(vscode.commands.registerCommand("shader-validator.dumpDependency", () => {
         const activeTextEditor = vscode.window.activeTextEditor;
-        if (activeTextEditor && activeTextEditor.document.uri.scheme === 'file' && ShaderLanguageClient.isEnabledLangId(activeTextEditor.document.languageId)) {
+        if (activeTextEditor && ShaderLanguageClient.isEnabledLangId(activeTextEditor.document.languageId)) {
             if (server.getServerStatus() === ServerStatus.running) {
                 server.sendRequest(dumpDependencyRequest, {
                     uri: server.uriAsString(activeTextEditor.document.uri)

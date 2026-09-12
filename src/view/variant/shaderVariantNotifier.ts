@@ -97,14 +97,10 @@ export class ShaderVariantNotifier {
         }
         // Prepare entry point symbol cache
         for (let editor of vscode.window.visibleTextEditors) {
-            if (editor.document.uri.scheme === 'file') {
-                this.shaderEntryPointList.set(editor.document.uri, []);
-            }
+            this.shaderEntryPointList.set(editor.document.uri, []);
         }
         context.subscriptions.push(vscode.workspace.onDidOpenTextDocument(document => {
-            if (document.uri.scheme === 'file') {
-                this.shaderEntryPointList.set(document.uri, []);
-            }
+            this.shaderEntryPointList.set(document.uri, []);
         }));
         context.subscriptions.push(vscode.workspace.onDidCloseTextDocument(document => {
             this.shaderEntryPointList.delete(document.uri);
@@ -287,9 +283,7 @@ export class ShaderVariantNotifier {
     }
     updateDecorations(uri?: vscode.Uri) {
         for (let editor of vscode.window.visibleTextEditors) {
-            if (editor.document.uri.scheme === 'file') {
-                this.updateDecoration(editor);
-            }
+            this.updateDecoration(editor);
         }
     }
 }

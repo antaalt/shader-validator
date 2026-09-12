@@ -578,10 +578,6 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
         await this.openOrAddVariant(uri, null);
     }
     public async openOrAddVariant(uri: vscode.Uri, variant: ShaderVariant | null) {
-        if (uri.scheme !== 'file') {
-            console.error("Trying to open non file uri");
-            return;
-        }
         // If adding active variant, remove all currently active ones.
         if (variant) {
             if (variant.isActive) {
