@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { resolveVSCodeVariables, ShaderLanguageClient } from '../../client';
 import { ShaderStage, ShaderVariant, ShaderVariantFile, UriMap } from './variant';
 import { DocumentUri, ProtocolNotificationType, ProtocolRequestType, TextDocumentIdentifier, TextDocumentRegistrationOptions } from 'vscode-languageclient';
+import { DependencyTreeNode, dependencyTreeRequest } from '../../request';
 
 export interface ShaderVariantSerialized {
     url: DocumentUri,
@@ -181,29 +182,46 @@ export class ShaderVariantNotifier {
         // Dirty hack to trigger document symbol update
         // See https://github.com/microsoft/vscode/issues/108722 (Old one https://github.com/microsoft/vscode/issues/71454)
         
+        // Get all dependencies and force their update.
+        let dependencyTree = await this.server.sendRequest(dependencyTreeRequest, {
+            uri: this.server.uriAsString(uri),
+        });
+        function flattenTree(tree: DependencyTreeNode): vscode.Uri[] {
+            let uris = [vscode.Uri.file(tree.path)];
+            for (let include of tree.includes) {
+                uris.push(...flattenTree(include))
+            }
+            return uris;
+        }
+        let dependencies = flattenTree(dependencyTree);
+
         // Only trigger it if requested by user as it may be a bit invasive.
-        // TODO: This should also get dependencies of file to retrigger their update aswell.
-        // dumpDependency should return a parsable JSON which is then used here to edit all concerned dependencies.
         let updateSymbolsOnVariantUpdate = vscode.workspace.getConfiguration("shader-validator").get<boolean>("updateSymbolsOnVariantUpdate");
         if (updateSymbolsOnVariantUpdate) {
-            let visibleEditor = vscode.window.visibleTextEditors.find(e => e.document.uri.path === uri.path);
-            if (visibleEditor) {
-                let editor = visibleEditor;
-                await editor.edit(editBuilder => {
-                    for (let iLine = 0; iLine < editor.document.lineCount; iLine++) {
-                        // Find first non-empty line to avoid crashing on empty line with negative position.
-                        let line = editor.document.lineAt(iLine);
-                        if (line.text.length > 0) {
-                            const text = line.text;
-                            const c = line.range.end.character;
-                            // Remove last character of first line and add it back.
-                            editBuilder.delete(new vscode.Range(iLine, c-1, iLine, c));
-                            editBuilder.insert(new vscode.Position(iLine, c), text[c-1]);
-                            break;
+            // With variant, current editor might not be the variant one we request symbols for.
+            for (let fileToUpdate of dependencies) {
+                // TODO: should not use visibleTextEditors as this only impact the currently active one.
+                // saving all files of tree might be a bit invasive though on huge dependencies...
+                let visibleEditor = vscode.window.visibleTextEditors.find(e => e.document.uri.path === fileToUpdate.path);
+                if (visibleEditor) {
+                    console.debug(`Updating symbols of file ${fileToUpdate.path} by triggering a save.`);
+                    let editor = visibleEditor;
+                    await editor.edit(editBuilder => {
+                        for (let iLine = 0; iLine < editor.document.lineCount; iLine++) {
+                            // Find first non-empty line to avoid crashing on empty line with negative position.
+                            let line = editor.document.lineAt(iLine);
+                            if (line.text.length > 0) {
+                                const text = line.text;
+                                const c = line.range.end.character;
+                                // Remove last character of first line and add it back.
+                                editBuilder.delete(new vscode.Range(iLine, c-1, iLine, c));
+                                editBuilder.insert(new vscode.Position(iLine, c), text[c-1]);
+                                break;
+                            }
                         }
-                    }
-                    // All empty lines means no symbols !
-                });
+                        // All empty lines means no symbols !
+                    });
+                }
             }
         }
     }

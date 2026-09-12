@@ -45,6 +45,18 @@ export function decodeCompileShaderData(data: string): Uint8Array {
 
 export const compileShaderRequest = new ProtocolRequestType<CompileShaderParams, CompileShaderResult | null, never, void, CompileShaderRegistrationOptions>('textDocument/compilationResult');
 
+
+// Request to get dependency tree of shader
+export interface DependencyTreeParams extends TextDocumentIdentifier {}
+export interface DependencyTreeRegistrationOptions extends TextDocumentRegistrationOptions {}
+
+export interface DependencyTreeNode {
+    path: string,
+    includes: DependencyTreeNode[],
+}
+
+export const dependencyTreeRequest = new ProtocolRequestType<DependencyTreeParams, DependencyTreeNode, never, void, DependencyTreeRegistrationOptions>('textDocument/dependencyTree');
+
 // Request to dump ast to log.
 export interface DumpAstParams extends TextDocumentIdentifier {}
 export interface DumpAstRegistrationOptions extends TextDocumentRegistrationOptions {}
