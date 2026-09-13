@@ -17,6 +17,7 @@ suite('Server variant Test Suite', () => {
         await activate()!;
         // Load database
         const configUri = await vscode.workspace.findFiles("variant.config.json");
+        assert.ok(configUri.length > 0);
         await vscode.commands.executeCommand("shader-validator.loadVariantDatabaseFromUri", configUri[0]);
         // Validate file
         await openAndShowFile(docUri[0]);

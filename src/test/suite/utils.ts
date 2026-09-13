@@ -49,6 +49,8 @@ export async function testDiagnostic(
 	hasAny: boolean
   ) {
     let diagnostics = vscode.languages.getDiagnostics(docUri);
+    // Remove unecessary diag as they concern region
+    diagnostics = diagnostics.filter(e => e.tags === undefined || e.tags.find(tag => tag == vscode.DiagnosticTag.Unnecessary) === undefined);
     assert.ok((diagnostics.length === 0) && !hasAny, `Diagnostic is ${hasAny ? 'empty' : 'not empty'}: ${JSON.stringify(diagnostics)}`);
 }
 
