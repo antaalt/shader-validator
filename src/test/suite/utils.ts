@@ -37,6 +37,7 @@ export async function activate() {
 export async function openAndShowFile(docUri: vscode.Uri) : Promise<[vscode.TextDocument, vscode.TextEditor]> {
 	let doc = await vscode.workspace.openTextDocument(docUri);
 	let editor = await vscode.window.showTextDocument(doc);
+    await sleep(500); // Sleep a bit to wait for server to process file opening.
 	return [doc, editor];
 }
 
