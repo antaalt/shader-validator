@@ -168,7 +168,9 @@ export async function activate(context: vscode.ExtensionContext)
                 if (requiresRestart) {
                     await server.restart(context);
                 } else {
-                    await server.sendNotification(DidChangeConfigurationNotification.type, undefined);
+                    await server.sendNotification(DidChangeConfigurationNotification.type, {
+                        settings: ""
+                    });
                 }
             }
         })
