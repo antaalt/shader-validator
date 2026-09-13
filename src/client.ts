@@ -462,6 +462,12 @@ export class ShaderLanguageClient {
             default: return false;
         }
     }
+    static isTextDocumentSupported(textDocument: vscode.TextDocument): boolean {
+        return this.isUriSupported(textDocument.uri) && this.isEnabledLangId(textDocument.languageId);
+    }
+    static isUriSupported(uri: vscode.Uri): boolean {
+        return uri.scheme == "file";
+    }
     static getTraceLevel(): Trace {
         let levelString = vscode.workspace.getConfiguration("shader-validator").get<string>("trace.server")!;
         return Trace.fromString(levelString);
@@ -481,7 +487,10 @@ export class ShaderLanguageClient {
         let documentSelector = [];
         for (var langId of ShaderLanguageClient.getSupportedLangId()) {
             if (ShaderLanguageClient.isEnabledLangId(langId)) {
-                documentSelector.push({ language: langId });
+                documentSelector.push({ 
+                    language: langId,
+                    scheme: 'file', // shader-language-server does not support non file scheme (this include untitled file scheme.)
+                });
             }
         }
         const clientOptions: LanguageClientOptions = {

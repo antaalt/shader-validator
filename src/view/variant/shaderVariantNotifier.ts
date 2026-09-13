@@ -98,13 +98,19 @@ export class ShaderVariantNotifier {
         }
         // Prepare entry point symbol cache
         for (let editor of vscode.window.visibleTextEditors) {
-            this.shaderEntryPointList.set(editor.document.uri, []);
+            if (ShaderLanguageClient.isTextDocumentSupported(editor.document)) {
+                this.shaderEntryPointList.set(editor.document.uri, []);
+            }
         }
         context.subscriptions.push(vscode.workspace.onDidOpenTextDocument(document => {
-            this.shaderEntryPointList.set(document.uri, []);
+            if (ShaderLanguageClient.isTextDocumentSupported(document)) {
+                this.shaderEntryPointList.set(document.uri, []);
+            }
         }));
         context.subscriptions.push(vscode.workspace.onDidCloseTextDocument(document => {
-            this.shaderEntryPointList.delete(document.uri);
+            if (ShaderLanguageClient.isTextDocumentSupported(document)) {
+                this.shaderEntryPointList.delete(document.uri);
+            }
         }));
         context.subscriptions.push(vscode.workspace.onDidRenameFiles(document => {
             for (const fileObj of document.files) {
@@ -131,8 +137,9 @@ export class ShaderVariantNotifier {
             // sometimes, its goes in random place in file... 
             // TODO: Should use regex & read diag region instead.
             //let diagnostic = vscode.languages.getDiagnostics().find(([diagUri, diags]) => diagUri === uri);
-            
-            this.goToShaderEntryPoint(uri, entryPointName, true);
+            if (ShaderLanguageClient.isUriSupported(uri)) {
+                this.goToShaderEntryPoint(uri, entryPointName, true);
+            }
         }));
     }
     async notifyVariantChanged(variantFile: ShaderVariantFile, activeVariant: ShaderVariant | null) {
@@ -301,7 +308,9 @@ export class ShaderVariantNotifier {
     }
     updateDecorations(uri?: vscode.Uri) {
         for (let editor of vscode.window.visibleTextEditors) {
-            this.updateDecoration(editor);
+            if (ShaderLanguageClient.isTextDocumentSupported(editor.document)) {
+                this.updateDecoration(editor);
+            }
         }
     }
 }

@@ -118,10 +118,10 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
             }
         }));
         context.subscriptions.push(vscode.commands.registerCommand("shader-validator.addCurrentFile", (): void => {
-            if (vscode.window.activeTextEditor && ShaderLanguageClient.isEnabledLangId(vscode.window.activeTextEditor.document.languageId)) {
+            if (vscode.window.activeTextEditor && ShaderLanguageClient.isTextDocumentSupported(vscode.window.activeTextEditor.document)) {
                 this.open(vscode.window.activeTextEditor.document.uri);
+                this.save();
             }
-            this.save();
         }));
         context.subscriptions.push(vscode.commands.registerCommand("shader-validator.disableActiveShaderVariant", async () => {
             let variant = this.getActiveVariant();
@@ -133,25 +133,27 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
             }
         }));
         context.subscriptions.push(vscode.commands.registerCommand("shader-validator.addShaderVariant", async (uri: vscode.Uri, entryPoint: string, stage: ShaderStage) => {
-            await this.openOrAddVariant(uri, {
-                kind: 'variant',
-                uri: uri,
-                name: entryPoint,
-                isActive: true,
-                stage: {
-                    kind: 'stage',
-                    stage: stage
-                },
-                defines: {
-                    kind: 'defineList',
-                    defines:[]
-                },
-                includes: {
-                    kind: 'includeList',
-                    includes:[]
-                },
-            });
-            this.save();
+            if (ShaderLanguageClient.isUriSupported(uri)) {
+                await this.openOrAddVariant(uri, {
+                    kind: 'variant',
+                    uri: uri,
+                    name: entryPoint,
+                    isActive: true,
+                    stage: {
+                        kind: 'stage',
+                        stage: stage
+                    },
+                    defines: {
+                        kind: 'defineList',
+                        defines:[]
+                    },
+                    includes: {
+                        kind: 'includeList',
+                        includes:[]
+                    },
+                });
+                this.save();
+            }
         }));
         context.subscriptions.push(vscode.commands.registerCommand("shader-validator.addCurrentFileVariant", async () => {
             if (vscode.window.activeTextEditor && ShaderLanguageClient.isEnabledLangId(vscode.window.activeTextEditor.document.languageId)) {
