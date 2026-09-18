@@ -66,6 +66,8 @@ export async function activate(context: vscode.ExtensionContext)
                 console.error("Trying to get compilation result but server is not running");
                 return null;
             }
+        } else {
+            return null;
         }
     }));
     context.subscriptions.push(vscode.commands.registerCommand("shader-validator.compileAndSaveActiveEditor", async () => {

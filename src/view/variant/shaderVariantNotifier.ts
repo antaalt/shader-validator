@@ -190,17 +190,22 @@ export class ShaderVariantNotifier {
         // See https://github.com/microsoft/vscode/issues/108722 (Old one https://github.com/microsoft/vscode/issues/71454)
         
         // Get all dependencies and force their update.
-        let dependencyTree = await this.server.sendRequest(dependencyTreeRequest, {
-            uri: this.server.uriAsString(uri),
-        });
-        function flattenTree(tree: DependencyTreeNode): vscode.Uri[] {
-            let uris = [vscode.Uri.file(tree.path)];
-            for (let include of tree.includes) {
-                uris.push(...flattenTree(include))
+        let dependencies = [uri];
+        try {
+            let dependencyTree = await this.server.sendRequest(dependencyTreeRequest, {
+                uri: this.server.uriAsString(uri),
+            });
+            function flattenTree(tree: DependencyTreeNode): vscode.Uri[] {
+                let uris = [vscode.Uri.file(tree.path)];
+                for (let include of tree.includes) {
+                    uris.push(...flattenTree(include))
+                }
+                return uris;
             }
-            return uris;
+            dependencies = flattenTree(dependencyTree);
+        } catch(e: any) {
+            console.error("Failed to get dependency tree: ", e);
         }
-        let dependencies = flattenTree(dependencyTree);
 
         // Only trigger it if requested by user as it may be a bit invasive.
         let updateSymbolsOnVariantUpdate = vscode.workspace.getConfiguration("shader-validator").get<boolean>("updateSymbolsOnVariantUpdate");

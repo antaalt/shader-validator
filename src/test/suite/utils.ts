@@ -76,10 +76,10 @@ export async function testHasDocumentSymbol(
         'vscode.executeDocumentSymbolProvider',
         docUri
     )) as vscode.DocumentSymbol[] | undefined;
-    assert.ok(symbols, "No document symbol returned for " + docUri.fsPath);
+    assert.ok(symbols, "No document symbol returned for " + docUri);
     const symbolNames = symbols.map((symbol) => symbol.name);
     assert.ok(
         symbolNames.includes(expectedSymbol),
-        `Failed to find symbol ${expectedSymbol} in ${JSON.stringify(symbolNames)}`
+        `Failed to find symbol for file ${docUri} ${expectedSymbol} in ${JSON.stringify(symbolNames)}`
     );
 }
