@@ -80,6 +80,6 @@ export async function testHasDocumentSymbol(
     const symbolNames = symbols.map((symbol) => symbol.name);
     assert.ok(
         symbolNames.includes(expectedSymbol),
-        `Failed to find symbol for file ${docUri} ${expectedSymbol} in ${JSON.stringify(symbolNames)}`
+        `Failed to find symbol '${expectedSymbol}' for file ${docUri} in ${JSON.stringify(symbolNames)}`
     );
 }

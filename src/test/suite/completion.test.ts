@@ -64,6 +64,6 @@ async function testCompletion(
 			return actualLabel.label === expectedItem.label && actualItem.kind === expectedItem.kind;
 		});
 		const itemLabel = actualCompletionList.items.map((item) => item.label);
-		assert.notStrictEqual(item, undefined, `Failed to find completion symbols for file ${docUri} ${expectedItem.label} in ${JSON.stringify(itemLabel)}`);
+		assert.notStrictEqual(item, undefined, `Failed to find completion symbols '${expectedItem.label}' for file ${docUri} in ${JSON.stringify(itemLabel)}`);
 	});
 }

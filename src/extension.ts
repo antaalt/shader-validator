@@ -57,11 +57,16 @@ export async function activate(context: vscode.ExtensionContext)
     context.subscriptions.push(vscode.commands.registerCommand("shader-validator.compileShader", async (uri: vscode.Uri, compilationType?: CompilationType) => {
         if (ShaderLanguageClient.isUriSupported(uri)) {
             if (server.getServerStatus() === ServerStatus.running) {
-                let compilationResult = await server.sendRequest(compileShaderRequest, {
-                    uri: server.uriAsString(uri),
-                    compilationType: compilationType
-                });
-                return compilationResult;
+                try {
+                    let compilationResult = await server.sendRequest(compileShaderRequest, {
+                        uri: server.uriAsString(uri),
+                        compilationType: compilationType
+                    });
+                    return compilationResult;
+                } catch(e: any) {
+                    console.error("Failed to request compilation result: ", e);
+                    return null;
+                }
             } else {
                 console.error("Trying to get compilation result but server is not running");
                 return null;
