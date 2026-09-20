@@ -24,7 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Web test in ci splitted from main task to speed up ci.
 - Ask user to install wasm runner only when creating wasi server.
-- Using [shader-language-server v1.6.1](https://github.com/antaalt/shader-sense/releases/tag/v1.6.1) with dependency tree request and few fixes.
+- Using [shader-language-server v1.6.2](https://github.com/antaalt/shader-sense/releases/tag/v1.6.2) with dependency tree request and few fixes.
 
 ## [1.5.0] - 2026-09-07
 
