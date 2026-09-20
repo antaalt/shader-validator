@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [unreleased]
 
+### Added
+
+- New dependency tree view listing the files included by the current shader, as resolved by the server.
+- New settings for overriding GLSL profile and version `shader-validator.glsl.version.profile` and `shader-validator.glsl.version.version`.
+- Update all dependencies of variant using dependencyTree request on variant change.
+
+### Fixed
+
+- Check for uri scheme.
+- Entry point was decorating all files instead of only variant file.
+
+### Changed
+
+- Web test in ci splitted from main task to speed up ci.
+- Ask user to install wasm runner only when creating wasi server.
+- Using [shader-language-server v1.6.0](https://github.com/antaalt/shader-sense/releases/tag/v1.6.0) with dependency tree request and few fixes.
+
 ## [1.5.0] - 2026-09-07
 
 ### Added
@@ -455,7 +472,8 @@ Initial release of this extension using [shader-language-server v0.0.1](https://
 
 
 <!-- Below are link for above changelog titles-->
-[unreleased]: https://github.com/antaalt/shader-validator/compare/v1.5.0...HEAD
+[unreleased]: https://github.com/antaalt/shader-validator/compare/v1.6.0...HEAD
+[1.6.0]: https://github.com/antaalt/shader-validator/compare/v1.5.0...v1.6.0
 [1.5.0]: https://github.com/antaalt/shader-validator/compare/v1.4.4...v1.5.0
 [1.4.4]: https://github.com/antaalt/shader-validator/compare/v1.4.3...v1.4.4
 [1.4.3]: https://github.com/antaalt/shader-validator/compare/v1.4.2...v1.4.3
