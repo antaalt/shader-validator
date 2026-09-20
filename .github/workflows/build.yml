@@ -60,7 +60,7 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -76,14 +76,14 @@ jobs:
       - name: Display requested server version
         run: echo '${{ steps.package_json.outputs.server_version }}'
       - name: Download native shader language server.
-        uses: robinraju/release-downloader@v1.11
+        uses: robinraju/release-downloader@v1.13
         if: ${{ matrix.npm-target != 'wasi' && matrix.npm-target != 'web' }}
         with:
           repository: 'antaalt/shader-sense'
           tag: ${{ format('v{0}', steps.package_json.outputs.server_version) }}
           fileName: 'shader-language-server-${{ matrix.rust-target }}.zip'
       - name: Download wasi shader language server.
-        uses: robinraju/release-downloader@v1.11
+        uses: robinraju/release-downloader@v1.13
         with:
           repository: 'antaalt/shader-sense'
           tag: ${{ format('v{0}', steps.package_json.outputs.server_version) }}
@@ -135,7 +135,7 @@ jobs:
         run: vsce package ${{ inputs.prerelease && '--pre-release' || '' }} --target ${{ matrix.npm-target }} --out shader-validator-${{ matrix.npm-target }}.vsix
           
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: shader-validator-${{ matrix.npm-target }}.vsix
           path: shader-validator-${{ matrix.npm-target }}.vsix

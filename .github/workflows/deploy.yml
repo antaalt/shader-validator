@@ -34,9 +34,9 @@ jobs:
     # Handle secrets: https://docs.github.com/fr/actions/security-guides/using-secrets-in-github-actions
     # Get tokens: https://code.visualstudio.com/api/working-with-extensions/publishing-extension#get-a-personal-access-token
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Download VSIX
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: shader-validator-${{ matrix.npm-target }}.vsix
       - name: Publish to Open VSX Registry
