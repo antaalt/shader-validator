@@ -13,24 +13,15 @@ export interface ShaderDependency {
     isRecursive: boolean,
 }
 
-// The server sends plain file system paths, not uris. Rebuild them with the scheme of the workspace
-// so that the tree keeps working on the web, where there is no file system behind the workspace.
-function resolveDependencyUri(filePath: string): vscode.Uri {
-    let fileUri = vscode.Uri.file(filePath);
-    let workspaceFolder = vscode.workspace.workspaceFolders?.at(0);
-    if (workspaceFolder && workspaceFolder.uri.scheme !== 'file') {
-        return workspaceFolder.uri.with({ path: fileUri.path });
-    }
-    return fileUri;
-}
-
-function toShaderDependency(node: DependencyTreeNode, ancestors: string[]): ShaderDependency {
+function toShaderDependency(server: ShaderLanguageClient, node: DependencyTreeNode, ancestors: string[]): ShaderDependency {
     // Include guards make a file including itself indirectly perfectly legal, so stop expanding
     // instead of recursing forever.
-    let isRecursive = ancestors.includes(node.path);
+    let isRecursive = ancestors.includes(node.url);
     return {
-        uri: resolveDependencyUri(node.path),
-        includes: isRecursive ? [] : node.includes.map(include => toShaderDependency(include, [...ancestors, node.path])),
+        // Uris live in the server namespace, which is the mounted one under WASI, so they have to
+        // go through the client converter, the exact inverse of the uriAsString used to request it.
+        uri: server.stringAsUri(node.url),
+        includes: isRecursive ? [] : node.includes.map(include => toShaderDependency(server, include, [...ancestors, node.url])),
         isRecursive: isRecursive,
     };
 }
@@ -129,7 +120,7 @@ export class ShaderDependencyTreeDataProvider implements vscode.TreeDataProvider
             let dependencyTree = await this.server.sendRequest(dependencyTreeRequest, {
                 uri: this.server.uriAsString(activeTextEditor.document.uri),
             });
-            return [toShaderDependency(dependencyTree, []), undefined];
+            return [toShaderDependency(this.server, dependencyTree, []), undefined];
         } catch(error: any) {
             const message = error instanceof Error ? error.message : `${error}`;
             console.error("Failed to get dependency tree: ", message);

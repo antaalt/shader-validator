@@ -1,4 +1,5 @@
 import {
+    DocumentUri,
     ProtocolRequestType,
     TextDocumentIdentifier, 
     TextDocumentRegistrationOptions,
@@ -51,7 +52,7 @@ export interface DependencyTreeParams extends TextDocumentIdentifier {}
 export interface DependencyTreeRegistrationOptions extends TextDocumentRegistrationOptions {}
 
 export interface DependencyTreeNode {
-    path: string,
+    url: DocumentUri,
     includes: DependencyTreeNode[],
 }
 

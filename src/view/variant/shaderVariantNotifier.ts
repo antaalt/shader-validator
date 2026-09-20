@@ -195,8 +195,11 @@ export class ShaderVariantNotifier {
             let dependencyTree = await this.server.sendRequest(dependencyTreeRequest, {
                 uri: this.server.uriAsString(uri),
             });
+            // Uris are in the server namespace, which is the mounted one under WASI, so they
+            // have to go through the client converter to be matched against opened documents.
+            let server = this.server;
             function flattenTree(tree: DependencyTreeNode): vscode.Uri[] {
-                let uris = [vscode.Uri.file(tree.path)];
+                let uris = [server.stringAsUri(tree.url)];
                 for (let include of tree.includes) {
                     uris.push(...flattenTree(include))
                 }
