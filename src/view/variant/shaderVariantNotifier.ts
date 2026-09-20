@@ -203,8 +203,9 @@ export class ShaderVariantNotifier {
                 return uris;
             }
             dependencies = flattenTree(dependencyTree);
-        } catch(e: any) {
-            console.error("Failed to get dependency tree: ", e);
+        } catch(error) {
+            const message = error instanceof Error ? error.message : `${error}`;
+            console.error("Failed to get dependency tree: ", message);
         }
 
         // Only trigger it if requested by user as it may be a bit invasive.

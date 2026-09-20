@@ -2,10 +2,10 @@
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
 
-import { ServerPlatform, ServerStatus, ShaderLanguageClient, ServerVersion } from './client';
+import { ServerStatus, ShaderLanguageClient } from './client';
 import { CompilationType, compileShaderRequest, CompileShaderResult, decodeCompileShaderData, dumpAstRequest, dumpDependencyRequest, getCompiledShaderExtension } from './request';
 import { ShaderVariantTreeDataProvider } from './view/variant/shaderVariantTreeView';
-import { DidChangeConfigurationNotification, LanguageClient, Trace } from 'vscode-languageclient';
+import { DidChangeConfigurationNotification, Trace } from 'vscode-languageclient';
 import { ShaderStatusBar } from './view/status/shaderStatusBar';
 
 export let sidebar: ShaderVariantTreeDataProvider;
@@ -63,8 +63,9 @@ export async function activate(context: vscode.ExtensionContext)
                         compilationType: compilationType
                     });
                     return compilationResult;
-                } catch(e: any) {
-                    console.error("Failed to request compilation result: ", e);
+                } catch(error: any) {
+                    const message = error instanceof Error ? error.message : `${error}`;
+                    console.error("Failed to request compilation result: ", message);
                     return null;
                 }
             } else {
