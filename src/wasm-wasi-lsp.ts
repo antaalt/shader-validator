@@ -145,36 +145,36 @@ export function createUriConverters(): { code2Protocol: (value: vscode.Uri) => s
 	if (folders === undefined || folders.length === 0) {
 		return undefined;
 	}
+	// Both sides of a mapping must be built the same way, without a trailing slash, so that the
+	// separator always comes from the remainder of the uri. With a trailing slash on one side only,
+	// the substitution duplicates it on the way out and drops it on the way back. That stays
+	// invisible for uris the server echoes back, as the two cancel out, but it corrupts the ones
+	// the server builds itself, such as the `textDocument/dependencyTree` result.
+	const asPrefix = (uri: string) => uri.endsWith('/') ? uri.slice(0, -1) : uri;
 	const c2p: Map<string, string> = new Map();
 	const p2c: Map<string, string> = new Map();
 	if (folders.length === 1) {
-		const folder = folders[0];
-		c2p.set(folder.uri.toString(), 'file:///workspace/');
-		p2c.set('file:///workspace/', folder.uri.toString());
+		const uri = asPrefix(folders[0].uri.toString());
+		c2p.set(uri, 'file:///workspace');
+		p2c.set('file:///workspace', uri);
 	} else {
 		for (const folder of folders) {
-			const uri = folder.uri.toString();
+			const uri = asPrefix(folder.uri.toString());
 			c2p.set(uri, `file:///workspace/${folder.name}`);
 			p2c.set(`file:///workspace/${folder.name}`, uri);
 		}
 	}
-	return {
-		code2Protocol: (uri: vscode.Uri) => {
-			const str = uri.toString();
-			for (const key of c2p.keys()) {
-				if (str.startsWith(key)) {
-					return str.replace(key, c2p.get(key) ?? '');
-				}
+	// Match on path boundaries only, else a folder named `shader` also captures `shader-sense`.
+	const substitute = (value: string, mapping: Map<string, string>) => {
+		for (const [prefix, replacement] of mapping) {
+			if (value === prefix || value.startsWith(`${prefix}/`)) {
+				return `${replacement}${value.slice(prefix.length)}`;
 			}
-			return str;
-		},
-		protocol2Code: (value: string) => {
-			for (const key of p2c.keys()) {
-				if (value.startsWith(key)) {
-					return vscode.Uri.parse(value.replace(key, p2c.get(key) ?? ''));
-				}
-			}
-			return vscode.Uri.parse(value);
 		}
+		return value;
+	};
+	return {
+		code2Protocol: (uri: vscode.Uri) => substitute(uri.toString(), c2p),
+		protocol2Code: (value: string) => vscode.Uri.parse(substitute(value, p2c))
 	};
 }
