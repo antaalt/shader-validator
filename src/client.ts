@@ -356,11 +356,13 @@ export class ShaderLanguageClient {
     private serverVersion: ServerVersion;
     private serverStatus: ServerStatus = ServerStatus.stopped;
     private statusChangedCallback: (status: ServerStatus) => void;
+    private static isWebTest: boolean;
 
     constructor(context: vscode.ExtensionContext) {
         this.statusChangedCallback = (status) => {};
         this.serverVersion = new ServerVersion(context.extensionUri);
         this.errorHandler = new ShaderErrorHandler(this);
+        ShaderLanguageClient.isWebTest = isRunningOnWeb() && context.extensionMode === vscode.ExtensionMode.Test;
     }
 
     onStatusChanged(statusChangedCallback: (status: ServerStatus) => void) {
@@ -466,7 +468,8 @@ export class ShaderLanguageClient {
         return this.isUriSupported(textDocument.uri) && this.isEnabledLangId(textDocument.languageId);
     }
     static isUriSupported(uri: vscode.Uri): boolean {
-        return uri.scheme == "file";
+        // On web test, vscode uses custom url scheme
+        return uri.scheme == "file" || ShaderLanguageClient.isWebTest;
     }
     static getTraceLevel(): Trace {
         let levelString = vscode.workspace.getConfiguration("shader-validator").get<string>("trace.server")!;
@@ -489,7 +492,9 @@ export class ShaderLanguageClient {
             if (ShaderLanguageClient.isEnabledLangId(langId)) {
                 documentSelector.push({ 
                     language: langId,
-                    scheme: 'file', // shader-language-server does not support non file scheme (this include untitled file scheme.)
+                    // shader-language-server does not support non file scheme (this include untitled file scheme.)
+                    // On web test, custom scheme are used (vscode-test-web), so ignore in test.
+                    scheme: ShaderLanguageClient.isWebTest ? undefined : 'file',
                 });
             }
         }
