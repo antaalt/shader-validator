@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [unreleased]
 
+## [1.6.0] - 2026-09-20
+
 ### Added
 
 - New dependency tree view listing the files included by the current shader, as resolved by the server.
