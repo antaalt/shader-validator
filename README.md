@@ -25,6 +25,7 @@ Currently, it support some features and languages:
 -   **[Inlay hints](#inlay-hints)**: Add hints to function calls.
 -   **[Variant](#variants)**: Define multiple shader variant entry point & quickly switch between them. 
 -   **[Regions](#regions)**: Detect inactive regions in code due to preprocessor and grey them out.
+-   **[Dependencies](#dependencies)**: Inspect the tree of files included by the current shader.
 
 |Language|Syntax Highlighting|Diagnostics |User symbols |Built-in symbols|Regions|Format|
 |--------|-------------------|------------|-------------|----------------|-------|------|
@@ -124,6 +125,12 @@ It is also possible to create a variant list from a JSON file and load it direct
 ]
 ```
 
+### Dependencies
+
+Inspect the tree of files included by the currently opened shader from the dedicated window. It is resolved by the server, so it follows the include paths & defines of the active [variant](#variants) and only lists the includes that are actually compiled in.
+
+The tree follows the active editor and refreshes as you type. Clicking an entry opens the file. A file that is already part of its own include chain is marked as `already included` and not expanded again.
+
 ### Regions
 
 Grey out inactive regions depending on currently declared preprocessor & filter symbols.
@@ -182,6 +189,7 @@ This extension contributes the following settings:
 *   `shader-validator.addCurrentFileVariant`: Add a variant to the current file.
 *   `shader-validator.addShaderVariant`: Add a variant to the current file.
 *   `shader-validator.disableActiveShaderVariant`: Disable active variant.
+*   `shader-validator.refreshDependencyTree`: Refresh the dependency tree of the current file.
 *   `shader-validator.showLogs`: Open the extension log window.
 *   `shader-validator.dumpDependency`: Print dependency tree in logs. mostly for debug.
 *   `shader-validator.dumpAst`: Print internal ast in logs. mostly for debug.

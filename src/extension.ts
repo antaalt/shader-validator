@@ -7,6 +7,7 @@ import { CompilationType, compileShaderRequest, CompileShaderResult, decodeCompi
 import { ShaderVariantTreeDataProvider } from './view/variant/shaderVariantTreeView';
 import { DidChangeConfigurationNotification, Trace } from 'vscode-languageclient';
 import { ShaderStatusBar } from './view/status/shaderStatusBar';
+import { ShaderDependencyTreeDataProvider } from './view/dependency/shaderDependencyTreeView';
 
 export let sidebar: ShaderVariantTreeDataProvider;
 
@@ -23,6 +24,10 @@ export async function activate(context: vscode.ExtensionContext)
     sidebar = new ShaderVariantTreeDataProvider(context, server);
     context.subscriptions.push(sidebar);
 
+    // Create dependency tree view
+    let dependencyTree = new ShaderDependencyTreeDataProvider(context, server);
+    context.subscriptions.push(dependencyTree);
+
     // Create status bar
     let statusBar = new ShaderStatusBar(context, server);
     context.subscriptions.push(statusBar);
@@ -32,15 +37,18 @@ export async function activate(context: vscode.ExtensionContext)
         await server.start(context, updateServerUsed);
         statusBar.updateStatusBar();
         sidebar.onServerStart();
+        dependencyTree.requestRefresh();
     }));
     context.subscriptions.push(vscode.commands.registerCommand("shader-validator.stopServer", async () => {
         await server.stop();
         statusBar.updateStatusBar();
+        dependencyTree.requestRefresh();
     }));
     context.subscriptions.push(vscode.commands.registerCommand("shader-validator.restartServer", async () => {
         await server.restart(context);
         statusBar.updateStatusBar();
         sidebar.onServerStart();
+        dependencyTree.requestRefresh();
     }));
     context.subscriptions.push(vscode.commands.registerCommand("shader-validator.showLogs", () => {
         const level = ShaderLanguageClient.getTraceLevel();
@@ -180,6 +188,8 @@ export async function activate(context: vscode.ExtensionContext)
                         settings: ""
                     });
                 }
+                // Include paths & defines are resolved by the server, they affect the dependency tree.
+                dependencyTree.requestRefresh();
             }
         })
     );

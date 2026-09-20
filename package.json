@@ -602,6 +602,12 @@
         "title": "Compile the active editor and prompt for save.",
         "category": "Shader validator",
         "icon": "$(run-view-icon)"
+      },
+      {
+        "command": "shader-validator.refreshDependencyTree",
+        "title": "Refresh dependency tree",
+        "category": "Shader validator",
+        "icon": "$(refresh)"
       }
     ],
     "menus": {
@@ -620,6 +626,11 @@
         {
           "command": "shader-validator.loadVariantDatabase",
           "when": "view == shader-validator-variants",
+          "group": "navigation"
+        },
+        {
+          "command": "shader-validator.refreshDependencyTree",
+          "when": "view == shader-validator-dependencies",
           "group": "navigation"
         }
       ],
@@ -665,6 +676,11 @@
         {
           "id": "shader-validator-variants",
           "name": "variants",
+          "icon": "res/icons/hlsl-icon.svg"
+        },
+        {
+          "id": "shader-validator-dependencies",
+          "name": "dependencies",
           "icon": "res/icons/hlsl-icon.svg"
         }
       ]
