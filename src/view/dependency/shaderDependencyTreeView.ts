@@ -2,9 +2,14 @@ import * as vscode from 'vscode';
 import path from 'path';
 import { ServerStatus, ShaderLanguageClient } from '../../client';
 import { DependencyTreeNode, dependencyTreeRequest } from '../../request';
+import { ShaderVariantTreeDataProvider } from '../variant/shaderVariantTreeView';
 
 // Delay before refreshing the tree after an edit, to avoid requesting the server on every keystroke.
 const refreshDebounceInMs : number = 500;
+
+const followActiveVariantKey : string = 'shader-validator.dependency-tree-follow-active-variant-key';
+// Drives which of the two toggle buttons is visible in the view title.
+const followActiveVariantContextKey : string = 'shader-validator.dependencyTreeFollowsActiveVariant';
 
 export interface ShaderDependency {
     uri: vscode.Uri,
@@ -39,24 +44,51 @@ export class ShaderDependencyTreeDataProvider implements vscode.TreeDataProvider
     readonly onDidChangeTreeData: vscode.Event<ShaderDependency | undefined | void> = this.onDidChangeTreeDataEmitter.event;
 
     private server: ShaderLanguageClient;
+    private variants: ShaderVariantTreeDataProvider;
     private tree: vscode.TreeView<ShaderDependency>;
     private root: ShaderDependency | null = null;
+    // When set, inspect the active variant file instead of following the active editor.
+    private followActiveVariant: boolean;
     // Increased on every refresh so that a slow request cannot overwrite the result of a newer one.
     private refreshId: number = 0;
     private refreshTimeout: ReturnType<typeof setTimeout> | undefined = undefined;
 
-    constructor(context: vscode.ExtensionContext, server: ShaderLanguageClient) {
+    constructor(context: vscode.ExtensionContext, server: ShaderLanguageClient, variants: ShaderVariantTreeDataProvider) {
         this.server = server;
+        this.variants = variants;
+        this.followActiveVariant = context.workspaceState.get<boolean>(followActiveVariantKey, false);
         this.tree = vscode.window.createTreeView<ShaderDependency>("shader-validator-dependencies", {
             treeDataProvider: this
         });
         context.subscriptions.push(this.tree);
 
+        const setFollowActiveVariant = async (followActiveVariant: boolean) => {
+            this.followActiveVariant = followActiveVariant;
+            await context.workspaceState.update(followActiveVariantKey, followActiveVariant);
+            await vscode.commands.executeCommand('setContext', followActiveVariantContextKey, followActiveVariant);
+            this.requestRefresh();
+        };
+        vscode.commands.executeCommand('setContext', followActiveVariantContextKey, this.followActiveVariant);
+
+        context.subscriptions.push(vscode.commands.registerCommand("shader-validator.followActiveVariantInDependencyTree", async () => {
+            await setFollowActiveVariant(true);
+        }));
+        context.subscriptions.push(vscode.commands.registerCommand("shader-validator.followActiveEditorInDependencyTree", async () => {
+            await setFollowActiveVariant(false);
+        }));
         context.subscriptions.push(vscode.commands.registerCommand("shader-validator.refreshDependencyTree", async () => {
             await this.refresh();
         }));
+        context.subscriptions.push(this.variants.onDidChangeActiveVariant(() => {
+            if (this.followActiveVariant) {
+                this.requestRefresh();
+            }
+        }));
         context.subscriptions.push(vscode.window.onDidChangeActiveTextEditor(() => {
-            this.requestRefresh();
+            // Staying on the variant file is the whole point of the toggle, so ignore the editor.
+            if (!this.followActiveVariant) {
+                this.requestRefresh();
+            }
         }));
         context.subscriptions.push(vscode.workspace.onDidSaveTextDocument((document: vscode.TextDocument) => {
             if (this.isInTree(document.uri)) {
@@ -101,24 +133,45 @@ export class ShaderDependencyTreeDataProvider implements vscode.TreeDataProvider
         if (root) {
             let dependencies = new Set<string>;
             collectDependencies(root, dependencies);
-            this.tree.description = `${dependencies.size} ${dependencies.size > 1 ? "dependencies" : "dependency"}`;
+            let count = `${dependencies.size} ${dependencies.size > 1 ? "dependencies" : "dependency"}`;
+            let activeVariant = this.followActiveVariant ? this.variants.getActiveVariant() : null;
+            this.tree.description = activeVariant ? `${activeVariant.name} - ${count}` : count;
         } else {
             this.tree.description = undefined;
         }
         this.onDidChangeTreeDataEmitter.fire();
     }
 
-    private async requestDependencyTree(): Promise<[ShaderDependency | null, string | undefined]> {
+    // The file whose tree is displayed, either the active variant one or the active editor one.
+    private getInspectedUri(): [vscode.Uri | null, string | undefined] {
+        if (this.followActiveVariant) {
+            let activeVariant = this.variants.getActiveVariant();
+            if (!activeVariant) {
+                return [null, "No active shader variant. Activate one from the variants view."];
+            }
+            if (!ShaderLanguageClient.isUriSupported(activeVariant.uri)) {
+                return [null, undefined];
+            }
+            return [activeVariant.uri, undefined];
+        }
         const activeTextEditor = vscode.window.activeTextEditor;
         if (!activeTextEditor || !ShaderLanguageClient.isTextDocumentSupported(activeTextEditor.document)) {
             return [null, undefined]; // Let the welcome view explain there is nothing to show.
+        }
+        return [activeTextEditor.document.uri, undefined];
+    }
+
+    private async requestDependencyTree(): Promise<[ShaderDependency | null, string | undefined]> {
+        let [inspectedUri, inspectedMessage] = this.getInspectedUri();
+        if (!inspectedUri) {
+            return [null, inspectedMessage];
         }
         if (this.server.getServerStatus() !== ServerStatus.running) {
             return [null, "Server is not running."];
         }
         try {
             let dependencyTree = await this.server.sendRequest(dependencyTreeRequest, {
-                uri: this.server.uriAsString(activeTextEditor.document.uri),
+                uri: this.server.uriAsString(inspectedUri),
             });
             return [toShaderDependency(this.server, dependencyTree, []), undefined];
         } catch(error: any) {
@@ -129,14 +182,16 @@ export class ShaderDependencyTreeDataProvider implements vscode.TreeDataProvider
     }
 
     private isInTree(uri: vscode.Uri): boolean {
-        // An edit in the active file is relevant even if we failed to compute its tree.
-        if (vscode.window.activeTextEditor?.document.uri.path === uri.path) {
-            return true;
-        }
         function isInNode(node: ShaderDependency): boolean {
             return node.uri.path === uri.path || node.includes.some(isInNode);
         }
-        return this.root !== null && isInNode(this.root);
+        if (this.root !== null) {
+            return isInNode(this.root);
+        }
+        // Without a tree to compare against, follow the inspected file so that one which failed
+        // to resolve can still recover as the user edits it.
+        let [inspectedUri, _message] = this.getInspectedUri();
+        return inspectedUri !== null && inspectedUri.path === uri.path;
     }
 
     public getTreeItem(element: ShaderDependency): vscode.TreeItem {

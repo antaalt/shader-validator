@@ -608,6 +608,18 @@
         "title": "Refresh dependency tree",
         "category": "Shader validator",
         "icon": "$(refresh)"
+      },
+      {
+        "command": "shader-validator.followActiveVariantInDependencyTree",
+        "title": "Inspect the active variant file",
+        "category": "Shader validator",
+        "icon": "$(pin)"
+      },
+      {
+        "command": "shader-validator.followActiveEditorInDependencyTree",
+        "title": "Inspect the active editor file",
+        "category": "Shader validator",
+        "icon": "$(pinned)"
       }
     ],
     "menus": {
@@ -629,9 +641,19 @@
           "group": "navigation"
         },
         {
+          "command": "shader-validator.followActiveVariantInDependencyTree",
+          "when": "view == shader-validator-dependencies && !shader-validator.dependencyTreeFollowsActiveVariant",
+          "group": "navigation@1"
+        },
+        {
+          "command": "shader-validator.followActiveEditorInDependencyTree",
+          "when": "view == shader-validator-dependencies && shader-validator.dependencyTreeFollowsActiveVariant",
+          "group": "navigation@1"
+        },
+        {
           "command": "shader-validator.refreshDependencyTree",
           "when": "view == shader-validator-dependencies",
-          "group": "navigation"
+          "group": "navigation@2"
         }
       ],
       "view/item/context": [

@@ -129,6 +129,8 @@ It is also possible to create a variant list from a JSON file and load it direct
 
 Inspect the tree of files included by the currently opened shader from the dedicated window. It is resolved by the server, so it follows the include paths & defines of the active [variant](#variants) and only lists the includes that are actually compiled in.
 
+Use the pin button in the view title to inspect the active [variant](#variants) file instead of the opened one. This keeps the view on the entry point that is actually compiled while you browse through its includes, rather than switching to each file you open.
+
 The tree follows the active editor and refreshes as you type. Clicking an entry opens the file. A file that is already part of its own include chain is marked as `already included` and not expanded again.
 
 ### Regions
@@ -190,6 +192,8 @@ This extension contributes the following settings:
 *   `shader-validator.addShaderVariant`: Add a variant to the current file.
 *   `shader-validator.disableActiveShaderVariant`: Disable active variant.
 *   `shader-validator.refreshDependencyTree`: Refresh the dependency tree of the current file.
+*   `shader-validator.followActiveVariantInDependencyTree`: Inspect the active variant file in the dependency view.
+*   `shader-validator.followActiveEditorInDependencyTree`: Inspect the active editor file in the dependency view.
 *   `shader-validator.showLogs`: Open the extension log window.
 *   `shader-validator.dumpDependency`: Print dependency tree in logs. mostly for debug.
 *   `shader-validator.dumpAst`: Print internal ast in logs. mostly for debug.

@@ -13,6 +13,9 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
     private onDidChangeTreeDataEmitter: vscode.EventEmitter<ShaderVariantNode | undefined | void> = new vscode.EventEmitter<ShaderVariantNode | undefined | void>();
     readonly onDidChangeTreeData: vscode.Event<ShaderVariantNode | undefined | void> = this.onDidChangeTreeDataEmitter.event;
 
+    private onDidChangeActiveVariantEmitter: vscode.EventEmitter<ShaderVariant | null> = new vscode.EventEmitter<ShaderVariant | null>();
+    readonly onDidChangeActiveVariant: vscode.Event<ShaderVariant | null> = this.onDidChangeActiveVariantEmitter.event;
+
     private notifier: ShaderVariantNotifier;
     private files: UriMap<ShaderVariantFile>;
     private database: UriMap<UriMap<ShaderVariantFile>>;
@@ -440,6 +443,7 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
     }
     public async updateActiveVariant(file: ShaderVariantFile, node: ShaderVariant | null) {
         await this.notifier.notifyVariantChanged(file, node);
+        this.onDidChangeActiveVariantEmitter.fire(node);
     }
 
     public getTreeItem(element: ShaderVariantNode): vscode.TreeItem {

@@ -25,7 +25,7 @@ export async function activate(context: vscode.ExtensionContext)
     context.subscriptions.push(sidebar);
 
     // Create dependency tree view
-    let dependencyTree = new ShaderDependencyTreeDataProvider(context, server);
+    let dependencyTree = new ShaderDependencyTreeDataProvider(context, server, sidebar);
     context.subscriptions.push(dependencyTree);
 
     // Create status bar
