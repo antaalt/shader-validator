@@ -40,7 +40,7 @@ jobs:
         with:
           name: shader-validator-${{ matrix.npm-target }}.vsix
       - name: Publish to Open VSX Registry
-        uses: HaaLeo/publish-vscode-extension@v1
+        uses: HaaLeo/publish-vscode-extension@v2
         id: publishToOpenVSX
         with:
           skipDuplicate: true # In case script is relaunched only for the second marketplace, fail silently this one
@@ -49,7 +49,7 @@ jobs:
           preRelease: ${{ github.event.release.prerelease }}
           # No need to specify target as we are publishing pre-packaged package.
       - name: Publish to Visual Studio Marketplace
-        uses: HaaLeo/publish-vscode-extension@v1
+        uses: HaaLeo/publish-vscode-extension@v2
         # Dont publish pre-release here, vscode marketplace dont support semver != major.minor.patch
         if: ${{ !github.event.release.prerelease }}
         with:
