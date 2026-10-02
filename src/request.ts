@@ -52,7 +52,7 @@ export interface DependencyTreeParams extends TextDocumentIdentifier {}
 export interface DependencyTreeRegistrationOptions extends TextDocumentRegistrationOptions {}
 
 export interface DependencyTreeNode {
-    url: DocumentUri,
+    uri: DocumentUri,
     includes: DependencyTreeNode[],
 }
 

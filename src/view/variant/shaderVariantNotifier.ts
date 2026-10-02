@@ -5,7 +5,7 @@ import { DocumentUri, ProtocolNotificationType, ProtocolRequestType, TextDocumen
 import { DependencyTreeNode, dependencyTreeRequest } from '../../request';
 
 export interface ShaderVariantSerialized {
-    url: DocumentUri,
+    uri: DocumentUri,
     shadingLanguage: string,
     entryPoint: string,
     stage: string | null,
@@ -18,9 +18,9 @@ export type ShaderEntryPoint = {
     range: vscode.Range,
 };
 
-function shaderVariantToSerialized(url: DocumentUri, languageId: string, e: ShaderVariant) : ShaderVariantSerialized {
+function shaderVariantToSerialized(uri: DocumentUri, languageId: string, e: ShaderVariant) : ShaderVariantSerialized {
     return {
-        url: url,
+        uri,
         shadingLanguage: languageId,
         entryPoint: e.name,
         stage: (e.stage.stage === ShaderStage.auto) ? null : ShaderStage[e.stage.stage],
@@ -199,7 +199,7 @@ export class ShaderVariantNotifier {
             // have to go through the client converter to be matched against opened documents.
             let server = this.server;
             function flattenTree(tree: DependencyTreeNode): vscode.Uri[] {
-                let uris = [server.stringAsUri(tree.url)];
+                let uris = [server.stringAsUri(tree.uri)];
                 for (let include of tree.includes) {
                     uris.push(...flattenTree(include))
                 }

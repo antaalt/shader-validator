@@ -66,7 +66,7 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
                         let file = this.getNodeVariantFile(variant);
                         if (file) {
                             // Need to unset other possibles active ones to keep only one entry point active.
-                            for (let [url, file] of this.files) {
+                            for (let [uri, file] of this.files) {
                                 for (let otherVariant of file.variants) {
                                     if (otherVariant.isActive) {
                                         otherVariant.isActive = false;
@@ -75,7 +75,7 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
                                 }
                             }
                             for (let [databaseUrl, database] of this.database) {
-                                for (let [url, file] of database) {
+                                for (let [uri, file] of database) {
                                     for (let otherVariant of file.variants) {
                                         if (otherVariant.isActive) {
                                             otherVariant.isActive = false;
@@ -242,7 +242,7 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
                 let file = this.getNodeVariantFile(node);
                 if (file) {
                     // Need to unset other possibles active ones to keep only one entry point active.
-                    for (let [url, file] of this.files) {
+                    for (let [uri, file] of this.files) {
                         for (let otherVariant of file.variants) {
                             if (otherVariant.isActive) {
                                 otherVariant.isActive = false;
@@ -251,7 +251,7 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
                         }
                     }
                     for (let [databaseUrl, database] of this.database) {
-                        for (let [url, file] of database) {
+                        for (let [uri, file] of database) {
                             for (let otherVariant of file.variants) {
                                 if (otherVariant.isActive) {
                                     otherVariant.isActive = false;
@@ -588,7 +588,7 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
         if (variant) {
             if (variant.isActive) {
                 // Need to unset other possibles active ones to keep only one entry point active.
-                for (let [url, file] of this.files) {
+                for (let [uri, file] of this.files) {
                     for (let otherVariant of file.variants) {
                         if (otherVariant.isActive) {
                             otherVariant.isActive = false;
@@ -597,7 +597,7 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
                     }
                 }
                 for (let [databaseUrl, database] of this.database) {
-                    for (let [url, file] of database) {
+                    for (let [uri, file] of database) {
                         for (let otherVariant of file.variants) {
                             if (otherVariant.isActive) {
                                 otherVariant.isActive = false;

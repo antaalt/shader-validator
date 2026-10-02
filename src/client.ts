@@ -468,7 +468,7 @@ export class ShaderLanguageClient {
         return this.isUriSupported(textDocument.uri) && this.isEnabledLangId(textDocument.languageId);
     }
     static isUriSupported(uri: vscode.Uri): boolean {
-        // On web test, vscode uses custom url scheme
+        // On web test, vscode uses custom uri scheme
         return uri.scheme == "file" || ShaderLanguageClient.isWebTest;
     }
     static getTraceLevel(): Trace {

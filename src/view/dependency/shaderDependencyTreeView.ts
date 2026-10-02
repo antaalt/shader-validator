@@ -21,12 +21,12 @@ export interface ShaderDependency {
 function toShaderDependency(server: ShaderLanguageClient, node: DependencyTreeNode, ancestors: string[]): ShaderDependency {
     // Include guards make a file including itself indirectly perfectly legal, so stop expanding
     // instead of recursing forever.
-    let isRecursive = ancestors.includes(node.url);
+    let isRecursive = ancestors.includes(node.uri);
     return {
         // Uris live in the server namespace, which is the mounted one under WASI, so they have to
         // go through the client converter, the exact inverse of the uriAsString used to request it.
-        uri: server.stringAsUri(node.url),
-        includes: isRecursive ? [] : node.includes.map(include => toShaderDependency(server, include, [...ancestors, node.url])),
+        uri: server.stringAsUri(node.uri),
+        includes: isRecursive ? [] : node.includes.map(include => toShaderDependency(server, include, [...ancestors, node.uri])),
         isRecursive: isRecursive,
     };
 }
