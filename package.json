@@ -74,7 +74,8 @@
       {
         "id": "wgsl",
         "extensions": [
-          ".wgsl"
+          ".wgsl",
+          ".wesl"
         ],
         "icon": {
           "light": "./res/icons/wgsl-icon.svg",
@@ -97,7 +98,7 @@
       {
         "language": "wgsl",
         "scopeName": "source.wgsl",
-        "path": "./syntaxes/wgsl.tmLanguage.json"
+        "path": "./syntaxes/wesl.tmLanguage.json"
       }
     ],
     "configuration": [
@@ -450,6 +451,18 @@
             "description": "Enable WGSL support for language server.",
             "type": "boolean",
             "default": true
+          },
+          "shader-validator.wgsl.packageRoot": {
+            "description": "Root directory of the WESL package, used to resolve `package::` imports. Default to the directory of the validated file if empty.",
+            "type": "string",
+            "default": ""
+          },
+          "shader-validator.wgsl.packages": {
+            "description": "Root directory of external WESL packages, used to resolve `name::` imports. Key is the package name, value is the path to its root directory.",
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
           }
         }
       },

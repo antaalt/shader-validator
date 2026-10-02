@@ -1,7 +1,7 @@
 {
     "name": "WGSL",
     "scopeName": "source.wgsl",
-    "fileTypes": [ "wgsl" ],
+    "fileTypes": [ "wgsl", "wesl" ],
     "author": ["antaalt", "PolyMeilex"],
     "uuid": "746210e7-d00f-4583-b571-f4cbb6b4f73e",
     "patterns": [
@@ -28,6 +28,9 @@
         },
         {
             "include": "#types"
+        },
+        {
+            "include": "#imports"
         },
         {
             "include": "#variables"
@@ -95,12 +98,15 @@
                 {
                     "comment": "function definition",
                     "name": "meta.function.definition.wgsl",
-                    "begin": "\\b(fn)\\s+([A-Za-z0-9_]+)((\\()|(<))",
+                    "begin": "\\b(public)?\\s+(fn)\\s+([A-Za-z0-9_]+)((\\()|(<))",
                     "beginCaptures": {
                         "1": {
                             "name": "keyword.other.fn.wgsl"
                         },
                         "2": {
+                            "name": "keyword.other.fn.wgsl"
+                        },
+                        "3": {
                             "name": "entity.name.function.wgsl"
                         },
                         "4": {
@@ -267,6 +273,38 @@
                 }
             ]
         },
+        "imports": {
+            "patterns": [
+                {
+                    "comment": "import",
+                    "name": "import.wgsl",
+                    "match": "\\b(import)\\s+(\\w+(?:::\\w+)*)",
+                    "captures": {
+                        "1": {
+                            "name": "keyword.other.import.wgsl"
+                        },
+                        "2": {
+                            "name": "import.package.wgsl",
+                            "patterns": [
+                                {
+                                    "comment": "import",
+                                    "name": "import.wgsl",
+                                    "match": "(::)(\\w+)",
+                                    "captures": {
+                                        "1": {
+                                            "name": "keyword.puncuation.wgsl"
+                                        },
+                                        "2": {
+                                            "name": "import.package.wgsl"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
         "variables": {
             "patterns": [
                 {
@@ -320,7 +358,7 @@
                 {
                     "comment": "reserved keywords",
                     "name": "keyword.control.wgsl",
-                    "match": "\\b(asm|const|do|enum|handle|mat|premerge|regardless|typedef|unless|using|vec|void)\\b"
+                    "match": "\\b(asm|const|do|enum|handle|mat|premerge|regardless|typedef|unless|using|vec|void|alias)\\b"
                 },
                 {
                     "comment": "storage keywords",
