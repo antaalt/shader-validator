@@ -601,7 +601,7 @@
                 {
                     "comment": "define preprocessor",
                     "name": "keyword.preprocessor.hlsl",
-                    "match": "^\\s*#\\s*(define)\\s+(\\w+)(\\s*\\(\\s*[\\w\\,\\s]+\\s*\\))?\\s+(.*)?",
+                    "match": "^\\s*#\\s*(define)\\s+(\\w+)(\\s*\\(\\s*[\\w\\,\\s]*\\s*\\))?\\s+(.*)?",
                     "captures": {
                         "1": {
                             "name": "keyword.preprocessor.hlsl"
