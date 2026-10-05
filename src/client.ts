@@ -68,6 +68,21 @@ function resolveConfigurationVSCodeVariables(config: any): any {
             return [key, (key == "preamble") ? resolveVSCodeVariables(value as string) : value];
         })
     );
+    resolvedConfigObject["wgsl"] = Object.fromEntries(
+        Object.entries(config["wgsl"] ?? {}).map(([key, value]) => {
+            if (key == "packageRoot") {
+                return [key, resolveVSCodeVariables(value as string)];
+            } else if (key == "packages") {
+                return [key, Object.fromEntries(
+                    Object.entries(value ?? {}).map(([name, path]) => {
+                        return [name, resolveVSCodeVariables(path as string)];
+                    })
+                )];
+            } else {
+                return [key, value];
+            }
+        })
+    );
     resolvedConfigObject["configOverride"] = resolveVSCodeVariables(config["configOverride"]);
     resolvedConfigObject["serverPath"] = resolveVSCodeVariables(config["serverPath"]);
     resolvedConfigObject["pathRemapping"] = Object.fromEntries(

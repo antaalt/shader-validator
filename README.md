@@ -27,15 +27,15 @@ Currently, it support some features and languages:
 -   **[Regions](#regions)**: Detect inactive regions in code due to preprocessor and grey them out.
 -   **[Dependencies](#dependencies)**: Inspect the tree of files included by the current shader.
 
-|Language|Syntax Highlighting|Diagnostics |User symbols |Built-in symbols|Regions|Format|
-|--------|-------------------|------------|-------------|----------------|-------|------|
-|GLSL    |✅                 |✅(glslang)|✅           |✅             |✅     |✅   |
-|HLSL    |✅                 |✅(DXC)    |✅           |✅             |✅     |✅   |
-|WGSL    |✅                 |✅(Naga)   |❌           |❌             |❌     |❌   |
+|Language  |Syntax Highlighting|Diagnostics |User symbols |Built-in symbols|Regions|Format|
+|----------|-------------------|------------|-------------|----------------|-------|------|
+|GLSL      |✅                 |✅(glslang)|✅           |✅             |✅     |✅   |
+|HLSL      |✅                 |✅(DXC)    |✅           |✅             |✅     |✅   |
+|WGSL/WESL |✅                 |✅(Naga)   |✅           |✅             |✅     |✅   |
 
 ### Syntax highlighting
 
-This extension provide improved syntax highlighting for HLSL, GLSL & WGSL than the base one in VS code.
+This extension provide improved syntax highlighting for HLSL, GLSL & WESL than the base one in VS code.
 
 ![syntax-highlighting](res/doc/syntax-highlighting.png)
 
@@ -45,7 +45,7 @@ You cant lint your code in real time through this extension:
 
 -   GLSL relies on Glslang.
 -   HLSL relies on DirectX shader compiler on desktop, Glslang on the web (see below).
--   WGSL relies on Naga.
+-   WGSL relies on Naga and support WESL syntax and import aswell.
 
 ![diagnostic](res/doc/diagnostic.png)
 
@@ -182,6 +182,8 @@ This extension contributes the following settings:
 ### WGSL specific settings:
 
 *   `shader-validator.wgsl.enabled`: Control if server handle this language.
+*   `shader-validator.wgsl.packageRoot`: Root directory of the WESL package, used to resolve `package::` imports. Default to the directory of the validated file.
+*   `shader-validator.wgsl.packages`: Root directory of each external WESL package, used to resolve `name::` imports.
 
 ## Commands
 

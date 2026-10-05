@@ -1,7 +1,7 @@
 {
     "name": "WGSL",
     "scopeName": "source.wgsl",
-    "fileTypes": [ "wgsl" ],
+    "fileTypes": [ "wgsl", "wesl" ],
     "author": ["antaalt", "PolyMeilex"],
     "uuid": "746210e7-d00f-4583-b571-f4cbb6b4f73e",
     "patterns": [
@@ -12,10 +12,19 @@
             "include": "#block_comments"
         },
         {
+            "include": "#imports"
+        },
+        {
             "include": "#keywords"
         },
         {
             "include": "#attributes"
+        },
+        {
+            "include": "#paths"
+        },
+        {
+            "include": "#types"
         },
         {
             "include": "#functions"
@@ -25,9 +34,6 @@
         },
         {
             "include": "#constants"
-        },
-        {
-            "include": "#types"
         },
         {
             "include": "#variables"
@@ -95,12 +101,15 @@
                 {
                     "comment": "function definition",
                     "name": "meta.function.definition.wgsl",
-                    "begin": "\\b(fn)\\s+([A-Za-z0-9_]+)((\\()|(<))",
+                    "begin": "\\b(?:(public)\\s+)?(fn)\\s+([A-Za-z0-9_]+)((\\()|(<))",
                     "beginCaptures": {
                         "1": {
-                            "name": "keyword.other.fn.wgsl"
+                            "name": "storage.modifier.visibility.wgsl"
                         },
                         "2": {
+                            "name": "keyword.other.fn.wgsl"
+                        },
+                        "3": {
                             "name": "entity.name.function.wgsl"
                         },
                         "4": {
@@ -127,13 +136,16 @@
                             "include": "#attributes"
                         },
                         {
+                            "include": "#paths"
+                        },
+                        {
+                            "include": "#types"
+                        },
+                        {
                             "include": "#function_calls"
                         },
                         {
                             "include": "#constants"
-                        },
-                        {
-                            "include": "#types"
                         },
                         {
                             "include": "#variables"
@@ -179,13 +191,16 @@
                             "include": "#attributes"
                         },
                         {
+                            "include": "#paths"
+                        },
+                        {
+                            "include": "#types"
+                        },
+                        {
                             "include": "#function_calls"
                         },
                         {
                             "include": "#constants"
-                        },
-                        {
-                            "include": "#types"
                         },
                         {
                             "include": "#variables"
@@ -267,6 +282,88 @@
                 }
             ]
         },
+        "imports": {
+            "patterns": [
+                {
+                    "comment": "import statement",
+                    "name": "meta.import.wgsl",
+                    "begin": "\\b(import)\\b",
+                    "beginCaptures": {
+                        "1": {
+                            "name": "keyword.control.import.wgsl"
+                        }
+                    },
+                    "end": ";",
+                    "endCaptures": {
+                        "0": {
+                            "name": "punctuation.semi.wgsl"
+                        }
+                    },
+                    "patterns": [
+                        {
+                            "include": "#line_comments"
+                        },
+                        {
+                            "include": "#block_comments"
+                        },
+                        {
+                            "include": "#paths"
+                        },
+                        {
+                            "comment": "rename",
+                            "name": "keyword.control.as.wgsl",
+                            "match": "\\bas\\b"
+                        },
+                        {
+                            "comment": "wildcard import",
+                            "name": "keyword.operator.wildcard.wgsl",
+                            "match": "\\*"
+                        },
+                        {
+                            "comment": "imported type",
+                            "name": "entity.name.type.wgsl",
+                            "match": "\\b[A-Z][A-Za-z0-9_]*\\b"
+                        },
+                        {
+                            "comment": "imported item",
+                            "name": "variable.other.wgsl",
+                            "match": "\\b[A-Za-z_][A-Za-z0-9_]*\\b"
+                        },
+                        {
+                            "include": "#punctuation"
+                        }
+                    ]
+                }
+            ]
+        },
+        "paths": {
+            "patterns": [
+                {
+                    "comment": "path roots",
+                    "match": "\\b(package|super|self)\\s*(::)",
+                    "captures": {
+                        "1": {
+                            "name": "keyword.other.package.wgsl"
+                        },
+                        "2": {
+                            "name": "punctuation.separator.namespace.wgsl"
+                        }
+                    }
+                },
+                {
+                    "comment": "module path segment",
+                    "match": "\\b([A-Za-z_][A-Za-z0-9_]*)\\s*(::)",
+                    "captures": {
+                        "1": {
+                            "name": "entity.name.namespace.wgsl"
+                        },
+                        "2": {
+                            "name": "punctuation.separator.namespace.wgsl"
+                        }
+                    }
+                }
+            ]
+        },
         "variables": {
             "patterns": [
                 {
@@ -320,7 +417,7 @@
                 {
                     "comment": "reserved keywords",
                     "name": "keyword.control.wgsl",
-                    "match": "\\b(asm|const|do|enum|handle|mat|premerge|regardless|typedef|unless|using|vec|void)\\b"
+                    "match": "\\b(asm|const|do|enum|handle|mat|premerge|regardless|typedef|unless|using|vec|void|alias)\\b"
                 },
                 {
                     "comment": "storage keywords",
