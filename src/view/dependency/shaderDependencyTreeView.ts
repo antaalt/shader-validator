@@ -16,6 +16,21 @@ export interface ShaderDependency {
     includes: ShaderDependency[],
     // Set when the file is already one of its own ancestors. Its includes are not expanded again.
     isRecursive: boolean,
+    // Only set on filtered nodes. Changes with the filter so that the tree expands the new matches
+    // instead of restoring the expansion state of the previous filter.
+    id?: string,
+}
+
+// Displayed above the root, holds the filter actions and reminds what is hidden while filtering.
+interface ShaderFilter {
+    filter: string,
+    matchCount: number,
+}
+
+type ShaderDependencyTreeElement = ShaderDependency | ShaderFilter;
+
+function isShaderFilter(element: ShaderDependencyTreeElement): element is ShaderFilter {
+    return 'filter' in element;
 }
 
 function toShaderDependency(server: ShaderLanguageClient, node: DependencyTreeNode, ancestors: string[]): ShaderDependency {
@@ -31,6 +46,39 @@ function toShaderDependency(server: ShaderLanguageClient, node: DependencyTreeNo
     };
 }
 
+// Keep the nodes matching the filter along with their ancestors, so that the path to each match stays visible.
+function filterDependency(node: ShaderDependency, filter: string, id: string): ShaderDependency | null {
+    let includes: ShaderDependency[] = [];
+    node.includes.forEach((include, index) => {
+        let filteredInclude = filterDependency(include, filter, `${id}/${index}`);
+        if (filteredInclude) {
+            includes.push(filteredInclude);
+        }
+    });
+    if (includes.length === 0 && !matchesFilter(node.uri, filter)) {
+        return null;
+    }
+    return {
+        uri: node.uri,
+        includes: includes,
+        isRecursive: node.isRecursive,
+        id: id,
+    };
+}
+
+function matchesFilter(uri: vscode.Uri, filter: string): boolean {
+    return vscode.workspace.asRelativePath(uri).toLowerCase().includes(filter);
+}
+
+function collectMatches(node: ShaderDependency, filter: string, matches: Set<string>) {
+    if (matchesFilter(node.uri, filter)) {
+        matches.add(node.uri.toString());
+    }
+    for (let include of node.includes) {
+        collectMatches(include, filter, matches);
+    }
+}
+
 function collectDependencies(node: ShaderDependency, dependencies: Set<string>) {
     for (let include of node.includes) {
         dependencies.add(include.uri.toString());
@@ -38,15 +86,24 @@ function collectDependencies(node: ShaderDependency, dependencies: Set<string>) 
     }
 }
 
-export class ShaderDependencyTreeDataProvider implements vscode.TreeDataProvider<ShaderDependency> {
+export class ShaderDependencyTreeDataProvider implements vscode.TreeDataProvider<ShaderDependencyTreeElement> {
 
-    private onDidChangeTreeDataEmitter: vscode.EventEmitter<ShaderDependency | undefined | void> = new vscode.EventEmitter<ShaderDependency | undefined | void>();
-    readonly onDidChangeTreeData: vscode.Event<ShaderDependency | undefined | void> = this.onDidChangeTreeDataEmitter.event;
+    private onDidChangeTreeDataEmitter: vscode.EventEmitter<ShaderDependencyTreeElement | undefined | void> = new vscode.EventEmitter<ShaderDependencyTreeElement | undefined | void>();
+    readonly onDidChangeTreeData: vscode.Event<ShaderDependencyTreeElement | undefined | void> = this.onDidChangeTreeDataEmitter.event;
 
     private server: ShaderLanguageClient;
     private variants: ShaderVariantTreeDataProvider;
-    private tree: vscode.TreeView<ShaderDependency>;
+    private tree: vscode.TreeView<ShaderDependencyTreeElement>;
     private root: ShaderDependency | null = null;
+    // The root actually displayed, which is the filtered version of root when a filter is set.
+    private displayedRoot: ShaderDependency | null = null;
+    // The node displayed above the root whenever there is a tree.
+    private filterNode: ShaderFilter | null = null;
+    // Message from the last refresh, displayed unless the filter hides everything.
+    private message: string | undefined = undefined;
+    private filter: string = "";
+    // Increased on every filter change to give filtered nodes fresh ids.
+    private filterId: number = 0;
     // When set, inspect the active variant file instead of following the active editor.
     private followActiveVariant: boolean;
     // Increased on every refresh so that a slow request cannot overwrite the result of a newer one.
@@ -57,7 +114,7 @@ export class ShaderDependencyTreeDataProvider implements vscode.TreeDataProvider
         this.server = server;
         this.variants = variants;
         this.followActiveVariant = context.workspaceState.get<boolean>(followActiveVariantKey, false);
-        this.tree = vscode.window.createTreeView<ShaderDependency>("shader-validator-dependencies", {
+        this.tree = vscode.window.createTreeView<ShaderDependencyTreeElement>("shader-validator-dependencies", {
             treeDataProvider: this
         });
         context.subscriptions.push(this.tree);
@@ -78,6 +135,12 @@ export class ShaderDependencyTreeDataProvider implements vscode.TreeDataProvider
         }));
         context.subscriptions.push(vscode.commands.registerCommand("shader-validator.refreshDependencyTree", async () => {
             await this.refresh();
+        }));
+        context.subscriptions.push(vscode.commands.registerCommand("shader-validator.filterDependencyTree", () => {
+            this.showFilterInput();
+        }));
+        context.subscriptions.push(vscode.commands.registerCommand("shader-validator.clearDependencyTreeFilter", () => {
+            this.setFilter("");
         }));
         context.subscriptions.push(this.variants.onDidChangeActiveVariant(() => {
             if (this.followActiveVariant) {
@@ -129,7 +192,45 @@ export class ShaderDependencyTreeDataProvider implements vscode.TreeDataProvider
             return; // A newer refresh was started in the meantime, drop this stale result.
         }
         this.root = root;
-        this.tree.message = message;
+        this.message = message;
+        this.updateDisplayedTree();
+    }
+
+    private showFilterInput() {
+        let input = vscode.window.createInputBox();
+        input.title = "Filter dependencies";
+        input.placeholder = "Part of the file path to search for";
+        input.value = this.filter;
+        // Filtering is done locally, so the tree can follow every keystroke.
+        input.onDidChangeValue(value => this.setFilter(value));
+        input.onDidAccept(() => input.hide());
+        input.onDidHide(() => input.dispose());
+        input.show();
+    }
+
+    private setFilter(filter: string) {
+        filter = filter.trim().toLowerCase();
+        if (filter === this.filter) {
+            return;
+        }
+        this.filter = filter;
+        this.filterId++;
+        this.updateDisplayedTree();
+    }
+
+    private updateDisplayedTree() {
+        let root = this.root;
+        if (root && this.filter.length > 0) {
+            let matches = new Set<string>;
+            collectMatches(root, this.filter, matches);
+            this.displayedRoot = filterDependency(root, this.filter, `filter-${this.filterId}`);
+            this.filterNode = { filter: this.filter, matchCount: matches.size };
+        } else {
+            this.displayedRoot = root;
+            // Without a tree, there is nothing to filter and the welcome view must stay visible.
+            this.filterNode = root ? { filter: "", matchCount: 0 } : null;
+        }
+        this.tree.message = this.message;
         if (root) {
             let dependencies = new Set<string>;
             collectDependencies(root, dependencies);
@@ -194,12 +295,23 @@ export class ShaderDependencyTreeDataProvider implements vscode.TreeDataProvider
         return inspectedUri !== null && inspectedUri.path === uri.path;
     }
 
-    public getTreeItem(element: ShaderDependency): vscode.TreeItem {
-        let isRoot = element === this.root;
-        let item = new vscode.TreeItem(path.basename(element.uri.path), element.includes.length === 0
+    public getTreeItem(element: ShaderDependencyTreeElement): vscode.TreeItem {
+        if (isShaderFilter(element)) {
+            return this.getFilterTreeItem(element);
+        }
+        let isRoot = element === this.displayedRoot;
+        let isFiltered = this.filter.length > 0;
+        let label = path.basename(element.uri.path);
+        let matchStart = isFiltered ? label.toLowerCase().indexOf(this.filter) : -1;
+        let item = new vscode.TreeItem({
+            label: label,
+            highlights: matchStart >= 0 ? [[matchStart, matchStart + this.filter.length]] : undefined,
+        }, element.includes.length === 0
             ? vscode.TreeItemCollapsibleState.None
-            : isRoot ? vscode.TreeItemCollapsibleState.Expanded : vscode.TreeItemCollapsibleState.Collapsed
+            // Expand everything while filtering, the filter already keeps only the paths leading to a match.
+            : isRoot || isFiltered ? vscode.TreeItemCollapsibleState.Expanded : vscode.TreeItemCollapsibleState.Collapsed
         );
+        item.id = element.id;
         item.command = {
             title: "Go to file",
             command: 'vscode.open',
@@ -217,15 +329,48 @@ export class ShaderDependencyTreeDataProvider implements vscode.TreeDataProvider
         return item;
     }
 
-    public getChildren(element?: ShaderDependency): ShaderDependency[] {
-        if (element) {
-            return element.includes;
-        } else {
-            return this.root ? [this.root] : [];
+    private getFilterTreeItem(element: ShaderFilter): vscode.TreeItem {
+        let command: vscode.Command = {
+            title: "Edit filter",
+            command: 'shader-validator.filterDependencyTree',
+        };
+        if (element.filter.length === 0) {
+            let item = new vscode.TreeItem("Filter dependencies...", vscode.TreeItemCollapsibleState.None);
+            item.iconPath = new vscode.ThemeIcon('filter');
+            item.tooltip = "Click to filter the dependencies by file path.";
+            item.command = command;
+            item.contextValue = 'dependencyFilter';
+            return item;
         }
+        let item = new vscode.TreeItem(`"${element.filter}"`, vscode.TreeItemCollapsibleState.None);
+        item.iconPath = new vscode.ThemeIcon('filter-filled');
+        item.description = element.matchCount === 0
+            ? "no match"
+            : `${element.matchCount} ${element.matchCount > 1 ? "matches" : "match"}`;
+        item.tooltip = `Dependencies filtered by "${element.filter}". Click to edit the filter.`;
+        item.command = command;
+        item.contextValue = 'dependencyFilterActive';
+        return item;
     }
 
-    public getParent(element: ShaderDependency): ShaderDependency | undefined {
+    public getChildren(element?: ShaderDependencyTreeElement): ShaderDependencyTreeElement[] {
+        if (element) {
+            return isShaderFilter(element) ? [] : element.includes;
+        }
+        let children: ShaderDependencyTreeElement[] = [];
+        if (this.filterNode) {
+            children.push(this.filterNode);
+        }
+        if (this.displayedRoot) {
+            children.push(this.displayedRoot);
+        }
+        return children;
+    }
+
+    public getParent(element: ShaderDependencyTreeElement): ShaderDependency | undefined {
+        if (isShaderFilter(element)) {
+            return undefined;
+        }
         function findParent(node: ShaderDependency): ShaderDependency | undefined {
             for (let include of node.includes) {
                 if (include === element) {
@@ -238,6 +383,6 @@ export class ShaderDependencyTreeDataProvider implements vscode.TreeDataProvider
             }
             return undefined;
         }
-        return this.root ? findParent(this.root) : undefined;
+        return this.displayedRoot ? findParent(this.displayedRoot) : undefined;
     }
 }

@@ -623,6 +623,18 @@
         "icon": "$(refresh)"
       },
       {
+        "command": "shader-validator.filterDependencyTree",
+        "title": "Filter dependency tree",
+        "category": "Shader validator",
+        "icon": "$(search)"
+      },
+      {
+        "command": "shader-validator.clearDependencyTreeFilter",
+        "title": "Clear dependency tree filter",
+        "category": "Shader validator",
+        "icon": "$(close)"
+      },
+      {
         "command": "shader-validator.followActiveVariantInDependencyTree",
         "title": "Inspect the active variant file",
         "category": "Shader validator",
@@ -670,6 +682,16 @@
         }
       ],
       "view/item/context": [
+        {
+          "command": "shader-validator.filterDependencyTree",
+          "group": "inline@1",
+          "when": "view == shader-validator-dependencies && (viewItem == dependencyFilter || viewItem == dependencyFilterActive)"
+        },
+        {
+          "command": "shader-validator.clearDependencyTreeFilter",
+          "group": "inline@2",
+          "when": "view == shader-validator-dependencies && viewItem == dependencyFilterActive"
+        },
         {
           "command": "shader-validator.addMenu",
           "group": "inline@1",
