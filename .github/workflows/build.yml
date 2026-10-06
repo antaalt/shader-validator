@@ -91,7 +91,7 @@ jobs:
         if: ${{ matrix.npm-target != 'wasi' && matrix.npm-target != 'web' && !inputs.is-deploying }}
         with:
           repository: 'antaalt/shader-sense'
-          name: 'shader-language-server-${{ matrix.rust-target }}.zip'
+          name: 'shader-language-server-${{ matrix.rust-target }}'
       - name: Download wasi shader language server.
         uses: robinraju/release-downloader@v1.13
         if: ${{ inputs.is-deploying }}
@@ -104,7 +104,7 @@ jobs:
         if: ${{ !inputs.is-deploying }}
         with:
           repository: 'antaalt/shader-sense'
-          name: 'shader-language-server-wasm32-wasip1-threads.zip'
+          name: 'shader-language-server-wasm32-wasip1-threads'
       - name: Create bin folder
         run: mkdir ./bin
       - name: Copy native binary to bin
