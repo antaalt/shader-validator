@@ -92,6 +92,7 @@ jobs:
         with:
           repository: 'antaalt/shader-sense'
           name: 'shader-language-server-${{ matrix.rust-target }}'
+          github-token: ${{ github.token }}
       - name: Download wasi shader language server.
         uses: robinraju/release-downloader@v1.13
         if: ${{ inputs.is-deploying }}
@@ -105,6 +106,7 @@ jobs:
         with:
           repository: 'antaalt/shader-sense'
           name: 'shader-language-server-wasm32-wasip1-threads'
+          github-token: ${{ github.token }}
       - name: Create bin folder
         run: mkdir ./bin
       - name: Copy native binary to bin
