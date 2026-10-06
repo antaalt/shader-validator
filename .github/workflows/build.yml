@@ -11,6 +11,10 @@ on:
           required: false
           type: boolean
           default: false
+        is-deploying:
+          required: false
+          type: boolean
+          default: false
 
 jobs:
   build:
@@ -77,17 +81,30 @@ jobs:
         run: echo '${{ steps.package_json.outputs.server_version }}'
       - name: Download native shader language server.
         uses: robinraju/release-downloader@v1.13
-        if: ${{ matrix.npm-target != 'wasi' && matrix.npm-target != 'web' }}
+        if: ${{ matrix.npm-target != 'wasi' && matrix.npm-target != 'web' && inputs.is-deploying }}
         with:
           repository: 'antaalt/shader-sense'
           tag: ${{ format('v{0}', steps.package_json.outputs.server_version) }}
           fileName: 'shader-language-server-${{ matrix.rust-target }}.zip'
+      - name: Download native shader language server from latest commit.
+        uses: actions/download-artifact@v8
+        if: ${{ matrix.npm-target != 'wasi' && matrix.npm-target != 'web' && !inputs.is-deploying }}
+        with:
+          repository: 'antaalt/shader-sense'
+          name: 'shader-language-server-${{ matrix.rust-target }}.zip'
       - name: Download wasi shader language server.
         uses: robinraju/release-downloader@v1.13
+        if: ${{ inputs.is-deploying }}
         with:
           repository: 'antaalt/shader-sense'
           tag: ${{ format('v{0}', steps.package_json.outputs.server_version) }}
           fileName: 'shader-language-server-wasm32-wasip1-threads.zip'
+      - name: Download wasi shader language server from latest commit.
+        uses: actions/download-artifact@v8
+        if: ${{ !inputs.is-deploying }}
+        with:
+          repository: 'antaalt/shader-sense'
+          name: 'shader-language-server-wasm32-wasip1-threads.zip'
       - name: Create bin folder
         run: mkdir ./bin
       - name: Copy native binary to bin

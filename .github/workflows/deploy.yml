@@ -12,6 +12,7 @@ jobs:
     secrets: inherit # for GH_PAT
     with:
       prerelease: ${{ github.event.release.prerelease }}
+      is-deploying: true
 
   deploy:
     permissions: write-all
