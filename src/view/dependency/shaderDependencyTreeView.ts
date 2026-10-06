@@ -106,6 +106,9 @@ export class ShaderDependencyTreeDataProvider implements vscode.TreeDataProvider
     private filterId: number = 0;
     // When set, inspect the active variant file instead of following the active editor.
     private followActiveVariant: boolean;
+    // Document of the last focused file editor. Focusing the terminal or the output panel changes the
+    // active editor aswell, so it cannot be used directly without the tree going away.
+    private editorDocument: vscode.TextDocument | null = null;
     // Increased on every refresh so that a slow request cannot overwrite the result of a newer one.
     private refreshId: number = 0;
     private refreshTimeout: ReturnType<typeof setTimeout> | undefined = undefined;
@@ -142,15 +145,28 @@ export class ShaderDependencyTreeDataProvider implements vscode.TreeDataProvider
         context.subscriptions.push(vscode.commands.registerCommand("shader-validator.clearDependencyTreeFilter", () => {
             this.setFilter("");
         }));
+        context.subscriptions.push(vscode.commands.registerCommand("shader-validator.revealActiveFileInDependencyTree", async () => {
+            await this.revealActiveFile();
+        }));
         context.subscriptions.push(this.variants.onDidChangeActiveVariant(() => {
             if (this.followActiveVariant) {
                 this.requestRefresh();
             }
         }));
-        context.subscriptions.push(vscode.window.onDidChangeActiveTextEditor(() => {
-            // Staying on the variant file is the whole point of the toggle, so ignore the editor.
-            if (!this.followActiveVariant) {
+        this.updateEditorDocument(vscode.window.activeTextEditor);
+        context.subscriptions.push(vscode.window.onDidChangeActiveTextEditor((editor) => {
+            if (this.updateEditorDocument(editor) && !this.followActiveVariant) {
+                // Staying on the variant file is the whole point of the toggle, so ignore the editor.
                 this.requestRefresh();
+            }
+        }));
+        context.subscriptions.push(vscode.window.tabGroups.onDidChangeTabs((event) => {
+            // The tree outlives the focus of its editor, but not the editor itself.
+            if (this.editorDocument && event.closed.length > 0 && !this.isOpenedInTab(this.editorDocument.uri)) {
+                this.editorDocument = null;
+                if (!this.followActiveVariant) {
+                    this.requestRefresh();
+                }
             }
         }));
         context.subscriptions.push(vscode.workspace.onDidSaveTextDocument((document: vscode.TextDocument) => {
@@ -255,11 +271,30 @@ export class ShaderDependencyTreeDataProvider implements vscode.TreeDataProvider
             }
             return [activeVariant.uri, undefined];
         }
-        const activeTextEditor = vscode.window.activeTextEditor;
-        if (!activeTextEditor || !ShaderLanguageClient.isTextDocumentSupported(activeTextEditor.document)) {
+        if (!this.editorDocument || !ShaderLanguageClient.isTextDocumentSupported(this.editorDocument)) {
             return [null, undefined]; // Let the welcome view explain there is nothing to show.
         }
-        return [activeTextEditor.document.uri, undefined];
+        return [this.editorDocument.uri, undefined];
+    }
+
+    // Returns true when the followed editor changed.
+    private updateEditorDocument(editor: vscode.TextEditor | undefined): boolean {
+        // No editor means focus went to a panel such as the terminal, and output or diff views use
+        // their own schemes. Keep following the last file in both cases.
+        if (!editor || !ShaderLanguageClient.isUriSupported(editor.document.uri)) {
+            return false;
+        }
+        if (this.editorDocument === editor.document) {
+            return false;
+        }
+        this.editorDocument = editor.document;
+        return true;
+    }
+
+    private isOpenedInTab(uri: vscode.Uri): boolean {
+        return vscode.window.tabGroups.all.some(group => group.tabs.some(tab =>
+            tab.input instanceof vscode.TabInputText && tab.input.uri.toString() === uri.toString()
+        ));
     }
 
     private async requestDependencyTree(): Promise<[ShaderDependency | null, string | undefined]> {
@@ -280,6 +315,39 @@ export class ShaderDependencyTreeDataProvider implements vscode.TreeDataProvider
             console.error("Failed to get dependency tree: ", message);
             return [null, `Failed to get dependency tree: ${message}`];
         }
+    }
+
+    // Select the active editor file in the tree. A file can be included from several places, so
+    // revealing again while one of them is selected moves on to the next one.
+    private async revealActiveFile() {
+        if (!this.editorDocument) {
+            vscode.window.showInformationMessage("No file is opened in the active editor.");
+            return;
+        }
+        let uri = this.editorDocument.uri;
+        function collectOccurrences(node: ShaderDependency, occurrences: ShaderDependency[]) {
+            if (node.uri.path === uri.path) {
+                occurrences.push(node);
+            }
+            for (let include of node.includes) {
+                collectOccurrences(include, occurrences);
+            }
+        }
+        let occurrences: ShaderDependency[] = [];
+        if (this.displayedRoot) {
+            collectOccurrences(this.displayedRoot, occurrences);
+        }
+        if (occurrences.length === 0) {
+            let fileName = path.basename(uri.path);
+            vscode.window.showInformationMessage(this.filter.length > 0 && this.isInTree(uri)
+                ? `${fileName} is hidden by the current filter.`
+                : `${fileName} is not part of the dependency tree.`);
+            return;
+        }
+        let selected = this.tree.selection.length > 0 ? this.tree.selection[0] : undefined;
+        let selectedIndex = occurrences.findIndex(occurrence => occurrence === selected);
+        let next = occurrences[(selectedIndex + 1) % occurrences.length];
+        await this.tree.reveal(next, { select: true, focus: true, expand: false });
     }
 
     private isInTree(uri: vscode.Uri): boolean {
