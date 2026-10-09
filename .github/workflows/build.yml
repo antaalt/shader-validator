@@ -5,6 +5,9 @@ on:
       branches: [ "main" ]
     pull_request:
       branches: [ "main" ]
+    # Sent by shader-sense once its main build succeeds and its nightly release is updated.
+    repository_dispatch:
+      types: [ shader-sense-build ]
     workflow_call:
       inputs:
         prerelease:
@@ -79,36 +82,23 @@ jobs:
           file_path: "package.json"
       - name: Display requested server version
         run: echo '${{ steps.package_json.outputs.server_version }}'
+      # Releases use the server version requested by package.json, else the nightly release which shader-sense
+      # updates on every commit of main, and which is up to date when shader-sense triggers this workflow.
       - name: Download native shader language server.
         uses: robinraju/release-downloader@v1.13
-        if: ${{ matrix.npm-target != 'wasi' && matrix.npm-target != 'web' && inputs.is-deploying }}
+        if: ${{ matrix.npm-target != 'wasi' && matrix.npm-target != 'web' }}
         with:
           repository: 'antaalt/shader-sense'
-          tag: ${{ format('v{0}', steps.package_json.outputs.server_version) }}
+          tag: ${{ inputs.is-deploying && format('v{0}', steps.package_json.outputs.server_version) || 'nightly' }}
           fileName: 'shader-language-server-${{ matrix.rust-target }}.zip'
-      - name: Download native shader language server from latest commit.
-        uses: actions/download-artifact@v8
-        if: ${{ matrix.npm-target != 'wasi' && matrix.npm-target != 'web' && !inputs.is-deploying }}
-        with:
-          repository: 'antaalt/shader-sense'
-          name: 'shader-language-server-${{ matrix.rust-target }}'
-          github-token: ${{ github.token }}
       - name: Download wasi shader language server.
         uses: robinraju/release-downloader@v1.13
-        if: ${{ inputs.is-deploying }}
         with:
           repository: 'antaalt/shader-sense'
-          tag: ${{ format('v{0}', steps.package_json.outputs.server_version) }}
+          tag: ${{ inputs.is-deploying && format('v{0}', steps.package_json.outputs.server_version) || 'nightly' }}
           fileName: 'shader-language-server-wasm32-wasip1-threads.zip'
-      - name: Download wasi shader language server from latest commit.
-        uses: actions/download-artifact@v8
-        if: ${{ !inputs.is-deploying }}
-        with:
-          repository: 'antaalt/shader-sense'
-          name: 'shader-language-server-wasm32-wasip1-threads'
-          github-token: ${{ github.token }}
       - name: Create bin folder
-        run: mkdir ./bin
+        run: mkdir -p ./bin
       - name: Copy native binary to bin
         if: ${{ matrix.npm-target != 'wasi' && matrix.npm-target != 'web' }}
         run: mkdir ./bin/${{ matrix.npm-target }} && unzip shader-language-server-${{ matrix.rust-target }}.zip -d ./bin/${{ matrix.npm-target }} && rm ./shader-language-server-${{ matrix.rust-target }}.zip
