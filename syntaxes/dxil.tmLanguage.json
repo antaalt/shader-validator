@@ -1,0 +1,43 @@
+{
+    "name": "DXIL Assembly",
+    "scopeName": "source.dxil",
+    "fileTypes": [ "dxil" ],
+    "author": ["antaalt"],
+    "patterns": [
+        {
+            "match": "\\b(define|declare|ret|call|add|fadd|sub|fsub|mul|fmul|udiv|sdiv|fdiv|urem|srem|frem|shl|lshr|ashr|and|or|xor|extractelement|insertelement|shufflevector|extractvalue|insertvalue|alloca|load|store|fence|cmpxchg|atomicrmw|getelementptr|trunc|zext|sext|fptrunc|fpext|fptoui|fptosi|uitofp|sitofp|ptrtoint|inttoptr|bitcast|addrspacecast|icmp|fcmp|phi|select|call|va_arg|landingpad|catchpad|cleanuppad)\\b",
+            "name": "keyword.control.instruction.dxil"
+        },
+        {
+            "match": "\\b(void|half|float|double|x86_fp80|fp128|ppc_fp128|label|metadata|x86_mmx|token|i[0-9]+)\\b",
+            "name": "entity.name.type.dxil"
+        },
+        {
+            "match": "(@|%|!)[a-zA-Z0-9_.]+",
+            "name": "variable.other.dxil"
+        },
+        {
+            "match": "\\b(?i:true|false)\\b",
+            "name": "constant.language.dxil"
+        },
+        {
+            "match": "\\b-?(0x[0-9a-fA-F]+|[0-9]+(\\.[0-9]+)?([eE][+-]?[0-9]+)?)\\b",
+            "name": "constant.numeric.dxil"
+        },
+        {
+            "name": "string.quoted.double.hlsl",
+            "begin": "[\"]",
+            "end": "[\"]",
+            "patterns": [
+                {
+                    "name": "constant.character.escape.hlsl",
+                    "match": "\\\\."
+                }
+            ]
+        },
+        {
+            "match": "\\;.*",
+            "name": "comment.block.spirv"
+        }
+    ]
+}

@@ -1,0 +1,47 @@
+{
+    "name": "SPIRV Assembly",
+    "scopeName": "source.spirv",
+    "fileTypes": [ "spirv" ],
+    "author": ["antaalt"],
+    "patterns": [
+        {
+            "match": "\\b(Op[A-Za-z0-9]+)\\b",
+            "name": "entity.name.function.spirv"
+        },
+        {
+            "match": "(%)([a-zA-Z0-9_]+)",
+            "name": "variable.other.id.spirv",
+            "captures": {
+                "1": {
+                    "name": "keyword.constant.spirv"
+                },
+                "2": {
+                    "name": "constant.language.address.spirv"
+                }
+            }
+        },
+        {
+            "match": "\\b(?i:true|false)\\b",
+            "name": "constant.language.spirv"
+        },
+        {
+            "match": "\\b-?(0x[0-9a-fA-F]+|[0-9]+(\\.[0-9]+)?([eE][+-]?[0-9]+)?)\\b",
+            "name": "constant.numeric.spirv"
+        },
+        {
+            "name": "string.quoted.double.hlsl",
+            "begin": "[\"]",
+            "end": "[\"]",
+            "patterns": [
+                {
+                    "name": "constant.character.escape.hlsl",
+                    "match": "\\\\."
+                }
+            ]
+        },
+        {
+            "match": "\\;.*",
+            "name": "comment.block.spirv"
+        }
+    ]
+}

@@ -82,6 +82,27 @@
           "dark": "./res/icons/wgsl-icon.svg"
         },
         "configuration": "./language-configuration.json"
+      },
+      {
+        "id": "spirv",
+        "extensions": [
+          ".spirv",
+          ".spv"
+        ],
+        "icon": {
+          "light": "./res/icons/spirv-icon.svg",
+          "dark": "./res/icons/spirv-icon.svg"
+        }
+      },
+      {
+        "id": "dxil",
+        "extensions": [
+          ".dxil"
+        ],
+        "icon": {
+          "light": "./res/icons/dxil-icon.svg",
+          "dark": "./res/icons/dxil-icon.svg"
+        }
       }
     ],
     "grammars": [
@@ -99,6 +120,16 @@
         "language": "wgsl",
         "scopeName": "source.wgsl",
         "path": "./syntaxes/wesl.tmLanguage.json"
+      },
+      {
+        "language": "spirv",
+        "scopeName": "source.spirv",
+        "path": "./syntaxes/spirv.tmLanguage.json"
+      },
+      {
+        "language": "dxil",
+        "scopeName": "source.dxil",
+        "path": "./syntaxes/dxil.tmLanguage.json"
       }
     ],
     "configuration": [
