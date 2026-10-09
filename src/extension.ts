@@ -136,7 +136,7 @@ export async function activate(context: vscode.ExtensionContext)
                     });
                     await vscode.window.showTextDocument(document, { 
                         preview: true, 
-                        viewColumn: vscode.ViewColumn.Beside 
+                        viewColumn: vscode.ViewColumn.Active 
                     });
                 } else {
                     vscode.window.showErrorMessage("Compilation returned empty blob. Check diagnostics and ensure there is a valid entry point set via shader variants.")

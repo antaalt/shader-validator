@@ -263,27 +263,10 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
                     node.isActive = true; // checked
                     await this.updateActiveVariant(file, node);
                     this.updateTreeView(node);
-                    let compilationResult = (await vscode.commands.executeCommand(
-                        'shader-validator.compileShader',
-                        node.uri,
-                        undefined, // CompilationType auto
-                        false,
-                    )) as CompileShaderResult | null;
-                    if (compilationResult) {
-                        let saveLocation = await vscode.window.showSaveDialog({
-                            title: 'Save compilation result',
-                            saveLabel: "Save",
-                            defaultUri: vscode.Uri.file(path.basename(node.uri.path) + getCompiledShaderExtension(compilationResult)),
-                        });
-                        if (saveLocation) {
-                            await vscode.workspace.fs.writeFile(saveLocation, decodeCompileShaderData(compilationResult.data, compilationResult.compilationType, false));
-                            console.info('Save ', compilationResult.compilationType);
-                        } else {
-                            vscode.window.showErrorMessage("Failed to find a valid location to save compilation result.")
-                        }
-                    } else {
-                        vscode.window.showErrorMessage("Failed to compile shader variant.")
-                    }
+                    let options = await vscode.commands.executeCommand<vscode.TextDocumentShowOptions>("vscode.open", node.uri, {
+                        viewColumn: vscode.ViewColumn.Active
+                    });
+                    await vscode.commands.executeCommand('shader-validator.compileAndSaveActiveEditor');
                 }
             }
         }));
@@ -313,24 +296,10 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
                     node.isActive = true; // checked
                     await this.updateActiveVariant(file, node);
                     this.updateTreeView(node);
-                    let compilationResult = (await vscode.commands.executeCommand(
-                        'shader-validator.compileShader',
-                        node.uri,
-                        undefined, // CompilationType auto
-                        true,
-                    )) as CompileShaderResult | null;
-                    if (compilationResult) {
-                        let document = await vscode.workspace.openTextDocument({
-                            content: compilationResult.data,
-                            language: getCompiledShaderLanguage(compilationResult)
-                        });
-                        await vscode.window.showTextDocument(document, { 
-                            preview: true, 
-                            viewColumn: vscode.ViewColumn.Beside 
-                        });
-                    } else {
-                        vscode.window.showErrorMessage("Failed to disassemble shader variant.")
-                    }
+                    let options = await vscode.commands.executeCommand<vscode.TextDocumentShowOptions>("vscode.open", node.uri, {
+                        viewColumn: vscode.ViewColumn.Active
+                    });
+                    await vscode.commands.executeCommand('shader-validator.compileAndDisassembleActiveEditor');
                 }
             }
         }));
