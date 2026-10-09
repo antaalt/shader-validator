@@ -14,13 +14,23 @@ export enum CompilationType {
 // Request to compile the shader
 export interface CompileShaderParams extends TextDocumentIdentifier {
     compilationType?: CompilationType,
+    disassemble?: boolean,
 }
 export interface CompileShaderRegistrationOptions extends TextDocumentRegistrationOptions {}
 
 export interface CompileShaderResult {
     compilationType: CompilationType,
-    // Server sends a Vec<u8>, which serde serializes as a base64 string.
+    // Server sends a string that might be base64 encoded if result is binary. Check isCompilationResultBinary & isCompilationResultString
     data: string,
+}
+
+export function isCompilationResultBinary(compilationType: CompilationType, disassembly: boolean): boolean {
+    // Disassembly is sent as raw string, same as wgsl. Spirv and Dxil are binary base64 encoded.
+    return (compilationType == CompilationType.Spirv || compilationType == CompilationType.Dxil) && !disassembly;
+}
+
+export function isCompilationResultString(compilationType: CompilationType, disassembly: boolean): boolean {
+    return !isCompilationResultBinary(compilationType, disassembly);
 }
 
 export function getCompiledShaderExtension(value: CompileShaderResult) : string {
@@ -32,11 +42,20 @@ export function getCompiledShaderExtension(value: CompileShaderResult) : string 
     } 
 }
 
+export function getCompiledShaderLanguage(value: CompileShaderResult) : string {
+    switch(value.compilationType) {
+        case CompilationType.Spirv: return 'spirv';
+        case CompilationType.Dxil: return 'dxil';
+        case CompilationType.Wgsl: return 'wgsl';
+        default: return 'plaintext';
+    } 
+}
+
 /// Decode the base64 payload of a compilation result into raw bytes.
 /// Cannot rely on Buffer here: it does not exist in the web extension host, and webpack
 /// does not polyfill it for the webworker target.
-export function decodeCompileShaderData(data: string): Uint8Array {
-    const binary = atob(data);
+export function decodeCompileShaderData(data: string, compilationType: CompilationType, disassemble: boolean): Uint8Array {
+    const binary = isCompilationResultBinary(compilationType, disassemble) ? atob(data) : data;
     const bytes = new Uint8Array(binary.length);
     for (let i = 0; i < binary.length; i++) {
         bytes[i] = binary.charCodeAt(i);

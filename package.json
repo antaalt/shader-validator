@@ -592,6 +592,13 @@
         "enablement": "view == shader-validator-variants"
       },
       {
+        "command": "shader-validator.disassembleMenu",
+        "title": "Disassemble",
+        "category": "Shader validator",
+        "icon": "$(disassembly-editor-label-icon)",
+        "enablement": "view == shader-validator-variants"
+      },
+      {
         "command": "shader-validator.refreshMenu",
         "title": "Refresh",
         "category": "Shader validator",
@@ -615,6 +622,12 @@
         "title": "Compile the active editor and prompt for save.",
         "category": "Shader validator",
         "icon": "$(run-view-icon)"
+      },
+      {
+        "command": "shader-validator.compileAndDisassembleActiveEditor",
+        "title": "Compile the active editor and open disassembly in editor.",
+        "category": "Shader validator",
+        "icon": "$(disassembly-editor-label-icon)"
       },
       {
         "command": "shader-validator.refreshDependencyTree",
@@ -719,13 +732,18 @@
           "when": "view == shader-validator-variants && (viewItem == variant)"
         },
         {
-          "command": "shader-validator.deleteMenu",
+          "command": "shader-validator.disassembleMenu",
           "group": "inline@4",
+          "when": "view == shader-validator-variants && (viewItem == variant)"
+        },
+        {
+          "command": "shader-validator.deleteMenu",
+          "group": "inline@5",
           "when": "view == shader-validator-variants && (viewItem == variant || viewItem == include || viewItem == define || viewItem == file || viewItem == database)"
         },
         {
           "command": "shader-validator.refreshMenu",
-          "group": "inline@5",
+          "group": "inline@6",
           "when": "view == shader-validator-variants && (viewItem == database)"
         }
       ]

@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import { resolveVSCodeVariables, ShaderLanguageClient } from '../../client';
 import { deserializeShaderVariantNode, ShaderStage, ShaderVariant, ShaderVariantDatabase, ShaderVariantFile, ShaderVariantNode, ShaderVariantRoot, UriMap } from './variant';
 import { ShaderVariantNotifier } from './shaderVariantNotifier';
-import { CompileShaderResult, decodeCompileShaderData, getCompiledShaderExtension } from '../../request';
+import { CompileShaderResult, decodeCompileShaderData, getCompiledShaderExtension, getCompiledShaderLanguage } from '../../request';
 import path from 'path';
 
 const shaderVariantTreeKey : string = 'shader-validator.shader-variant-tree-key';
@@ -43,7 +43,7 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
     private save() {
         let treeArray = Array.from(this.files.values());
         this.workspaceState.update(shaderVariantTreeKey, treeArray);
-        let databaseArray = Array.from(this.database.keys());
+        let databaseArray = Array.from(this.database.keys());//.map(uri => uri.path);
         this.workspaceState.update(shaderVariantDatabaseKey, databaseArray);
     }
 
@@ -265,7 +265,9 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
                     this.updateTreeView(node);
                     let compilationResult = (await vscode.commands.executeCommand(
                         'shader-validator.compileShader',
-                        node.uri
+                        node.uri,
+                        undefined, // CompilationType auto
+                        false,
                     )) as CompileShaderResult | null;
                     if (compilationResult) {
                         let saveLocation = await vscode.window.showSaveDialog({
@@ -274,13 +276,60 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
                             defaultUri: vscode.Uri.file(path.basename(node.uri.path) + getCompiledShaderExtension(compilationResult)),
                         });
                         if (saveLocation) {
-                            await vscode.workspace.fs.writeFile(saveLocation, decodeCompileShaderData(compilationResult.data));
+                            await vscode.workspace.fs.writeFile(saveLocation, decodeCompileShaderData(compilationResult.data, compilationResult.compilationType, false));
                             console.info('Save ', compilationResult.compilationType);
                         } else {
                             vscode.window.showErrorMessage("Failed to find a valid location to save compilation result.")
                         }
                     } else {
                         vscode.window.showErrorMessage("Failed to compile shader variant.")
+                    }
+                }
+            }
+        }));
+        context.subscriptions.push(vscode.commands.registerCommand("shader-validator.disassembleMenu", async (node: ShaderVariantNode) => {
+            if (node.kind === 'variant') {
+                let file = this.getNodeVariantFile(node);
+                if (file) {
+                    // Need to unset other possibles active ones to keep only one entry point active.
+                    for (let [uri, file] of this.files) {
+                        for (let otherVariant of file.variants) {
+                            if (otherVariant.isActive) {
+                                otherVariant.isActive = false;
+                                this.updateTreeView(otherVariant);
+                            }
+                        }
+                    }
+                    for (let [databaseUrl, database] of this.database) {
+                        for (let [uri, file] of database) {
+                            for (let otherVariant of file.variants) {
+                                if (otherVariant.isActive) {
+                                    otherVariant.isActive = false;
+                                    this.updateTreeView(otherVariant);
+                                }
+                            }
+                        }
+                    }
+                    node.isActive = true; // checked
+                    await this.updateActiveVariant(file, node);
+                    this.updateTreeView(node);
+                    let compilationResult = (await vscode.commands.executeCommand(
+                        'shader-validator.compileShader',
+                        node.uri,
+                        undefined, // CompilationType auto
+                        true,
+                    )) as CompileShaderResult | null;
+                    if (compilationResult) {
+                        let document = await vscode.workspace.openTextDocument({
+                            content: compilationResult.data,
+                            language: getCompiledShaderLanguage(compilationResult)
+                        });
+                        await vscode.window.showTextDocument(document, { 
+                            preview: true, 
+                            viewColumn: vscode.ViewColumn.Beside 
+                        });
+                    } else {
+                        vscode.window.showErrorMessage("Failed to disassemble shader variant.")
                     }
                 }
             }

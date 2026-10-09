@@ -3,7 +3,7 @@
 import * as vscode from 'vscode';
 
 import { ServerStatus, ShaderLanguageClient } from './client';
-import { CompilationType, compileShaderRequest, CompileShaderResult, decodeCompileShaderData, dumpAstRequest, dumpDependencyRequest, getCompiledShaderExtension } from './request';
+import { CompilationType, compileShaderRequest, CompileShaderResult, decodeCompileShaderData, dumpAstRequest, dumpDependencyRequest, getCompiledShaderExtension, getCompiledShaderLanguage } from './request';
 import { ShaderVariantTreeDataProvider } from './view/variant/shaderVariantTreeView';
 import { DidChangeConfigurationNotification, Trace } from 'vscode-languageclient';
 import { ShaderStatusBar } from './view/status/shaderStatusBar';
@@ -62,13 +62,14 @@ export async function activate(context: vscode.ExtensionContext)
             server.showLogs();
         }
     }));
-    context.subscriptions.push(vscode.commands.registerCommand("shader-validator.compileShader", async (uri: vscode.Uri, compilationType?: CompilationType) => {
+    context.subscriptions.push(vscode.commands.registerCommand("shader-validator.compileShader", async (uri: vscode.Uri, compilationType?: CompilationType, disassemble?: boolean) => {
         if (ShaderLanguageClient.isUriSupported(uri)) {
             if (server.getServerStatus() === ServerStatus.running) {
                 try {
                     let compilationResult = await server.sendRequest(compileShaderRequest, {
                         uri: server.uriAsString(uri),
-                        compilationType: compilationType
+                        disassemble: disassemble,
+                        compilationType: compilationType,
                     });
                     return compilationResult;
                 } catch(error: any) {
@@ -90,7 +91,9 @@ export async function activate(context: vscode.ExtensionContext)
             if (server.getServerStatus() === ServerStatus.running) {
                 let compilationResult = (await vscode.commands.executeCommand(
                     'shader-validator.compileShader',
-                    activeTextEditor.document.uri
+                    activeTextEditor.document.uri,
+                    undefined, // CompilationType auto
+                    false,
                 )) as CompileShaderResult | null;
                 if (compilationResult) {
                     console.info(compilationResult);
@@ -100,7 +103,7 @@ export async function activate(context: vscode.ExtensionContext)
                         defaultUri: vscode.Uri.file(activeTextEditor.document.fileName + getCompiledShaderExtension(compilationResult)),
                     });
                     if (saveLocation) {
-                        await vscode.workspace.fs.writeFile(saveLocation, decodeCompileShaderData(compilationResult.data));
+                        await vscode.workspace.fs.writeFile(saveLocation, decodeCompileShaderData(compilationResult.data, compilationResult.compilationType, false));
                         console.info('Save ', compilationResult.compilationType);
                     } else {
                         vscode.window.showErrorMessage("Failed to find a valid location to save compilation result.")
@@ -115,6 +118,36 @@ export async function activate(context: vscode.ExtensionContext)
             server.log("No active file for getting compilation result.");
         }
     }));
+    context.subscriptions.push(vscode.commands.registerCommand("shader-validator.compileAndDisassembleActiveEditor", async() => {
+        const activeTextEditor = vscode.window.activeTextEditor;
+        if (activeTextEditor && ShaderLanguageClient.isTextDocumentSupported(activeTextEditor.document)) {
+            if (server.getServerStatus() === ServerStatus.running) {
+                let compilationResult = (await vscode.commands.executeCommand(
+                    'shader-validator.compileShader',
+                    activeTextEditor.document.uri,
+                    undefined, // CompilationType auto
+                    true,
+                )) as CompileShaderResult | null;
+                if (compilationResult) {
+                    console.info(compilationResult);
+                    let document = await vscode.workspace.openTextDocument({
+                        content: compilationResult.data,
+                        language: getCompiledShaderLanguage(compilationResult)
+                    });
+                    await vscode.window.showTextDocument(document, { 
+                        preview: true, 
+                        viewColumn: vscode.ViewColumn.Beside 
+                    });
+                } else {
+                    vscode.window.showErrorMessage("Compilation returned empty blob. Check diagnostics and ensure there is a valid entry point set via shader variants.")
+                }
+            } else {
+                vscode.window.showWarningMessage("Server is not running");
+            }
+        } else {
+            server.log("No active file for getting compilation result.");
+        }
+    }))
     context.subscriptions.push(vscode.commands.registerCommand("shader-validator.dumpAst", () => {
         const activeTextEditor = vscode.window.activeTextEditor;
         if (activeTextEditor && ShaderLanguageClient.isTextDocumentSupported(activeTextEditor.document)) {
