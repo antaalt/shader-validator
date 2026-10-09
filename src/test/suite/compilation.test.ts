@@ -5,22 +5,22 @@ import { activate, isUsingWasiServer, openAndShowFile } from './utils';
 import { CompilationType, CompileShaderResult, decodeCompileShaderData } from '../../request';
 import { ShaderStage } from '../../view/variant/variant';
 
-function isValidMagicNumber(data: Uint8Array, magicNumber: Uint8Array): boolean {
-    for (let i = 0; i < 4; i++) {
-        if (magicNumber[i] !== data[i]) {
-            return false;
-        }
+// Accept both endianness, as server test does.
+function isValidMagicNumber(data: Uint8Array, magicNumber: number): boolean {
+    if (data.length < 4) {
+        return false;
     }
-    return true;
+    const view = new DataView(data.buffer, data.byteOffset, 4);
+    return view.getUint32(0, true) === magicNumber || view.getUint32(0, false) === magicNumber;
 }
 function isValidDxil(dxil: Uint8Array): boolean {
-    const DXIL_MAGIC_LE = new Uint8Array([0x43, 0x42, 0x58, 0x44]);
-    return isValidMagicNumber(dxil, DXIL_MAGIC_LE)
+    const DXIL_MAGIC_NUMBER = 0x43425844; // 'DXBC'
+    return isValidMagicNumber(dxil, DXIL_MAGIC_NUMBER);
 }
 
 function isValidSpirv(spirv: Uint8Array) : boolean {
-    const SPIRV_MAGIC_LE = new Uint8Array([0x07, 0x23, 0x02, 0x03]);
-    return isValidMagicNumber(spirv, SPIRV_MAGIC_LE)
+    const SPIRV_MAGIC_NUMBER = 0x07230203;
+    return isValidMagicNumber(spirv, SPIRV_MAGIC_NUMBER);
 }
 
 suite('Compilation Test Suite', () => {
@@ -66,7 +66,7 @@ suite('Compilation Test Suite', () => {
         )) as CompileShaderResult | null;
         assert.ok(disassembleResult);
         assert.equal(disassembleResult.compilationType, CompilationType.Spirv);
-        assert.equal(disassembleResult.data.length, 608);
+        assert.equal(disassembleResult.data.length, 786);
         assert.ok(disassembleResult.data.startsWith('; SPIR-V'));
     }).timeout(10000); // First test to run on non WASI target
 
@@ -94,7 +94,7 @@ suite('Compilation Test Suite', () => {
         )) as CompileShaderResult | null;
         assert.ok(compilationResult);
         assert.equal(compilationResult.compilationType, CompilationType.Dxil);
-        assert.equal(compilationResult.data.length, 608);
+        assert.equal(compilationResult.data.length, 2428);
         let spirv = decodeCompileShaderData(compilationResult.data, compilationResult.compilationType, false);
         assert.ok(isValidDxil(spirv));
         // Request disassembly
