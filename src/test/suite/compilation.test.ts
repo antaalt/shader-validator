@@ -24,6 +24,7 @@ function isValidSpirv(spirv: Uint8Array) : boolean {
 }
 
 suite('Compilation Test Suite', () => {
+    const useWasiServer = isUsingWasiServer();
     vscode.window.showInformationMessage('Start all compilation tests.');
     suiteTeardown(async () => {
         // Remove variant for next test.
@@ -71,6 +72,8 @@ suite('Compilation Test Suite', () => {
 
     
     test('Check HLSL compilation', async () => {
+        // No DXC on wasi. Skip test.
+        if (useWasiServer) return;
         const docUri = await vscode.workspace.findFiles("test.hlsl");
         assert.ok(docUri.length > 0);
         await activate()!;
