@@ -35,9 +35,9 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
             }
             return [e.uri, e];
         }));
-        let databaseUris : string[] = this.workspaceState.get<string[]>(shaderVariantDatabaseKey, []);
-        for (let databseUri of databaseUris) {
-            this.loadDatabase(vscode.Uri.parse(databseUri));
+        let databaseUris : vscode.Uri[] = this.workspaceState.get<vscode.Uri[]>(shaderVariantDatabaseKey, []);
+        for (let databaseUri of databaseUris) {
+            this.loadDatabase(vscode.Uri.from(databaseUri));
         }
     }
     private save() {
