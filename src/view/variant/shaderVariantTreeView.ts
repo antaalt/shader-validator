@@ -790,6 +790,8 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
             }
             // Update whole tree as we added something at its root
             this.updateTreeView();
+            await this.tree.reveal(newFile, { select: true, focus: true, expand: true });
+            await this.add(newFile);
         } else if (variant) {
             file.variants.push(variant);
             if (variant && variant.isActive) {
@@ -799,6 +801,12 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
             }
             // Only update this file node.
             this.updateTreeView(file);
+            await this.tree.reveal(file, { select: true, focus: true, expand: true });
+            await this.add(file);
+        } else {
+            // Focus and request to add a variant.
+            await this.tree.reveal(file, { select: true, focus: true, expand: true });
+            await this.add(file);
         }
     }
     public close(uri: vscode.Uri): void {
