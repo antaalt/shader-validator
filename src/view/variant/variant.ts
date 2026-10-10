@@ -233,6 +233,14 @@ export type ShaderVariantFile = {
     uri: vscode.Uri,
     variants: ShaderVariant[],
 };
+// Only generated when viewing variants as a tree, to group files by their folder.
+export type ShaderVariantFolder = {
+    kind: 'folder',
+    uri: vscode.Uri,
+    label: string, // Can hold multiple path segments when folders only hold a single folder.
+    children: (ShaderVariantFolder | ShaderVariantFile)[],
+};
+
 export type ShaderVariantRoot = {
     kind: 'root'
     label: string,
@@ -246,4 +254,4 @@ export type ShaderVariantDatabase = {
     files: ShaderVariantFile[],
 };
 
-export type ShaderVariantNode = ShaderVariant | ShaderVariantFile | ShaderVariantDefineList | ShaderVariantIncludeList | ShaderVariantDefine | ShaderVariantInclude | ShaderVariantStage | ShaderVariantRoot | ShaderVariantDatabase;
+export type ShaderVariantNode = ShaderVariant | ShaderVariantFile | ShaderVariantFolder | ShaderVariantDefineList | ShaderVariantIncludeList | ShaderVariantDefine | ShaderVariantInclude | ShaderVariantStage | ShaderVariantRoot | ShaderVariantDatabase;

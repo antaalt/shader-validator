@@ -1,12 +1,15 @@
 import * as vscode from 'vscode';
 import { resolveVSCodeVariables, ShaderLanguageClient } from '../../client';
-import { deserializeShaderVariantNode, ShaderStage, ShaderVariant, ShaderVariantDatabase, ShaderVariantFile, ShaderVariantNode, ShaderVariantRoot, UriMap } from './variant';
+import { deserializeShaderVariantNode, ShaderStage, ShaderVariant, ShaderVariantDatabase, ShaderVariantFile, ShaderVariantFolder, ShaderVariantNode, ShaderVariantRoot, UriMap } from './variant';
 import { ShaderVariantNotifier } from './shaderVariantNotifier';
 import { CompileShaderResult, decodeCompileShaderData, getCompiledShaderExtension, getCompiledShaderLanguage } from '../../request';
 import path from 'path';
 
 const shaderVariantTreeKey : string = 'shader-validator.shader-variant-tree-key';
 const shaderVariantDatabaseKey : string = 'shader-validator.shader-variant-database-key';
+const shaderVariantViewAsTreeKey : string = 'shader-validator.shader-variant-view-as-tree-key';
+// Drives which of the two toggle buttons is visible in the view title.
+const shaderVariantViewAsTreeContextKey : string = 'shader-validator.variantTreeViewAsTree';
 
 export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<ShaderVariantNode> {
 
@@ -24,6 +27,8 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
     // Serialization & Editor
     private tree: vscode.TreeView<ShaderVariantNode>;
     private workspaceState: vscode.Memento;
+    // Group files by folder instead of listing them flat.
+    private viewAsTree: boolean;
 
     private load() {
         let variants : ShaderVariantFile[] = this.workspaceState.get<ShaderVariantFile[]>(shaderVariantTreeKey, []);
@@ -53,6 +58,8 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
         this.database = new UriMap;
         this.databaseWatcher = new UriMap;
         this.notifier = new ShaderVariantNotifier(context, server);
+        this.viewAsTree = this.workspaceState.get<boolean>(shaderVariantViewAsTreeKey, false);
+        vscode.commands.executeCommand('setContext', shaderVariantViewAsTreeContextKey, this.viewAsTree);
         this.load();
         this.tree = vscode.window.createTreeView<ShaderVariantNode>("shader-validator-variants", {
             treeDataProvider: this
@@ -221,6 +228,18 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
                 await this.delete(node);
                 this.save();
             }
+        }));
+        const setViewAsTree = async (viewAsTree: boolean) => {
+            this.viewAsTree = viewAsTree;
+            await this.workspaceState.update(shaderVariantViewAsTreeKey, viewAsTree);
+            await vscode.commands.executeCommand('setContext', shaderVariantViewAsTreeContextKey, viewAsTree);
+            this.updateTreeView();
+        };
+        context.subscriptions.push(vscode.commands.registerCommand("shader-validator.viewVariantsAsTree", async () => {
+            await setViewAsTree(true);
+        }));
+        context.subscriptions.push(vscode.commands.registerCommand("shader-validator.viewVariantsAsList", async () => {
+            await setViewAsTree(false);
         }));
         context.subscriptions.push(vscode.commands.registerCommand("shader-validator.refreshMenu", (node: ShaderVariantNode) => {
             if (node.kind === 'database') {
@@ -482,7 +501,9 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
             item.contextValue = element.kind;
             return item;
         } else if (element.kind === 'file') {
-            let item = new vscode.TreeItem(vscode.workspace.asRelativePath(element.uri), vscode.TreeItemCollapsibleState.Expanded);
+            // Folders already display the path when viewing as tree.
+            let label = this.viewAsTree ? path.posix.basename(element.uri.path) : vscode.workspace.asRelativePath(element.uri);
+            let item = new vscode.TreeItem(label, vscode.TreeItemCollapsibleState.Expanded);
             item.command = {
                 title: "Go to file",
                 command: 'vscode.open',
@@ -494,6 +515,13 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
             item.resourceUri = element.uri;
             item.tooltip = `File ${element.uri.fsPath}`;
             item.iconPath = vscode.ThemeIcon.File;
+            item.contextValue = element.kind;
+            return item;
+        } else if (element.kind === 'folder') {
+            let item = new vscode.TreeItem(element.label, vscode.TreeItemCollapsibleState.Expanded);
+            item.resourceUri = element.uri;
+            item.tooltip = `Folder ${element.uri.fsPath}`;
+            item.iconPath = vscode.ThemeIcon.Folder;
             item.contextValue = element.kind;
             return item;
         } else if (element.kind === 'defineList') {
@@ -571,10 +599,12 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
                 return [];
             } else if (element.kind === 'stage') {
                 return [];
+            } else if (element.kind === 'folder') {
+                return element.children;
             } else if (element.kind === 'root') {
-                return element.files;
+                return this.viewAsTree ? this.groupFilesByFolder(element.files) : element.files;
             } else if (element.kind === 'database') {
-                return element.files;
+                return this.viewAsTree ? this.groupFilesByFolder(element.files) : element.files;
             } else {
                 console.error("Reached unreachable", element);
                 return undefined!; // unreachable
@@ -596,6 +626,64 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
             } as ShaderVariantRoot);
             return rootArray;
         }
+    }
+
+    // Group files by their path relative to workspace, the same way source control panel does.
+    private groupFilesByFolder(files: ShaderVariantFile[]): (ShaderVariantFolder | ShaderVariantFile)[] {
+        let root: ShaderVariantFolder = {
+            kind: 'folder',
+            uri: vscode.Uri.file('/'), // Unused
+            label: '',
+            children: [],
+        };
+        for (let file of files) {
+            // Path outside workspace are absolute, with native separators.
+            let segments = vscode.workspace.asRelativePath(file.uri).split(/[\\/]/).filter(segment => segment.length > 0);
+            let folderCount = segments.length - 1;
+            let parent = root;
+            for (let i = 0; i < folderCount; i++) {
+                let folder = parent.children.find(child => child.kind === 'folder' && child.label === segments[i]) as ShaderVariantFolder | undefined;
+                if (!folder) {
+                    folder = {
+                        kind: 'folder',
+                        uri: vscode.Uri.joinPath(file.uri, ...Array<string>(folderCount - i).fill('..')),
+                        label: segments[i],
+                        children: [],
+                    };
+                    parent.children.push(folder);
+                }
+                parent = folder;
+            }
+            parent.children.push(file);
+        }
+        // Merge folders holding a single folder & sort them before files.
+        function compact(folder: ShaderVariantFolder) {
+            while (folder.children.length === 1 && folder.children[0].kind === 'folder') {
+                let child: ShaderVariantFolder = folder.children[0];
+                folder.label = `${folder.label}/${child.label}`;
+                folder.uri = child.uri;
+                folder.children = child.children;
+            }
+            for (let child of folder.children) {
+                if (child.kind === 'folder') {
+                    compact(child);
+                }
+            }
+            folder.children.sort((lhs, rhs) => {
+                if (lhs.kind !== rhs.kind) {
+                    return lhs.kind === 'folder' ? -1 : 1;
+                }
+                let lhsLabel = lhs.kind === 'folder' ? lhs.label : path.posix.basename(lhs.uri.path);
+                let rhsLabel = rhs.kind === 'folder' ? rhs.label : path.posix.basename(rhs.uri.path);
+                return lhsLabel.localeCompare(rhsLabel);
+            });
+        }
+        for (let child of root.children) {
+            if (child.kind === 'folder') {
+                compact(child);
+            }
+        }
+        return root.children;
     }
 
     public async open(uri: vscode.Uri) {

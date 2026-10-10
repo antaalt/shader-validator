@@ -685,6 +685,18 @@
         "icon": "$(target)"
       },
       {
+        "command": "shader-validator.viewVariantsAsTree",
+        "title": "View as Tree",
+        "category": "Shader validator",
+        "icon": "$(list-tree)"
+      },
+      {
+        "command": "shader-validator.viewVariantsAsList",
+        "title": "View as List",
+        "category": "Shader validator",
+        "icon": "$(list-flat)"
+      },
+      {
         "command": "shader-validator.followActiveVariantInDependencyTree",
         "title": "Inspect the active variant file",
         "category": "Shader validator",
@@ -701,6 +713,14 @@
       "commandPalette": [
         {
           "command": "shader-validator.gotoShaderEntryPoint",
+          "when": "false"
+        },
+        {
+          "command": "shader-validator.viewVariantsAsTree",
+          "when": "false"
+        },
+        {
+          "command": "shader-validator.viewVariantsAsList",
           "when": "false"
         }
       ],
@@ -719,6 +739,16 @@
           "command": "shader-validator.revealActiveFileInDependencyTree",
           "when": "view == shader-validator-dependencies",
           "group": "navigation@0"
+        },
+        {
+          "command": "shader-validator.viewVariantsAsTree",
+          "when": "view == shader-validator-variants && !shader-validator.variantTreeViewAsTree",
+          "group": "navigation@9"
+        },
+        {
+          "command": "shader-validator.viewVariantsAsList",
+          "when": "view == shader-validator-variants && shader-validator.variantTreeViewAsTree",
+          "group": "navigation@9"
         },
         {
           "command": "shader-validator.followActiveVariantInDependencyTree",
