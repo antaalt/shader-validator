@@ -62,7 +62,8 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
         vscode.commands.executeCommand('setContext', shaderVariantViewAsTreeContextKey, this.viewAsTree);
         this.load();
         this.tree = vscode.window.createTreeView<ShaderVariantNode>("shader-validator-variants", {
-            treeDataProvider: this
+            treeDataProvider: this,
+            showCollapseAll: true,
             // TODO: drag and drop for better ux.
             //dragAndDropController:
         });
