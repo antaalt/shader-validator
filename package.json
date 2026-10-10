@@ -685,6 +685,12 @@
         "icon": "$(target)"
       },
       {
+        "command": "shader-validator.revealActiveFileInVariantTree",
+        "title": "Reveal active file in variant tree",
+        "category": "Shader validator",
+        "icon": "$(target)"
+      },
+      {
         "command": "shader-validator.viewVariantsAsTree",
         "title": "View as Tree",
         "category": "Shader validator",
@@ -739,6 +745,11 @@
           "command": "shader-validator.revealActiveFileInDependencyTree",
           "when": "view == shader-validator-dependencies",
           "group": "navigation@0"
+        },
+        {
+          "command": "shader-validator.revealActiveFileInVariantTree",
+          "when": "view == shader-validator-variants",
+          "group": "navigation@8"
         },
         {
           "command": "shader-validator.viewVariantsAsTree",

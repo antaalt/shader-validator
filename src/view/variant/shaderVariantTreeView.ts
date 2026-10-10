@@ -29,6 +29,11 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
     private workspaceState: vscode.Memento;
     // Group files by folder instead of listing them flat.
     private viewAsTree: boolean;
+    // Nodes above variant files, kept until next full refresh so that reveal can find parents
+    // that are the exact same objects as the ones displayed.
+    private rootNodes: (ShaderVariantRoot | ShaderVariantDatabase)[] | null = null;
+    private nodeChildren: Map<ShaderVariantNode, (ShaderVariantFolder | ShaderVariantFile)[]> = new Map();
+    private nodeParent: Map<ShaderVariantNode, ShaderVariantNode> = new Map();
 
     private load() {
         let variants : ShaderVariantFile[] = this.workspaceState.get<ShaderVariantFile[]>(shaderVariantTreeKey, []);
@@ -242,6 +247,9 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
         context.subscriptions.push(vscode.commands.registerCommand("shader-validator.viewVariantsAsList", async () => {
             await setViewAsTree(false);
         }));
+        context.subscriptions.push(vscode.commands.registerCommand("shader-validator.revealActiveFileInVariantTree", async () => {
+            await this.revealActiveFile();
+        }));
         context.subscriptions.push(vscode.commands.registerCommand("shader-validator.refreshMenu", (node: ShaderVariantNode) => {
             if (node.kind === 'database') {
                 this.loadDatabase(node.uri);
@@ -400,7 +408,13 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
             vscode.window.showErrorMessage(`Failed to load variant database ${vscode.workspace.asRelativePath(fileUri)}: ${error.message}`);
         }
     }
-    getParent(element: ShaderVariantNode): vscode.ProviderResult<ShaderVariantNode> {
+    getParent(element: ShaderVariantNode): ShaderVariantNode | null {
+        if (element.kind === 'root' || element.kind === 'database') {
+            return null;
+        } else if (element.kind === 'file' || element.kind === 'folder') {
+            this.getRootNodes(); // Ensure parents are computed.
+            return this.nodeParent.get(element) ?? null;
+        }
         // TODO: should store parents if perf become critical as looping like this might be heavy.
         function findParent(file: ShaderVariantFile) : ShaderVariantNode | null {
             if (element === file) {
@@ -477,7 +491,70 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
     }
 
     public updateTreeView(node?: ShaderVariantNode) {
+        if (!node) {
+            // Files might have been added or removed, recompute them.
+            this.rootNodes = null;
+        }
         this.onDidChangeTreeDataEmitter.fire(node);
+    }
+    private getRootNodes(): (ShaderVariantRoot | ShaderVariantDatabase)[] {
+        if (this.rootNodes === null) {
+            this.nodeChildren.clear();
+            this.nodeParent.clear();
+            this.rootNodes = [];
+            this.database.forEach((database, databaseUri) => {
+                this.rootNodes!.push({
+                    kind: 'database',
+                    uri: databaseUri,
+                    label: vscode.workspace.asRelativePath(databaseUri),
+                    files: Array.from(database.values())
+                } as ShaderVariantDatabase);
+            });
+            this.rootNodes.push({
+                kind: 'root',
+                label: 'Main',
+                files: Array.from(this.files.values())
+            } as ShaderVariantRoot);
+            const registerChildren = (parent: ShaderVariantNode, children: (ShaderVariantFolder | ShaderVariantFile)[]) => {
+                this.nodeChildren.set(parent, children);
+                for (let child of children) {
+                    this.nodeParent.set(child, parent);
+                    if (child.kind === 'folder') {
+                        registerChildren(child, child.children);
+                    }
+                }
+            };
+            for (let rootNode of this.rootNodes) {
+                registerChildren(rootNode, this.viewAsTree ? this.groupFilesByFolder(rootNode.files) : rootNode.files);
+            }
+        }
+        return this.rootNodes;
+    }
+    private async revealActiveFile() {
+        const activeEditor = vscode.window.activeTextEditor;
+        if (!activeEditor) {
+            vscode.window.showInformationMessage("No active file to reveal in variant tree.");
+            return;
+        }
+        const uri = activeEditor.document.uri;
+        // Prefer the file holding the active variant, then the one from main, then databases.
+        let candidates: ShaderVariantFile[] = [];
+        const mainFile = this.files.get(uri);
+        if (mainFile) {
+            candidates.push(mainFile);
+        }
+        for (let [_, database] of this.database) {
+            const databaseFile = database.get(uri);
+            if (databaseFile) {
+                candidates.push(databaseFile);
+            }
+        }
+        const file = candidates.find(candidate => candidate.variants.some(variant => variant.isActive)) ?? candidates[0];
+        if (!file) {
+            vscode.window.showInformationMessage(`File ${vscode.workspace.asRelativePath(uri)} has no variant.`);
+            return;
+        }
+        await this.tree.reveal(file, { select: true, focus: true, expand: true });
     }
     public async updateActiveVariant(file: ShaderVariantFile, node: ShaderVariant | null) {
         await this.notifier.notifyVariantChanged(file, node);
@@ -600,32 +677,14 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
                 return [];
             } else if (element.kind === 'stage') {
                 return [];
-            } else if (element.kind === 'folder') {
-                return element.children;
-            } else if (element.kind === 'root') {
-                return this.viewAsTree ? this.groupFilesByFolder(element.files) : element.files;
-            } else if (element.kind === 'database') {
-                return this.viewAsTree ? this.groupFilesByFolder(element.files) : element.files;
+            } else if (element.kind === 'folder' || element.kind === 'root' || element.kind === 'database') {
+                return this.nodeChildren.get(element) ?? [];
             } else {
                 console.error("Reached unreachable", element);
                 return undefined!; // unreachable
             }
         } else {
-            let rootArray : ShaderVariantNode[] = [];
-            this.database.forEach((database, databaseUri) => {
-                rootArray.push({
-                    kind: 'database',
-                    uri: databaseUri,
-                    label: vscode.workspace.asRelativePath(databaseUri),
-                    files: Array.from(database.values())
-                } as ShaderVariantDatabase);
-            });
-            rootArray.push({
-                kind: 'root',
-                label: 'Main',
-                files: Array.from(this.files.values())
-            } as ShaderVariantRoot);
-            return rootArray;
+            return this.getRootNodes();
         }
     }
 
