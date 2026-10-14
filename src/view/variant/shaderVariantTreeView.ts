@@ -785,13 +785,15 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
             this.files.set(uri, newFile);
             if (variant && variant.isActive) {
                 await this.updateActiveVariant(newFile, variant);
-            } else {
-                await this.updateActiveVariant(newFile, null);
             }
             // Update whole tree as we added something at its root
             this.updateTreeView();
+            // Reveal added node.
             await this.tree.reveal(newFile, { select: true, focus: true, expand: true });
-            await this.add(newFile);
+            if (!variant) {
+                // Request to add a variant directly, as the file has none.
+                await this.add(newFile);
+            }
         } else if (variant) {
             file.variants.push(variant);
             if (variant && variant.isActive) {
@@ -802,7 +804,6 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
             // Only update this file node.
             this.updateTreeView(file);
             await this.tree.reveal(file, { select: true, focus: true, expand: true });
-            await this.add(file);
         } else {
             // Focus and request to add a variant.
             await this.tree.reveal(file, { select: true, focus: true, expand: true });
