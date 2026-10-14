@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Shader validator</title>
+    <meta name="description" content="HLSL, GLSL and WGSL validation, hover and completion, running entirely in your browser.">
+    <link rel="icon" type="image/png" href="/shader-validator/assets/img/logo.png">
+    <link rel="stylesheet" href="/shader-validator/assets/css/style.css">
+    <!-- SharedArrayBuffer needs cross origin isolation, which GitHub Pages cannot enable through headers. -->
+    <script src="/shader-validator/coi-serviceworker.js"></script>
+</head>
+<body>
+    <header class="site-header">
+        <a class="brand" href="/shader-validator/">
+            <img src="/shader-validator/assets/img/logo.png" alt="" width="50" height="50">
+            <h1>Shader validator</h1>
+        </a>
+        <nav>
+            <a href="https://marketplace.visualstudio.com/items?itemName=antaalt.shader-validator">Marketplace</a>
+            <a href="https://open-vsx.org/extension/antaalt/shader-validator">Open VSX</a>
+            <a href="https://github.com/antaalt/shader-validator">GitHub</a>
+        </nav>
+    </header>
+    <main>
+        <section class="hero">
+    <h2>Shader validation, everywhere</h2>
+    <p>
+        Edit HLSL, GLSL or WGSL below and get diagnostics, hover and completion as you type.
+        This is <a href="https://github.com/antaalt/shader-sense/tree/main/shader-language-server">shader-language-server</a>, the server behind the
+        <a href="https://marketplace.visualstudio.com/items?itemName=antaalt.shader-validator">shader-validator</a> VS Code extension, running locally as Rust compiled to WebAssembly.
+    </p>
+</section>
+
+<div class="shader-playground" data-language="glsl"></div>
+
+<section class="details">
+    <div>
+        <h3>Same server as VS Code</h3>
+        <p>
+            This is the WASI build the extension uses on VS Code for the web. As there, HLSL is validated with
+            glslang, as DXC does not compile to WASI. The desktop extension uses DXC.
+        </p>
+    </div>
+    <div>
+        <h3>Runs in web workers</h3>
+        <p>
+            The server is built for <code>wasm32-wasip1-threads</code>: each of its threads runs in a worker,
+            sharing one memory. A small WASI host feeds it LSP messages from
+            <a href="https://github.com/mkslanc/ace-linters">ace-linters</a>.
+        </p>
+    </div>
+    <div>
+        <h3>Want more?</h3>
+        <p>
+            The extension adds goto, inlay hints, shader variants, inactive regions and the include tree.
+            Install it from the <a href="https://marketplace.visualstudio.com/items?itemName=antaalt.shader-validator">Visual Studio Marketplace</a> or
+            <a href="https://open-vsx.org/extension/antaalt/shader-validator">Open VSX</a>.
+        </p>
+    </div>
+</section>
+
+<script src="/shader-validator/assets/playground/playground.js"></script>
+
+    </main>
+    <footer class="site-footer">
+        Made by <a href="https://github.com/antaalt">antaalt</a>. Powered by
+        <a href="https://github.com/antaalt/shader-sense/tree/main/shader-language-server">shader-language-server</a>,
+        <a href="https://ace.c9.io/">Ace</a> and
+        <a href="https://github.com/mkslanc/ace-linters">ace-linters</a>.
+    </footer>
+</body>
+</html>

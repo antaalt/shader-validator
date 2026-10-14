@@ -1,0 +1,218 @@
+:root {
+    --bg: #f7f8fa;
+    --surface: #ffffff;
+    --toolbar: #eef1f5;
+    --fg: #1d2330;
+    --muted: #5b6475;
+    --border: #d9dee6;
+    --accent: #2f6fd6;
+    --ok: #2e9d4f;
+    --pending: #c98a00;
+    --error: #d23c3c;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg: #14171c;
+        --surface: #1d1f21; /* Matches the tomorrow_night editor theme. */
+        --toolbar: #23272e;
+        --fg: #e3e6eb;
+        --muted: #98a1b0;
+        --border: #30353e;
+        --accent: #79a8f2;
+        --ok: #4cc472;
+        --pending: #e0ad35;
+        --error: #f06a6a;
+    }
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font: 16px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+a {
+    color: var(--accent);
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+code {
+    font-size: 0.9em;
+}
+
+.site-header,
+main,
+.site-footer {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 16px;
+}
+
+.site-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px 24px;
+    padding-top: 16px;
+    padding-bottom: 16px;
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--fg);
+    font-weight: 600;
+    font-size: 1.1em;
+}
+
+.brand h1 {
+    margin: 0;
+}
+
+.brand:hover {
+    text-decoration: none;
+}
+
+.site-header nav {
+    display: flex;
+    gap: 20px;
+    font-size: 0.95em;
+}
+
+.hero {
+    max-width: 780px;
+    margin: 24px 0 28px;
+}
+
+.hero h2 {
+    margin: 0 0 12px;
+    font-size: clamp(1.5em, 4vw, 2.4em);
+    line-height: 1.2;
+}
+
+.hero p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 1.05em;
+}
+
+.details {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 24px 40px;
+    margin: 48px 0;
+}
+
+.details h2 {
+    margin: 0 0 8px;
+    font-size: 1.05em;
+}
+
+.details p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.95em;
+}
+
+.site-footer {
+    padding-top: 24px;
+    padding-bottom: 32px;
+    border-top: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 0.85em;
+}
+
+/* Playground */
+
+.shader-playground {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgb(0 0 0 / 0.06);
+}
+
+.shader-playground-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: var(--toolbar);
+    border-bottom: 1px solid var(--border);
+}
+
+.shader-playground-toolbar select,
+.shader-playground-toolbar button {
+    font: inherit;
+    font-size: 0.85em;
+    color: var(--fg);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 3px 10px;
+    cursor: pointer;
+}
+
+.shader-playground-status {
+    margin-left: auto;
+    color: var(--muted);
+    font-size: 0.8em;
+}
+
+.shader-playground-status::before {
+    content: "";
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    margin-right: 6px;
+    border-radius: 50%;
+    background: var(--pending);
+}
+
+.shader-playground-status[data-state="ready"]::before {
+    background: var(--ok);
+}
+
+.shader-playground-status[data-state="error"]::before,
+.shader-playground-status[data-state="exited"]::before {
+    background: var(--error);
+}
+
+.shader-playground-editor {
+    height: min(70vh, 640px);
+    min-height: 360px;
+    font-size: 14px;
+}
+
+.shader-playground-logs {
+    border-top: 1px solid var(--border);
+    font-size: 0.8em;
+}
+
+.shader-playground-logs summary {
+    padding: 6px 12px;
+    color: var(--muted);
+    cursor: pointer;
+}
+
+.shader-playground-logs pre {
+    margin: 0;
+    padding: 0 12px 8px;
+    max-height: 240px;
+    overflow: auto;
+    white-space: pre-wrap;
+    word-break: break-all;
+}
