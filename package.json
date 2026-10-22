@@ -381,6 +381,11 @@
             "type": "boolean",
             "description": "Allow spirv syntax in shader code.",
             "default": false
+          },
+          "shader-validator.hlsl.preamble": {
+            "type": "string",
+            "description": "Specify a path to a file containing a preamble for all HLSL files.",
+            "default": ""
           }
         }
       },
