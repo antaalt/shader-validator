@@ -650,9 +650,11 @@ export class ShaderLanguageClient {
                 trace: trace === "verbose" || trace === "messages",
             };
             // Memory options required by wasm32-wasip1-threads target
+            // Must match --initial-memory & --max-memory link args of shader-sense .cargo/config.toml (in 64KB pages).
+            // glslang has a huge memory footprint due to pools and throws bad_alloc with less than that.
             const memory : WebAssembly.MemoryDescriptor = {
-                initial: 200, 
-                maximum: 1024, // Big enough to handle glslang heavy RAM usage.
+                initial: 200,
+                maximum: 2048,
                 shared: true
             };
 
