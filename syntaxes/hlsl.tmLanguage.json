@@ -550,12 +550,12 @@
                 {
                     "comment": "preprocessor",
                     "name": "keyword.preprocessor.hlsl",
-                    "match": "^\\s*#\\s*(if|elif|else|endif|ifdef|ifndef|undef|include|line|error|warning|pragma|INF)\\s+([\\w\\(\\)]+)?",
+                    "match": "^\\s*#\\s*(elif|else|endif|ifdef|ifndef|if|undef|include|line|error|warning|pragma|INF)(\\s+([\\w\\(\\)]+))?",
                     "captures": {
                         "1": {
                             "name": "keyword.other.preprocessor.hlsl"
                         },
-                        "2": {
+                        "3": {
                             "name": "variable.other.hlsl",
                             "patterns": [
                                 {
