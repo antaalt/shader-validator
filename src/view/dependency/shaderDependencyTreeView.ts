@@ -326,7 +326,7 @@ export class ShaderDependencyTreeDataProvider implements vscode.TreeDataProvider
         }
         let uri = this.editorDocument.uri;
         function collectOccurrences(node: ShaderDependency, occurrences: ShaderDependency[]) {
-            if (node.uri.path === uri.path) {
+            if (node.uri.fsPath === uri.fsPath) {
                 occurrences.push(node);
             }
             for (let include of node.includes) {
@@ -352,7 +352,7 @@ export class ShaderDependencyTreeDataProvider implements vscode.TreeDataProvider
 
     private isInTree(uri: vscode.Uri): boolean {
         function isInNode(node: ShaderDependency): boolean {
-            return node.uri.path === uri.path || node.includes.some(isInNode);
+            return node.uri.fsPath === uri.fsPath || node.includes.some(isInNode);
         }
         if (this.root !== null) {
             return isInNode(this.root);
@@ -360,7 +360,7 @@ export class ShaderDependencyTreeDataProvider implements vscode.TreeDataProvider
         // Without a tree to compare against, follow the inspected file so that one which failed
         // to resolve can still recover as the user edits it.
         let [inspectedUri, _message] = this.getInspectedUri();
-        return inspectedUri !== null && inspectedUri.path === uri.path;
+        return inspectedUri !== null && inspectedUri.fsPath === uri.fsPath;
     }
 
     public getTreeItem(element: ShaderDependencyTreeElement): vscode.TreeItem {

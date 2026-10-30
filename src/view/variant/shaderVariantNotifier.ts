@@ -218,7 +218,8 @@ export class ShaderVariantNotifier {
             for (let fileToUpdate of dependencies) {
                 // TODO: should not use visibleTextEditors as this only impact the currently active one.
                 // saving all files of tree might be a bit invasive though on huge dependencies...
-                let visibleEditor = vscode.window.visibleTextEditors.find(e => e.document.uri.path === fileToUpdate.path);
+                // Compare fsPath as it normalizes the drive letter case on Windows, unlike path.
+                let visibleEditor = vscode.window.visibleTextEditors.find(e => e.document.uri.fsPath === fileToUpdate.fsPath);
                 if (visibleEditor) {
                     console.debug(`Updating symbols of file ${fileToUpdate.path} by triggering a save.`);
                     let editor = visibleEditor;
