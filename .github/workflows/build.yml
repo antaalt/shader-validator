@@ -148,3 +148,36 @@ jobs:
         with:
           name: shader-validator-${{ matrix.npm-target }}.vsix
           path: shader-validator-${{ matrix.npm-target }}.vsix
+
+  # Upload the extensions of every commit on main to the nightly release, which must already exist.
+  # Also runs when shader-sense updates its own nightly release, so that it ships the latest server.
+  nightly:
+    needs: build
+    # Only for main, not for pull requests nor releases, which reuse this workflow through deploy.
+    if: ${{ (github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'repository_dispatch' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    # Avoid two runs uploading at the same time, leaving a mix of both in the release.
+    concurrency:
+      group: nightly
+      cancel-in-progress: false
+    steps:
+      - name: Download extensions
+        uses: actions/download-artifact@v8
+        with:
+          pattern: shader-validator-*.vsix
+          merge-multiple: true
+          path: ./extensions
+      - name: Upload extensions to nightly release
+        # Clobber to overwrite previous assets, as the nightly release is reused for every commit.
+        run: gh release upload nightly ./extensions/*.vsix --clobber --repo ${{ github.repository }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+      - name: Update nightly release notes
+        run: |
+          gh release edit nightly --repo ${{ github.repository }} --notes "Nightly build of commit ${{ github.sha }} from main, with shader-sense server ${SERVER_COMMIT}. Built by run ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}."
+        env:
+          GH_TOKEN: ${{ github.token }}
+          # Sent by shader-sense when it triggers this build, else the server is its latest nightly at build time.
+          SERVER_COMMIT: ${{ github.event.client_payload.sha && format('from commit {0}', github.event.client_payload.sha) || 'from latest nightly' }}

@@ -8,6 +8,11 @@ on:
 # https://code.visualstudio.com/api/working-with-extensions/continuous-integration
 jobs:
   build:
+    # The nightly release is updated by build.yml on every commit, it must not be published to marketplaces.
+    if: ${{ github.event.release.tag_name != 'nightly' }}
+    # build.yml nightly job requires it, even if it is skipped on release.
+    permissions:
+      contents: write
     uses: ./.github/workflows/build.yml
     secrets: inherit # for GH_PAT
     with:
