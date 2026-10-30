@@ -16,7 +16,7 @@ const webConfig = {
     path: path.resolve(__dirname, 'dist/web'),
     filename: 'extension.js',
     libraryTarget: 'commonjs2',
-    devtoolModuleFilenameTemplate: '../[resource-path]'
+    devtoolModuleFilenameTemplate: '../../[resource-path]' // Relative to dist/web
   },
   devtool: 'source-map',
   externals: {
@@ -59,7 +59,7 @@ const nodeConfig = {
     path: path.resolve(__dirname, 'dist/node'),
     filename: 'extension.js',
     libraryTarget: 'commonjs2',
-    devtoolModuleFilenameTemplate: '../[resource-path]'
+    devtoolModuleFilenameTemplate: '../../[resource-path]' // Relative to dist/node
   },
   devtool: 'source-map',
   externals: {
@@ -97,7 +97,7 @@ const webTestConfig = {
     path: path.resolve(__dirname, 'dist/web-test/suite'),
     filename: 'index.js',
     libraryTarget: 'commonjs2',
-    devtoolModuleFilenameTemplate: '../[resource-path]'
+    devtoolModuleFilenameTemplate: '../../../[resource-path]' // Relative to dist/web-test/suite
   },
   devtool: 'source-map',
   externals: {
