@@ -98,15 +98,12 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
                                 }
                             }
                             variant.isActive = true; // checked
-                            await this.updateActiveVariant(file, variant);
+                            await this.updateActiveVariant(file.uri, variant);
                             this.updateTreeView(file);
                         }
                     } else {
                         variant.isActive = false; // unchecked
-                        let file = this.getNodeVariantFile(variant);
-                        if (file) {
-                            await this.updateActiveVariant(file, null);
-                        }
+                        await this.updateActiveVariant(variant.uri, null);
                     }
                 }
             }
@@ -142,10 +139,7 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
         context.subscriptions.push(vscode.commands.registerCommand("shader-validator.disableActiveShaderVariant", async () => {
             let variant = this.getActiveVariant();
             if (variant) {
-                let file = this.getNodeVariantFile(variant);
-                if (file) {
-                    await this.updateActiveVariant(file, null);
-                }
+                await this.updateActiveVariant(variant.uri, null);
             }
         }));
         context.subscriptions.push(vscode.commands.registerCommand("shader-validator.addShaderVariant", async (uri: vscode.Uri, entryPoint: string, stage: ShaderStage) => {
@@ -289,7 +283,7 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
                         }
                     }
                     node.isActive = true; // checked
-                    await this.updateActiveVariant(file, node);
+                    await this.updateActiveVariant(file.uri, node);
                     this.updateTreeView(node);
                     let options = await vscode.commands.executeCommand<vscode.TextDocumentShowOptions>("vscode.open", node.uri, {
                         viewColumn: vscode.ViewColumn.Active
@@ -322,7 +316,7 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
                         }
                     }
                     node.isActive = true; // checked
-                    await this.updateActiveVariant(file, node);
+                    await this.updateActiveVariant(file.uri, node);
                     this.updateTreeView(node);
                     let options = await vscode.commands.executeCommand<vscode.TextDocumentShowOptions>("vscode.open", node.uri, {
                         viewColumn: vscode.ViewColumn.Active
@@ -337,7 +331,7 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
         for (let [uri, file] of this.files) {
             for (let variant of file.variants) {
                 if (variant.isActive) {
-                    this.updateActiveVariant(file, variant);
+                    this.updateActiveVariant(file.uri, variant);
                     break;
                 }
             }
@@ -355,11 +349,12 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
             }));
             // Reset variant if its inside db.
             let oldDatabase = this.database.get(fileUri);
+            let previouslyActiveVariant = null;
             if (oldDatabase) {
                 for (let [uri, file] of oldDatabase) {
                     for (let variant of file.variants) {
                         if (variant.isActive) {
-                            await this.updateActiveVariant(file, null);
+                            previouslyActiveVariant = variant;
                             break;
                         }
                     }
@@ -402,6 +397,23 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
                 oldWatcher.dispose();
             }
             this.databaseWatcher.set(fileUri, watcher);
+            
+            // Set the active variant that was previously set.
+            if (oldDatabase && previouslyActiveVariant !== null) {
+                let file = oldDatabase.get(previouslyActiveVariant.uri);
+                if (file) {
+                    let newDatabase = this.database.get(fileUri);
+                    // TODO: need somehow to have an unique id to keep track of variant if it was edited
+                    // Could check if no change, or where are changes localized to edit only part.
+                    await this.updateActiveVariant(file.uri, null);
+                } else {
+                    // Remove active variant as file is not present anymore.
+                    await this.updateActiveVariant(previouslyActiveVariant.uri, null);
+                }
+            } else if (previouslyActiveVariant !== null) {
+                // Remove active variant as db changed.
+                await this.updateActiveVariant(previouslyActiveVariant.uri, null);
+            }
         } catch (e) {
             let error = e as SyntaxError;
             console.error("Failed to load variant database", error);
@@ -556,9 +568,9 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
         }
         await this.tree.reveal(file, { select: true, focus: true, expand: true });
     }
-    public async updateActiveVariant(file: ShaderVariantFile, node: ShaderVariant | null) {
-        await this.notifier.notifyVariantChanged(file, node);
-        this.onDidChangeActiveVariantEmitter.fire(node);
+    public async updateActiveVariant(variantUri: vscode.Uri, variant: ShaderVariant | null) {
+        await this.notifier.notifyVariantChanged(variantUri, variant);
+        this.onDidChangeActiveVariantEmitter.fire(variant);
     }
 
     public getTreeItem(element: ShaderVariantNode): vscode.TreeItem {
@@ -784,7 +796,7 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
             };
             this.files.set(uri, newFile);
             if (variant && variant.isActive) {
-                await this.updateActiveVariant(newFile, variant);
+                await this.updateActiveVariant(newFile.uri, variant);
             }
             // Update whole tree as we added something at its root
             this.updateTreeView();
@@ -797,9 +809,9 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
         } else if (variant) {
             file.variants.push(variant);
             if (variant && variant.isActive) {
-                await this.updateActiveVariant(file, variant);
+                await this.updateActiveVariant(file.uri, variant);
             } else {
-                await this.updateActiveVariant(file, null);
+                await this.updateActiveVariant(file.uri, null);
             }
             // Only update this file node.
             this.updateTreeView(file);
@@ -933,11 +945,8 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
                     // Update file here as we want to update its description aswell
                     let variant = this.getNodeVariant(node);
                     if (variant) {
-                        let file = this.getNodeVariantFile(variant);
-                        if (file) {
-                            if (variant.isActive) {
-                                await this.updateActiveVariant(file, variant);
-                            }
+                        if (variant.isActive) {
+                            await this.updateActiveVariant(variant.uri, variant);
                         }
                         // Update variant as it impact description
                         this.updateTreeView(variant);
@@ -960,9 +969,8 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
                 });
                 let variant = this.getNodeVariant(node);
                 if (variant) {
-                    let file = this.getNodeVariantFile(variant);
-                    if (file && variant.isActive) {
-                        await this.updateActiveVariant(file, variant);
+                    if (variant.isActive) {
+                        await this.updateActiveVariant(variant.uri, variant);
                     }
                 }
                 this.updateTreeView(node);
@@ -983,9 +991,8 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
                 node.name = name;
                 this.updateTreeView(node);
                 if (node.isActive) {
-                    let file = this.getNodeVariantFile(node);
-                    if (file && node.isActive) {
-                        await this.updateActiveVariant(file, node);
+                    if (node.isActive) {
+                        await this.updateActiveVariant(node.uri, node);
                     }
                 }
             }
@@ -1011,9 +1018,8 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
             if (value || label) {
                 let variant = this.getNodeVariant(node);
                 if (variant) {
-                    let file = this.getNodeVariantFile(variant);
-                    if (file && variant.isActive) {
-                        await this.updateActiveVariant(file, variant);
+                    if (variant.isActive) {
+                        await this.updateActiveVariant(variant.uri, variant);
                     }
                     // Update variant here as we want to update its description aswell
                     this.updateTreeView(variant);
@@ -1032,9 +1038,8 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
                 node.include = include;
                 let variant = this.getNodeVariant(node);
                 if (variant) {
-                    let file = this.getNodeVariantFile(variant);
-                    if (file && variant.isActive) {
-                        await this.updateActiveVariant(file, variant);
+                    if (variant.isActive) {
+                        await this.updateActiveVariant(variant.uri, variant);
                     }
                 }
                 this.updateTreeView(node);
@@ -1046,9 +1051,8 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
                 this.updateTreeView(node);
                 let variant = this.getNodeVariant(node);
                 if (variant) {
-                    let file = this.getNodeVariantFile(variant);
-                    if (file && variant.isActive) {
-                        await this.updateActiveVariant(file, variant);
+                    if (variant.isActive) {
+                        await this.updateActiveVariant(variant.uri, variant);
                     }
                 }
             }
@@ -1063,7 +1067,7 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
             let file = this.files.get(node.uri);
             // Disable variant if it was inside...
             if (file && this.getFileActiveVariant(file) !== null) {
-                await this.updateActiveVariant(file, null);
+                await this.updateActiveVariant(file.uri, null);
             }
             if (file && file === node) {
                 this.files.delete(node.uri);
@@ -1075,7 +1079,7 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
                 let index = cachedFile.variants.indexOf(node);
                 if (index > -1) {
                     if (node.isActive) {
-                        await this.updateActiveVariant(cachedFile, null);
+                        await this.updateActiveVariant(cachedFile.uri, null);
                     }
                     cachedFile.variants.splice(index, 1);
                     this.updateTreeView(cachedFile);
@@ -1092,7 +1096,7 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
                         // Refresh variant for description
                         this.updateTreeView(file);
                         if (variant.isActive) {
-                            await this.updateActiveVariant(file, variant);
+                            await this.updateActiveVariant(variant.uri, variant);
                         }
                         found = true;
                         break;
@@ -1112,7 +1116,7 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
                         variant.includes.includes.splice(index, 1);
                         this.updateTreeView(variant);
                         if (variant.isActive) {
-                            await this.updateActiveVariant(file, variant);
+                            await this.updateActiveVariant(variant.uri, variant);
                         }
                         found = true;
                         break;

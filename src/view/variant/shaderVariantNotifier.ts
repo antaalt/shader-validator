@@ -142,7 +142,7 @@ export class ShaderVariantNotifier {
             }
         }));
     }
-    async notifyVariantChanged(variantFile: ShaderVariantFile, activeVariant: ShaderVariant | null) {
+    async notifyVariantChanged(variantUri: vscode.Uri, activeVariant: ShaderVariant | null) {
         function capitalizeFirstLetter(str: string): string {
             return str.charAt(0).toUpperCase() + str.slice(1);
         }
@@ -162,7 +162,7 @@ export class ShaderVariantNotifier {
                     ) : null,
                 });
                 // Symbols might have changed, so request them as we might change context
-                await this.requestDocumentSymbol(variantFile.uri);
+                await this.requestDocumentSymbol(variantUri);
             }, reason => {
                 console.error(`Failed to open file ${vscode.workspace.asRelativePath(activeVariant.uri)} to notify variant change: ${reason}.`);
                 vscode.window.showWarningMessage(`Failed to open file ${vscode.workspace.asRelativePath(activeVariant.uri)} to notify variant change: ${reason}.`);
@@ -171,7 +171,7 @@ export class ShaderVariantNotifier {
             this.server.sendNotification(didChangeShaderVariantNotification, {
                 shaderVariant: null,
             });
-            await this.requestDocumentSymbol(variantFile.uri);
+            await this.requestDocumentSymbol(variantUri);
         }
     }
     private async requestDocumentSymbol(uri: vscode.Uri) {
