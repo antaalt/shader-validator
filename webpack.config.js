@@ -123,6 +123,10 @@ const webTestConfig = {
       }
     ]
   },
+  ignoreWarnings: [
+    // mocha dynamically requires custom reporters by name, which is never used here (builtin reporters only).
+    { module: /node_modules[\\/]mocha[\\/]mocha\.js/, message: /Critical dependency/ }
+  ],
   plugins: [
     // A webworker cannot load extra chunks, everything must land in a single file.
     new webpack.optimize.LimitChunkCountPlugin({ maxChunks: 1 }),
