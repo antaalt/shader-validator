@@ -4,6 +4,17 @@
 	"version": "2.0.0",
 	"tasks": [
 		{
+			// Declared explicitly so preLaunchTask does not depend on npm script auto-detection,
+			// which runs asynchronously and can miss the task when launching right away.
+			"type": "npm",
+			"script": "compile",
+			"problemMatcher": "$tsc",
+			"presentation": {
+				"reveal": "silent"
+			},
+			"group": "build"
+		},
+		{
 			"type": "npm",
 			"script": "watch",
 			"problemMatcher": "$tsc-watch",
