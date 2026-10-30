@@ -83,7 +83,7 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
                                 for (let otherVariant of file.variants) {
                                     if (otherVariant.isActive) {
                                         otherVariant.isActive = false;
-                                            this.updateTreeView(otherVariant);
+                                        this.updateTreeView(otherVariant);
                                     }
                                 }
                             }
@@ -99,7 +99,6 @@ export class ShaderVariantTreeDataProvider implements vscode.TreeDataProvider<Sh
                             }
                             variant.isActive = true; // checked
                             await this.updateActiveVariant(file.uri, variant);
-                            this.updateTreeView(file);
                         }
                     } else {
                         variant.isActive = false; // unchecked
