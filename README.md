@@ -1,5 +1,6 @@
 # Shader validator
 
+[![Discord](https://img.shields.io/badge/Discord-Join%20us-5865F2?logo=discord&logoColor=white)](https://discord.gg/ZMuYD9wnBW)
 [![Rust](https://img.shields.io/badge/Rust-%23000000.svg?e&logo=rust&logoColor=white)](https://www.rust-lang.org/)
 [![extension issues](https://img.shields.io/github/issues/antaalt/shader-validator.svg?label=extension%20issues)](https://github.com/antaalt/shader-validator/issues)
 [![server issues](https://img.shields.io/github/issues/antaalt/shader-sense.svg?label=server%20issues)](https://github.com/antaalt/shader-sense/issues)
