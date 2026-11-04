@@ -7,8 +7,7 @@
 [![vsmarketplace](https://img.shields.io/visual-studio-marketplace/v/antaalt.shader-validator?color=blue&label=vscode%20marketplace)](https://marketplace.visualstudio.com/items?itemName=antaalt.shader-validator)
 [![openVSX registry](https://img.shields.io/open-vsx/v/antaalt/shader-validator?color=purple)](https://open-vsx.org/extension/antaalt/shader-validator)
 
-[shader-validator](https://marketplace.visualstudio.com/items?itemName=antaalt.shader-validator) adds syntax highlighting, validation & symbol providing for **HLSL** / **GLSL** / **WGSL** shaders. It is mostly intended to be used with big shader codebase used in production by providing interesting features such as [region selection](#regions) and a [shader variant](#variants) entry point selection for quickly switching between two entry point context with decent performances. This make it also quite reliable for small shader codebase.
-
+[shader-validator](https://marketplace.visualstudio.com/items?itemName=antaalt.shader-validator) adds syntax highlighting, validation & symbol providing for **HLSL** / **GLSL** / **WGSL** shaders. It is mostly intended to be used with big shader codebase used in production by providing interesting features such as [region selection](#regions) and a [shader variant](#variants) entry point selection for quickly switching between two entry point context with decent performances. This make it also quite reliable for small shader codebase. It works out of the box, with nothing to install and also run on [vscode.dev](https://vscode.dev) with a few limitations (see below).
 
 ## Features
 
@@ -133,6 +132,8 @@ Inspect the tree of files included by the currently opened shader from the dedic
 Use the pin button in the view title to inspect the active [variant](#variants) file instead of the opened one. This keeps the view on the entry point that is actually compiled while you browse through its includes, rather than switching to each file you open.
 
 The tree follows the active editor and refreshes as you type. Clicking an entry opens the file. A file that is already part of its own include chain is marked as `already included` and not expanded again.
+
+![dependencies](res/doc/dependencies.png)
 
 ### Regions
 

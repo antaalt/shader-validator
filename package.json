@@ -21,11 +21,11 @@
     "Programming Languages"
   ],
   "keywords": [
-    "shader",
-    "lsp",
     "hlsl",
     "glsl",
-    "wgsl"
+    "wgsl",
+    "shader",
+    "lsp"
   ],
   "activationEvents": [
     "onLanguage:glsl",
