@@ -654,7 +654,7 @@ export class ShaderLanguageClient {
             // glslang has a huge memory footprint due to pools and throws bad_alloc with less than that.
             const memory : WebAssembly.MemoryDescriptor = {
                 initial: 200,
-                maximum: 2048,
+                maximum: 4096,
                 shared: true
             };
 
