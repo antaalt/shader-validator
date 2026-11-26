@@ -7,6 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [unreleased]
 
+The extension now has full WGSL support through WESL, and the variant and dependency views are easier to use.
+
+### Added
+
+- WESL support, with `.wesl` files, syntax highlighting for imports and WESL attributes, and import resolution.
+- New settings for resolving WESL imports `shader-validator.wgsl.packageRoot` and `shader-validator.wgsl.packages`.
+- New setting `shader-validator.hlsl.preamble` to add a preamble to all HLSL files.
+- Disassembly of compilation results, with new commands `shader-validator.disassembleMenu` and `shader-validator.compileAndDisassembleActiveEditor`. SPIR-V and DXIL now have their own language with syntax highlighting.
+- Filter for the dependency view.
+- Reveal button for the current file in the dependency and variant views.
+- Ability to pin the current variant in the dependency view.
+- Variants can be viewed as a tree when there are many of them, with a collapse all button.
+- Prompt to add a variant when adding a new file, and the new variant is revealed in the view.
+- Nightly release.
+
+### Fixed
+
+- Crash when loading the editor because the variant database URI failed to parse.
+- URI comparison failing when the drive letter case differs.
+- Dependency tree was updated when focusing the terminal or other panes.
+- Timeout when adding a file that already has a variant, because the extension prompted to add a variant anyway.
+- Crash in WASI caused by glslang's larger memory footprint (bad alloc). The memory option now matches the new WASI server.
+- HLSL directives were not highlighted when they contained spaces, and a comment at the end of a preprocessor directive broke highlighting.
+- Syntax highlighting for macros defined with empty parentheses, and types now take priority over function calls.
+- Crash at startup when debugging the extension with F5, and broken source maps and breakpoints due to a webpack path issue.
+
+### Changed
+
+- Using [shader-language-server v2.0.0](https://github.com/antaalt/shader-sense/releases/tag/v2.0.0) with WESL support, disassembly, preambles for all languages, and various fixes.
+- Renamed URL to URI across the extension to match the server protocol. Variant change notifications now pass a URI instead of a file path.
+
 ## [1.6.0] - 2026-09-20
 
 ### Added
