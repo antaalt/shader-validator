@@ -218,6 +218,19 @@ This extension is based on a [language-server](https://github.com/antaalt/shader
 
 This extension run on the web on [vscode.dev](https://vscode.dev/). It is relying on the [WebAssembly Execution engine](https://marketplace.visualstudio.com/items?itemName=ms-vscode.wasm-wasi-core). Because of this restriction, we can't use dxc on the web as it does not compile to WASI and instead rely on glslang, which is more limited in linting (Only support some basic features of SM 6.0, while DXC support all newly added SM (current 6.8)).
 
+## Contribute
+
+Shader validator (and the [shader-language-server](https://github.com/antaalt/shader-sense/tree/main/shader-language-server) based on shader-sense behind it) is built and maintained by me in my spare time and some greatly appreciated contributors. It's free and I want it to stay free.
+
+If it saves you time on your shaders, you can support its development in a few different ways:
+
+- ☕ **[Buy me a coffee on Ko-fi](https://ko-fi.com/antaalt)**: one-off or monthly
+- ⭐ Star the repo or leave a review on the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=antaalt.shader-validator) / [OpenVSX](https://open-vsx.org/extension/antaalt/shader-validator)
+- 🐛 Report bugs with a small shader that reproduces them. It helps a lot.
+- 🔀 Submit pull request to improve features and contribute.
+- 🧩 Improvements on third party library (tree-sitter, hassle-rs...) on which shader-sense is relying.
+
+Thanks to everyone who has used, reported issues, and contributed so far !
 
 ## Questions and answers
 

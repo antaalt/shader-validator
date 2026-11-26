@@ -14,6 +14,9 @@
     "type": "git",
     "url": "https://github.com/antaalt/shader-validator"
   },
+  "sponsor": { 
+    "url": "https://ko-fi.com/antaalt"
+  },
   "engines": {
     "vscode": "^1.88.0"
   },
